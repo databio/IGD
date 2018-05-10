@@ -1,1 +1,1 @@
-# iDG
+# Create an integrated genomic database
