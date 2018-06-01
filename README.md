@@ -1,1 +1,1 @@
-# Reshape the genomic data sources for highly efficient locus-based analysis
+# Reshape the genomic data sources for highly efficient integrated analysis
