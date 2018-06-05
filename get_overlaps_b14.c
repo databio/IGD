@@ -11,6 +11,8 @@
 #include <math.h>
 #include <float.h>
 #include <glob.h>
+#include <zlib.h>
+#include <errno.h>
 
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 //-------------------------------------------------------------------------------------
@@ -30,13 +32,10 @@ struct query_data
     uint32_t g_val;        			//signal level
 };
 
-struct igd_overlap
-{
-    uint32_t i_idx;        			//genomic object
-    uint32_t r_start;      			//region start
-    uint32_t r_end;        			//region end
-    uint32_t g_val;        			//signal level
-    uint8_t r_chr;                 //chr:0-23
+struct igd_mix
+{    
+    uint32_t m_idx;                 //tile index--chr 
+    struct igd_data igd;
 };
 
 struct igd_info
@@ -49,15 +48,15 @@ struct igd_info
 char** str_split( char* str, char delim, int nmax);
 char** str_split_t( char* str, int nItems);
 struct query_data* get_igdlist(char *fname, uint32_t *nblocks, uint32_t *nRegions, double *mRegion);	
-struct igd_overlap* get_overlaps(struct query_data *query, uint32_t nblocks, uint32_t nmax, uint32_t *nOL);
-struct igd_overlap* get_overlaps_w(struct query_data *query, uint32_t nblocks, char *igdName, uint32_t nmax, uint32_t *nOL);
+struct igd_mix* get_overlaps(struct query_data *query, uint32_t nblocks, uint32_t nmax, uint32_t *nOL);
+struct igd_mix* get_overlaps_w(struct query_data *query, uint32_t nblocks, char *igdName, uint32_t nmax, uint32_t *nOL);
 struct igd_info* get_igdinfo(char *fname, uint32_t *nFiles);
 uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
 uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
 void test1(char* fname, char* igdName);
 void testMain(char* fname, char* igdName);
 void search(char* fname, char* igdName);
-void create_roadmap();
+void create_igd(char *path);
 
 char *fileBase = "b14";         	//14 bits block
 uint32_t nmax[] = {15940, 15580, 12760, 12240, 11670, 10990, 10260, 9370, 8860, 8610, 8710, 
@@ -70,10 +69,11 @@ uint32_t gstart[25] = {0, 15940, 31520, 44280, 56520, 68190, 79180, 89440, 98810
         178550, 181530, 184770, 194650, 198160}; 
 uint32_t nTiles = 198160;
 uint32_t nbp = 16384;
+uint32_t bgz_buf = 1048576;//65536;
 uint32_t *g2ichr;
 
 //-------------------------------------------------------------------------------------
-//This section is used here for comparison with giggle etc
+//This section is taken from giggle package
 /* Log gamma function
  * \log{\Gamma(z)}
  * AS245, 2nd algorithm, http://lib.stat.cmu.edu/apstat/245
@@ -229,11 +229,11 @@ int compare_qidx(const void *a, const void *b)
     return pa->q_idx - pb->q_idx;
 }
 
-int compare_oidx(const void *a, const void *b)
+int compare_midx(const void *a, const void *b)
 {
-    struct igd_overlap *pa = (struct igd_overlap *) a;
-    struct igd_overlap *pb = (struct igd_overlap *) b;
-    return pa->i_idx - pb->i_idx;
+    struct igd_mix *pa = (struct igd_mix *) a;
+    struct igd_mix *pb = (struct igd_mix *) b;
+    return pa->m_idx - pb->m_idx;
 }
 
 char** str_split_t( char* str, int nItems)
@@ -282,57 +282,101 @@ char** str_split( char* str, char delim, int nmax)
     return splits;
 }
 
-//create roadmap igd from gz
+void append_igd(struct igd_mix *data, char* path, char *fName)
+{   //binary: single folder
+    //both head file and data files (tile index)
+
+
+
+}
+
+//create ucsc igd from gz
 void create_igd(char *path)
-{   
-    //0. Get the files   
+{   //For large data sources (>10GB): save to individual-tile files in append
+    //   mode (igd mode 0); when done: reload each tile file and sort it and save
+    //   to a single disk file (igd mode 1) for better search performance.
+    //   In case of a single source data > 10GB(mem limit), open it chr by chr. 
+    //1. Get the files  
     glob_t gresult;
     int rtn = glob(path, 0, NULL, &gresult);     
     if(rtn!=0){
         printf("wrong dir path: %s", path);
         return;
     }
+    printf("nfiles:%i\n", (int)gresult.gl_pathc);
     char** file_ids = gresult.gl_pathv;
     uint32_t n_files = gresult.gl_pathc;
+    uint64_t *f_size = calloc(n_files, sizeof(uint64_t));
     
-    //1. Read head info: assume a .bed or .vcf file 
-    char* tmp = file_ids[0] + strlen(file_ids[0]) - 4;
-    int fileType = 0, colC, colS, colE, colV;
-    if(strcmp(".bed", tmp)==0){
-        fileType = 1;
-        colC = 0;
-        colS = 1;
-        colE = 2;
-        colV = 4;
-    }
-    else if(strcmp(".vcf", tmp)==0){
-        filetype = 2; 
-        colC = 0;
-        colS = 1;
-        colE   
-    }
-    else{
-        printf("File type not supported");
-        return;   
-    }
-    regionData = pd.read_csv(file_path+file_ids[0], delimiter='\t', header=None) 
-    nrows, ncols = regionData.shape
-    print("nFiles, rows[0], cols[0], ", n_files, nrows, ncols, "\n") 
+    //2. Read region data
+    int i, j, k;
+    char *ftype;
+    int err;                    
+    int bytes_read;
+    unsigned char buffer[bgz_buf];  
+      
+    for(i=0; i<n_files; i++){
+        ftype = file_ids[i] + strlen(file_ids[i]) - 7;
+        if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){
+            //printf("%s\n", file_ids[i]);
+            gzFile zfile;
+            zfile = gzopen (file_ids[i], "r");
+            if (! zfile) {
+                fprintf (stderr, "gzopen of '%s' failed: %s.\n", file_ids[i],
+                         strerror (errno));
+                    exit (EXIT_FAILURE);
+            }
+            j=1;
+            while (j==1) {
+                int err;                    
+                int bytes_read;
+                bytes_read = gzread (zfile, buffer, bgz_buf - 1);
+                //int gzputs (gzFile file, const char * s);  
+                //int gzread (gzFile file, voidp buf, unsigned int len);            
+                //char * gzgets (gzFile file, char * buf, int len);
+                f_size[i] += bytes_read;
+                buffer[bytes_read] = '\0';
+                //printf ("%s", buffer);             
+                if (bytes_read < bgz_buf - 1) {
+                    if (gzeof (zfile)) {
+                        j=2;
+                    }
+                    else {
+                        const char * error_string;
+                        error_string = gzerror (zfile, & err);
+                        if (err) {
+                            fprintf (stderr, "Error: %s.\n", error_string);
+                            exit (EXIT_FAILURE);
+                        }
+                    }
+                }
+            }
+            gzclose (zfile);
+        }
+        else if(strcmp(".vcf.gz", ftype)==0){
         
-    //2. Read region data: read int64 default--int32 should be better
+        }
+        else{
+            printf("File type not supported: %s\n", ftype);
+        }
+        printf("%i %s %llu\n", i, file_ids[i], (unsigned long long)f_size[i]);
+    }
+    
+    /*char* tmp = file_ids[0] + strlen(file_ids[0]) - 4;
+    int fileType = 0, colC, colS, colE, colV;
     nRegions = np.zeros(n_files, dtype='uint32')
     mRegion = np.zeros(n_files, dtype='uint32')
     count = np.zeros(nTiles, dtype=np.uint32)    
-    data = np.empty(nTiles, dtype=object)        #bytearray        
+    data = np.empty(nTiles, dtype=object)        //bytearray        
     for i, id_ in tqdm.tqdm(enumerate(file_ids)):
-        file = file_path + id_
+        file_id = file_path + id_
         regionData = pd.read_csv(file, delimiter='\t', header=None)       
-        df = regionData.sort_values(by=[0, 1])   #first by str, then by start
+        df = regionData.sort_values(by=[0, 1])   //first by str, then by start
         n1 = df[1].values//nbp
         n2 = df[2].values//nbp-n1 
         itmp = len(n1)
         nRegions[i] = itmp
-        tmp = np.sum(df[2]-df[1])/itmp    #64-bit
+        tmp = np.sum(df[2]-df[1])/itmp          //64-bit
         mRegion[i]= int(tmp)
         rchr, ridx, rcnt = np.unique(df[0].values, return_index=True, return_counts=True)        
         //if a record crosses the block boundary, list it under both blocks (duplicates)
@@ -394,8 +438,7 @@ void create_igd(char *path)
                 tmp += struct.pack('IIII', *tmpd[i])           
             file.write(tmp)       
     file.close()
-    print('t_save=', time.time()-t0)   
-    
+    print('t_save=', time.time()-t0)  */ 
     globfree(&gresult); 
 }
 
@@ -508,11 +551,11 @@ struct igd_info* get_igdinfo(char *fname, uint32_t *nFiles)
 }
 
 
-struct igd_overlap* get_overlaps(struct query_data *query, uint32_t nblocks, uint32_t nmax, uint32_t* nOL)
+struct igd_mix* get_overlaps(struct query_data *query, uint32_t nblocks, uint32_t nmax, uint32_t* nOL)
 {
     uint32_t i, j, i1, i2, bk, ichr, k, nrec, nols=0, q1, q2, m;
     char iname[128];
-    struct igd_overlap *overlaps = malloc(nmax*sizeof(struct igd_overlap));
+    struct igd_mix *overlaps = malloc(nmax*sizeof(struct igd_mix));
     struct igd_data *gdata;
     m = 0;
     while (m<nblocks) {    
@@ -536,16 +579,13 @@ struct igd_overlap* get_overlaps(struct query_data *query, uint32_t nblocks, uin
                 fread(gdata, sizeof(struct igd_data), nrec, fp);
          	    //printf("%i %i %i \n", nrec, gdata[0].r_start, gdata[0].r_end);               
                 for(i=i1; i<=i2; i++){
-             		q1 = query[i].r_start;
-              		q2 = query[i].r_end;
+                    q1 = query[i].r_start;
+                    q2 = query[i].r_end;
                     for(j=0;j<nrec;j++){
                         if(!(q1>gdata[j].r_end || q2<gdata[j].r_start)){
-                			overlaps[nols].i_idx   = gdata[j].i_idx;
-                			overlaps[nols].r_start = gdata[j].r_start;
-                			overlaps[nols].r_end   = gdata[j].r_end;
-                			//overlaps[nols].g_val   = gdata[j].g_val;
-                			overlaps[nols].r_chr   = ichr;
-                			nols++;
+                    			overlaps[nols].igd = gdata[j];
+                    			overlaps[nols].m_idx   = bk;
+                    			nols++;
                         }
                     }	    
                 }
@@ -560,7 +600,7 @@ struct igd_overlap* get_overlaps(struct query_data *query, uint32_t nblocks, uin
 }
 
 //using single-file igd_data
-struct igd_overlap* get_overlaps_w(struct query_data *query, uint32_t nblocks, char *igdName, uint32_t nmax, uint32_t* nOL)
+struct igd_mix* get_overlaps_w(struct query_data *query, uint32_t nblocks, char *igdName, uint32_t nmax, uint32_t* nOL)
 {   //add alignment: padding 
     //assume in-tile igdata is sorted by region end 
     FILE* fp = fopen(igdName, "rb");
@@ -568,7 +608,7 @@ struct igd_overlap* get_overlaps_w(struct query_data *query, uint32_t nblocks, c
         return NULL;    
         
     uint32_t i, j, t1, t2, i1, i2, bk, ichr, nols=0, q1, q2, m;
-    struct igd_overlap *overlaps = malloc(nmax*sizeof(struct igd_overlap));
+    struct igd_mix *overlaps = malloc(nmax*sizeof(struct igd_mix));
     struct igd_data *gdata;
     uint32_t len0 = nTiles*sizeof(uint32_t);
     uint32_t *counts = malloc(len0);//number of struct
@@ -602,11 +642,8 @@ struct igd_overlap* get_overlaps_w(struct query_data *query, uint32_t nblocks, c
         		    if(q1<=t2){
             	       t1 = gdata[j].r_start;
         		       if(q2>=t1){    		          		    
-                			overlaps[nols].i_idx   = gdata[j].i_idx;
-                			overlaps[nols].r_start = t1;
-                			overlaps[nols].r_end   = t2;
-                			//overlaps[nols].g_val   = gdata[j].g_val;
-                			overlaps[nols].r_chr   = ichr;
+                    		overlaps[nols].igd = gdata[j];
+                    		overlaps[nols].m_idx   = bk;
                 			nols++;
             			}
         		    }
@@ -678,9 +715,7 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nq, double *mq, 
             nRegions++;
             n1 = q1/nbp;
             n2 = q2/nbp-n1;   
-            idx = n1 + gstart[ichr];
-            if(nRegions>100000)
-                printf("%u\t %u\t %u\t \n", counts[idx], q1, q2);          
+            idx = n1 + gstart[ichr];         
             //find overlaps with this region          
             if(n2==0){
                 //printf("%u\t %u\t %u\t", counts[idx], q1, q2); 
@@ -769,6 +804,7 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nq, double *mq, 
 uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double *mean_size, uint32_t *hits)
 {   //no need to store every overlaps, only get the number of hits
     //assume in-tile igdata is sorted by region end 
+    //.Reuse igddata if current query is in the same tile as the previous
     FILE* fi = fopen(igdName, "rb");
     if(!fi)
         return 0;    
@@ -778,8 +814,8 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
      
     int ichr;      
     uint32_t i, j, t1, t2, q1, q2, m;
-    uint32_t n1, n2, idx, nRegions=1, nItems = 5, bd;  
-    struct igd_data *gdata;
+    uint32_t n1, n2, idx, idx0, nRegions=0, nItems = 5, bd;  
+    struct igd_data *gdata = malloc(1*sizeof(struct igd_data));
     uint32_t len0 = nTiles*sizeof(uint32_t);
     uint32_t *counts = malloc(len0);//number of struct
     uint64_t *mloc = malloc((nTiles+1)*sizeof(uint64_t));
@@ -796,6 +832,7 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
     char **splits;
     double delta=0.0;
     uint64_t nols=0;
+    idx0 = nTiles+10;
     while(fgets(buf, 1024, fq)!=NULL){	
         splits = str_split(buf,'\t', nItems); 
         if(strlen(splits[0])>5)
@@ -818,11 +855,15 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
             //find overlaps with this region  
             if(n2==0){
                 if(counts[idx]>0){
-                    fseek(fi, mloc[idx], SEEK_SET);
-                    gdata = malloc(counts[idx]*16);
-                    fread(gdata, 16, counts[idx], fi);
+                    if(idx!=idx0){
+                        free(gdata);
+                        fseek(fi, mloc[idx], SEEK_SET);
+                        gdata = malloc(counts[idx]*16);
+                        fread(gdata, 16, counts[idx], fi);
+                        idx0 = idx;
+                    }
                     //update the in-tile db start j0: not really faster           
-                    for(j=0;j<counts[idx];j++){
+                    for(j=0;j<counts[idx0];j++){
                         t2 = gdata[j].r_end;
                         if(q1<=t2){
                             t1 = gdata[j].r_start;
@@ -832,7 +873,6 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                             }
                         }
                     } 
-                    free(gdata);
                 }          
             }
             else{ 
@@ -841,9 +881,13 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                 //in tiles (m=0, m=n2-1): t2<bd(m)-----------------        
                 for(m=idx; m<idx+n2; m++){
                     if(counts[m]>0){
-                        fseek(fi, mloc[m], SEEK_SET);
-                        gdata = malloc(counts[m]*16);
-                        fread(gdata, 16, counts[m], fi);
+                        if(m!=idx0){
+                            free(gdata);
+                            fseek(fi, mloc[m], SEEK_SET);
+                            gdata = malloc(counts[m]*16);
+                            fread(gdata, 16, counts[m], fi);
+                            idx0 = m;
+                        }
                         //update the in-tile db start j0: not really faster           
                         for(j=0;j<counts[m];j++){
                             t2 = gdata[j].r_end;
@@ -855,16 +899,19 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                                 }
                             }
                         }
-                        free(gdata);
                     }                   
                     bd += nbp;
                 }	
                 //--last tile: normal------------------------------
                 m=idx+n2;
                 if(counts[m]>0){
-                    fseek(fi, mloc[m], SEEK_SET);
-                    gdata = malloc(counts[m]*16);
-                    fread(gdata, 16, counts[m], fi);
+                    if(m!=idx0){
+                        free(gdata);
+                        fseek(fi, mloc[m], SEEK_SET);
+                        gdata = malloc(counts[m]*16);
+                        fread(gdata, 16, counts[m], fi);
+                        idx0 = m;
+                    }
                     //update the in-tile db start j0: not really faster           
                     for(j=0;j<counts[m];j++){
                         t2 = gdata[j].r_end;
@@ -876,11 +923,11 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                             }
                         }
                     }
-                    free(gdata);
                 }
             }   
         }   //if
-    }   //while  
+    }   //while             
+    free(gdata);
     *mean_size = delta/nRegions;
     *nregions = nRegions;
     fclose(fq);   
@@ -907,7 +954,7 @@ void test1(char* fname, char* igdName)
     clock_t start, end;
     start = clock();
     uint32_t nOL=0, nmax=15000000;
-    struct igd_overlap *overlaps;   
+    struct igd_mix *overlaps;   
     overlaps = get_overlaps_w(query, nblocks, igdName, nmax, &nOL);
     
     end = clock();   
@@ -978,7 +1025,7 @@ void search(char* fname, char* igdName)
     clock_t start, end;
     start = clock();
     uint32_t *hits = calloc(nFiles, sizeof(uint32_t));
-    uint64_t nOL = get_overlaps_n1(fname, igdName, &nq, &mq, hits);   
+    uint64_t nOL = get_overlaps_n(fname, igdName, &nq, &mq, hits);   
     end = clock();   
     
     printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
@@ -1007,12 +1054,12 @@ int main(int argc, char **argv)
         	for(j=gstart[i]; j<gstart[i+1]; j++)      
         	    g2ichr[j] = i;
     }
-    //---------------------------------------------------------------------------------
-    
-    //char* path = "/media/john/CE30F6EE30F6DC81/roadmap_sort/";
-    
+    //---------------------------------------------------------------------------------  
+    char *path = "/media/john/CE30F6EE30F6DC81/ucscweb_sort/*";//ucsc_data/database/*";//ucscweb_sort/*";//roadmap_sort/*";
+    create_igd(path);
     char *fname = argv[1];
     char *igdName = argv[2];
+    
     if(usingw)
         search(fname, igdName);      
         //testMain(fname, igdName);
@@ -1033,7 +1080,11 @@ int main(int argc, char **argv)
 .Inlcude <float.h> for DBL_MAX definition
 .Using -lm  option to compile linked to math lib
     gcc -o get_overlaps_b14 get_overlaps_b14.c -lm
+    use .lz to link zlib
 .calloc() is similar to malloc() but the former does initialize memory to 0
 .may not free gdata but slower
 .chrM: core dumped
+.glob--path for files in a path with path/*
+.!/bin/sh may not work--->/bin/bash --version
+.if python parse.py not work try python2 parse.py 
 */
