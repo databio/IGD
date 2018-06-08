@@ -45,7 +45,7 @@ struct igd_info
     double md;
 };
 
-char** str_split( char* str, char delim, int nmax);
+char** str_split( char* str, char delim, int *nmax);
 char** str_split_t( char* str, int nItems);
 struct query_data* get_igdlist(char *qfName, uint32_t *nblocks, uint32_t *nRegions, double *mRegion);	
 struct igd_mix* get_overlaps(struct query_data *query, uint32_t nblocks, uint32_t nmax, uint32_t *nOL);
@@ -57,7 +57,7 @@ void test1(char* qfName, char* igdName);
 void testMain(char* qfName, char* igdName);
 void search(char* qfName, char* igdName);
 void create_igd(char *path, char* igdName);
-void append_igd(struct igd_data *mdata, uint64_t *counts, struct igd_info *fInfo, int nFiles, char* igdName);
+void append_igd(struct igd_mix *mdata, uint32_t *counts, struct igd_info *fInfo, int nFiles, char* igdName);
 void store_igd(char*igdName);
 
 char *fileBase = "_b14_";         	//14 bits block
@@ -259,7 +259,7 @@ char** str_split_t( char* str, int nItems)
     return splits;
 }
 
-char** str_split( char* str, char delim, int nmax)
+char** str_split( char* str, char delim, int *nmax)
 {   //slightly faster than _t
     char** splits;
     char* ch;    
@@ -267,8 +267,8 @@ char** str_split( char* str, char delim, int nmax)
     if (str == NULL || delim=='\0')
         return NULL;
     else {
-        splits = malloc((nmax+1) * sizeof(*splits));
-        splits[nmax] = NULL;
+        splits = malloc((*nmax+1) * sizeof(*splits));
+        splits[*nmax] = NULL;
         ch = str;
         ns = 1;
         splits[0] = str;
@@ -279,33 +279,36 @@ char** str_split( char* str, char delim, int nmax)
                 *ch = '\0';
             }
             ch++;
-        } while (*ch != '\0' && ns < nmax+1);
+        } while (*ch != '\0' && ns < *nmax+1);
     }
+    *nmax = ns;
     return splits;
 }
 
-void append_igd(struct igd_data *mdata, uint64_t *counts, struct igd_info *fInfo, int nFiles, char* igdName)
+void append_igd(struct igd_mix *mdata, uint32_t *counts, struct igd_info *fInfo, int nFiles, char* igdName)
 {   //binary: single folder (path without\)
     //both head file and data files (tile index)
     //Head file: path/igdName_index.tsv; datafiles: path/igdName_fileBase_tileNo.igd
     char idFile[128];
     sprintf(idFile, "%s%s%s", "igdata/", igdName, "_index.tsv");    
     FILE *fp = fopen(idFile, "a");
-    uint32_t i;
+    uint32_t i, j;
     for(i=0; i<nFiles; i++){
         fprintf(fp, "%s %u %f\n", fInfo[i].fileName, fInfo[i].nd, fInfo[i].md);     
     }
     fclose(fp);
     
     //---append igd data: sorted already
-    uint64_t nItems = 0;
+    uint64_t nI = 0;
+    //struct igd_data *td;
     for(i=0;i<nTiles;i++){
         if(counts[i]>0){
             sprintf(idFile, "%s%s%s%u%s", "igdata/data0/", igdName, fileBase, i, ".igd");
             fp = fopen(idFile, "ab");
-            fwrite(mdata, sizeof(struct igd_data), counts[i], fp);
+            for(j=nI;j<nI+counts[i];j++)
+                fwrite(&mdata[j].igd, sizeof(struct igd_data), 1, fp);
             fclose(fp);           
-            nItems += counts[i];
+            nI += counts[i];
         }
     }
 }
@@ -345,40 +348,41 @@ void store_igd(char *igdName)
 }
 
 //create ucsc igd from gz
-void create_igd(char *path, char *igdName)
+void create_igd_gz(char *path, char *igdName)
 {   //For large data sources (>2GB): save to individual-tile files in append
     //   mode (igd mode 0); when done: reload each tile file and sort it and save
     //   to a single disk file (igd mode 1) for better search performance.
     //   In case of a single source data > 2GB(mem limit), deal with it chr by chr. 
     //1. Get the files  
-    glob_t gresult;
-    int rtn = glob(path, 0, NULL, &gresult);     
+    glob_t gResult;
+    int rtn = glob(path, 0, NULL, &gResult);     
     if(rtn!=0){
         printf("wrong dir path: %s", path);
         return;
     }
-    printf("nfiles:%i\n", (int)gresult.gl_pathc);
-    char** file_ids = gresult.gl_pathv;
-    uint32_t n_files = gresult.gl_pathc;
-    uint64_t *f_size = calloc(n_files, sizeof(uint64_t));
+
+    char** file_ids = gResult.gl_pathv;
+    uint32_t n_files = gResult.gl_pathc;
      
     //2. Read region data
-    uint32_t nmax=134217728, nItems=0, i, j, df1, df2, t0, n1, n2, nR, nextra;//134217728*16=2G
-    uint32_t *counts = calloc(nTiles, sizeof(uint32_t));
-    struct igd_data *gdata = calloc(nmax, sizeof(struct igd_data));
-    struct igd_info *fi = calloc(nbp, sizeof(struct igd_info));
-    double delta;        
-    //-------------
+    uint32_t i, j, k, t, df1, df2, df4, ichr, n1, n2, ti, nR, nt;
+    uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
+    struct igd_mix *gData;
+    struct igd_info *fi = malloc(1*sizeof(struct igd_info));
+    double delta;    
+    
+    printf("nfiles:%i\n", (int)gResult.gl_pathc);        
+    //----------------------------------------------------------------------
     char *ftype;
     char **splits;
-    int ncols=5, err;                    
+    int nCols=5, err;                    
     int bytes_read;
     unsigned char buffer[bgz_buf];  
     for(i=0; i<n_files; i++){
         ftype = file_ids[i] + strlen(file_ids[i]) - 7;
         memset(counts, 0, nTiles*sizeof(uint32_t));
-        j = 0;
-        nextra = 0;
+        nt = 0;
+        nR = 0;
         delta = 0.0;
         if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){
             //printf("%s\n", file_ids[i]);
@@ -387,27 +391,47 @@ void create_igd(char *path, char *igdName)
             if (! zfile) {
                 fprintf (stderr, "gzopen of '%s' failed: %s.\n", file_ids[i],
                          strerror (errno));
-                    exit (EXIT_FAILURE);
+                exit (EXIT_FAILURE);
             }                   
             while(gzgets(zfile, buffer, bgz_buf)!=NULL){
-                splits = str_split(buffer,'\t', ncols);       
+                splits = str_split(buffer,'\t', &nCols);       
                 if(strlen(splits[0])<6){
                     if(strcmp(splits[0], "chrX")==0)
-                        t0 = 22;
+                        ichr = 22;
                     else if(strcmp(splits[0],"chrY")==0)
-                        t0 = 23;
+                        ichr = 23;
                     else
-                        t0 = (uint32_t)(atoi(&splits[0][3])-1);
+                        ichr = (uint32_t)(atoi(&splits[0][3])-1);
                     df1 = (uint32_t)atoi(splits[1]);
                     df2 = (uint32_t)atoi(splits[2]);
+                    if(nCols>4)
+                        df4 = (uint32_t)atoi(splits[4]);
+                    else
+                        df4 = 600;
                     delta += df2-df1;
                     n1 = df1/nbp;
                     n2 = df2/nbp-n1;  
-                    nextra += n2;     
-                    j++;
+                    //---------------------------------------------------------
+                    for(j=0;j<=n2;j++){
+                        ti = n1+j+gstart[ichr];
+                        gData[nt].m_idx = ti;
+                        counts[ti]++;
+                        gData[nt].igd.i_idx = i;
+                        gData[nt].igd.r_start = df1;
+                        gData[nt].igd.r_end = df2;
+                        gData[nt].igd.g_val = df4;
+                        nt++;
+                    }
+                    nR++;
                 }                
             }
-            gzclose (zfile);
+            gzclose (zfile);     
+            //-----------------------------------------------------------------
+            qsort(gData, nt, sizeof(struct igd_mix), compare_midx);         
+            fi[0].fileName = file_ids[i];
+            fi[0].nd = nR;
+            fi[0].md = delta/nR;
+            append_igd(gData, counts, fi, 1, igdName);
         }
         else if(strcmp(".vcf.gz", ftype)==0){
         
@@ -417,12 +441,114 @@ void create_igd(char *path, char *igdName)
         }
         //printf("%i %s %llu\n", i, file_ids[i], (unsigned long long)f_size[i]);
     }
-    //qsort(query, *nblocks, sizeof(struct query_data), compare_qidx);     
+    //qsort(query, *nblocks, sizeof(struct query_data), compare_qidx); 
     free(fi->fileName);
-    free(fi);   
-    free(gdata);
+    free(fi);     
+    free(gData);
     free(counts);
-    globfree(&gresult); 
+    globfree(&gResult); 
+}
+
+//create ucsc igd from bed files
+void create_igd(char *path, char *igdName)
+{   //For large data sources (>2GB): save to individual-tile files in append
+    //   mode (igd mode 0); when done: reload each tile file and sort it and save
+    //   to a single disk file (igd mode 1) for better search performance.
+    //   In case of a single source data > 2GB(mem limit), deal with it chr by chr. 
+    //1. Get the files  
+    glob_t gResult;
+    int rtn = glob(path, 0, NULL, &gResult);     
+    if(rtn!=0){
+        printf("wrong dir path: %s", path);
+        return;
+    }
+
+    char** file_ids = gResult.gl_pathv;
+    uint32_t n_files = gResult.gl_pathc;
+     
+    //2. Read region data
+    uint32_t i, j, k, t, df1, df2, df4, ichr, n1, n2, ti, nR, nt;
+    uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
+    struct igd_mix *gData;
+    struct igd_info *fi = malloc(1*sizeof(struct igd_info));
+    double delta;    
+    
+    printf("nfiles:%i\n", (int)gResult.gl_pathc);        
+    //----------------------------------------------------------------------
+    char *ftype;
+    char **splits;
+    int nCols=5, err;                    
+    int bytes_read;
+    unsigned char buffer[bgz_buf];  
+    for(i=0; i<n_files; i++){
+        ftype = file_ids[i] + strlen(file_ids[i]) - 7;
+        memset(counts, 0, nTiles*sizeof(uint32_t));
+        nt = 0;
+        nR = 0;
+        delta = 0.0;
+        if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){
+            //printf("%s\n", file_ids[i]);
+            gzFile zfile;
+            zfile = gzopen (file_ids[i], "r");
+            if (! zfile) {
+                fprintf (stderr, "gzopen of '%s' failed: %s.\n", file_ids[i],
+                         strerror (errno));
+                exit (EXIT_FAILURE);
+            }                   
+            while(gzgets(zfile, buffer, bgz_buf)!=NULL){
+                splits = str_split(buffer,'\t', &nCols);       
+                if(strlen(splits[0])<6){
+                    if(strcmp(splits[0], "chrX")==0)
+                        ichr = 22;
+                    else if(strcmp(splits[0],"chrY")==0)
+                        ichr = 23;
+                    else
+                        ichr = (uint32_t)(atoi(&splits[0][3])-1);
+                    df1 = (uint32_t)atoi(splits[1]);
+                    df2 = (uint32_t)atoi(splits[2]);
+                    if(nCols>4)
+                        df4 = (uint32_t)atoi(splits[4]);
+                    else
+                        df4 = 600;
+                    delta += df2-df1;
+                    n1 = df1/nbp;
+                    n2 = df2/nbp-n1;  
+                    //---------------------------------------------------------
+                    for(j=0;j<=n2;j++){
+                        ti = n1+j+gstart[ichr];
+                        gData[nt].m_idx = ti;
+                        counts[ti]++;
+                        gData[nt].igd.i_idx = i;
+                        gData[nt].igd.r_start = df1;
+                        gData[nt].igd.r_end = df2;
+                        gData[nt].igd.g_val = df4;
+                        nt++;
+                    }
+                    nR++;
+                }                
+            }
+            gzclose (zfile);     
+            //-----------------------------------------------------------------
+            qsort(gData, nt, sizeof(struct igd_mix), compare_midx);         
+            fi[0].fileName = file_ids[i];
+            fi[0].nd = nR;
+            fi[0].md = delta/nR;
+            append_igd(gData, counts, fi, 1, igdName);
+        }
+        else if(strcmp(".vcf.gz", ftype)==0){
+        
+        }
+        else{
+            printf("File type not supported: %s\n", ftype);
+        }
+        //printf("%i %s %llu\n", i, file_ids[i], (unsigned long long)f_size[i]);
+    }
+    //qsort(query, *nblocks, sizeof(struct query_data), compare_qidx); 
+    free(fi->fileName);
+    free(fi);     
+    free(gData);
+    free(counts);
+    globfree(&gResult); 
 }
 
 struct query_data* get_igdlist(char *qfName, uint32_t *nblocks, uint32_t *nRegions, double *mRegion)
@@ -443,13 +569,13 @@ struct query_data* get_igdlist(char *qfName, uint32_t *nblocks, uint32_t *nRegio
     uint8_t *n2 = malloc(nregions*sizeof(uint8_t)); 
 
     char **splits;
-    int nItems = 5;  
+    int nCols = 5;  
     fseek(fp, 0, SEEK_SET);
     int nm, i=0, nextras=0;
     double delta=0.0;//number of regions that cross the tile boundary
     while(fgets(buf, 1024, fp)!=NULL){	
         //splits = str_split_t(buf, nItems);
-        splits = str_split(buf,'\t', nItems);       
+        splits = str_split(buf,'\t', &nCols);       
         if(strlen(splits[0])<6){
     	   if(strcmp(splits[0], "chrX")==0)
             	df0[i] = 22;
@@ -500,8 +626,10 @@ struct query_data* get_igdlist(char *qfName, uint32_t *nblocks, uint32_t *nRegio
 struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles)
 {   //read head file __index.tsv to get info
     FILE *fp = fopen(ifName, "r");
-    if(fp==NULL)
+    if(fp==NULL){
+        printf("file not found:%s\n", ifName);
         return NULL;
+    }
     char buf[1024], ch;
     uint32_t i, nfiles = -1;
     while((ch=fgetc(fp))!=EOF){
@@ -519,7 +647,7 @@ struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles)
     i=0;
     fgets(buf, 1024, fp);   //header
     while(fgets(buf, 1024, fp)!=NULL){	
-        splits = str_split(buf,'\t', ncols);        
+        splits = str_split(buf,'\t', &ncols);        
         fi[i].fileName = (char *)calloc(strlen(splits[1]) + 1, sizeof(char));
         strcpy(fi[i].fileName, splits[1]);
         fi[i].nd = (uint32_t)atoi(splits[3]);
@@ -656,7 +784,7 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nq, double *mq, 
         return 0;    
     int ichr;           
     uint32_t i, j, t1, t2, q1, q2, m;
-    uint32_t n1, n2, idx, nRegions=0, nItems = 5, bd;  
+    uint32_t n1, n2, idx, nRegions=0, nCols = 5, bd;  
     struct igd_data *gdata;
     uint32_t len0 = nTiles*sizeof(uint32_t);
     uint32_t *counts = malloc(len0);//number of struct
@@ -675,7 +803,7 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nq, double *mq, 
     double delta=0.0;
     uint64_t nols=0;
     while(fgets(buf, 1024, fq)!=NULL){	
-        splits = str_split(buf,'\t', nItems);   
+        splits = str_split(buf,'\t', &nCols);   
         if(strlen(splits[0])>5)
             ichr = -1;  
         else if(strcmp(splits[0], "chrX")==0)
@@ -797,7 +925,7 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
      
     int ichr;      
     uint32_t i, j, t1, t2, q1, q2, m;
-    uint32_t n1, n2, idx, idx0, nRegions=0, nItems = 5, bd;  
+    uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 5, bd;  
     struct igd_data *gdata = malloc(1*sizeof(struct igd_data));
     uint32_t len0 = nTiles*sizeof(uint32_t);
     uint32_t *counts = malloc(len0);//number of struct
@@ -817,7 +945,7 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
     uint64_t nols=0;
     idx0 = nTiles+10;
     while(fgets(buf, 1024, fq)!=NULL){	
-        splits = str_split(buf,'\t', nItems); 
+        splits = str_split(buf,'\t', &nCols); 
         if(strlen(splits[0])>5)
             ichr = -1;  
         else if(strcmp(splits[0], "chrX")==0)
@@ -922,14 +1050,14 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
 
 void test1(char* qfName, char* igdName)
 {
-    uint32_t nblocks=0, nq=1, nFiles;
+    uint32_t nblocks=0, nq=1, nCols=2, nFiles;
     double mq = 1.0;
     struct query_data *query = get_igdlist(qfName, &nblocks, &nq, &mq);
     
     //-----open idfile-----
     char tmp[128];
     strcpy(tmp, igdName);
-    char *idFile = str_split(tmp, '_', 2)[0];
+    char *idFile = str_split(tmp, '_', &nCols)[0];
     strcat(idFile, "_index.tsv");  
     struct igd_info *fi = get_igdinfo(idFile, &nFiles);
     printf("%s %u %f\n", fi[10].fileName, fi[10].nd, fi[10].md);     
@@ -953,11 +1081,11 @@ void test1(char* qfName, char* igdName)
 
 void testMain(char* qfName, char* igdName)
 {
-    uint32_t nq=1, nFiles, genome_size=3095677412;
+    uint32_t nq=1, nFiles, nCols=2, genome_size=3095677412;
     double mq = 1.0;
     char tmp[128];
     strcpy(tmp, igdName);
-    char *idFile = str_split(tmp, '_', 2)[0];
+    char *idFile = str_split(tmp, '_', &nCols)[0];
     strcat(idFile, "_index.tsv");  
     struct igd_info *fi = get_igdinfo(idFile, &nFiles);   
     
@@ -997,11 +1125,12 @@ void testMain(char* qfName, char* igdName)
 
 void search(char* qfName, char* igdName)
 {
-    uint32_t nq=1, nFiles, genome_size=3095677412;
+    uint32_t nq=1, nFiles, nCols=2, genome_size=3095677412;
     double mq = 1.0;
     char tmp[128];
     strcpy(tmp, igdName);
-    char *idFile = str_split(tmp, '_', 2)[0];
+    tmp[strrchr(tmp, '_')-tmp] = '\0';
+    char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
     strcat(idFile, "_index.tsv");  
     struct igd_info *fi = get_igdinfo(idFile, &nFiles);   
     
@@ -1014,7 +1143,7 @@ void search(char* qfName, char* igdName)
     printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
     printf("%u %u %u %f \n", nFiles, (int)nOL, nq, mq);
     printf("index\t File_name\t number of regions\t mean-region-size \t number of hits\n");
-    for(int i=0;i<nFiles/20;i++)
+    for(int i=0;i<nFiles/50;i++)
         printf("%i %s %u %u %u\n", i, fi[i].fileName, fi[i].nd, (uint32_t)fi[i].md, hits[i]);
     //---------------------------------------------------------------------------------
     free(fi->fileName);
@@ -1038,13 +1167,13 @@ int main(int argc, char **argv)
         	    g2ichr[j] = i;
     }
     //---------------------------------------------------------------------------------  
-    //char *path = "/media/john/CE30F6EE30F6DC81/ucscweb_sort/*";//ucsc_data/database/*";//ucscweb_sort/*";//roadmap_sort/*";
-    //create_igd(path, "ucsc_web");
-    char *qfName = argv[1];
-    char *igdName = argv[2];
+    char *path = "/home/roadmap_sort/*";//ucscweb_sort/*";//ucsc_data/database/*";//ucscweb_sort/*";//roadmap_sort/*";
+    create_igd(path, "roadmap");
+    //char *qfName = argv[1];
+    // char *igdName = argv[2];
     
-    if(usingw)
-        search(qfName, igdName);      
+    //if(usingw)
+    //    search(qfName, igdName);      
         //testMain(fname, igdName);
 
     free(g2ichr);
