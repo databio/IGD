@@ -587,15 +587,20 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         L0 = L1;
         L1 = 0;
     }    
-    char iname[256];
+ 
     //save _index.tsv
+    char *tchr;
     sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
     FILE *fpi = fopen(idFile, "a");
+    //printf("file_ids[0]%s %s", file_ids[0], strrchr(file_ids[0], '/'));
     for(i=0; i<n_files; i++){
         //tmp[strrchr(tmp, '_')-tmp] = '\0';
-        //strcpy(iname, file_ids[i]);
-        //strrchr(i, '/');
-        fprintf(fpi, "%s %u %f\n", file_ids[i], nd[i], md[i]/nd[i]);     
+        tchr = strrchr(file_ids[i], '/');
+        if(tchr!=NULL)
+            tchr+=1;
+        else
+            tchr = file_ids[i];
+        fprintf(fpi, "%s\t%u\t%f\n", tchr, nd[i], md[i]/nd[i]);     
     }
     fclose(fpi);   
     free(nd);
@@ -611,7 +616,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     //struct igd_data *gdata;
     memset(counts, 0, nTiles*sizeof(uint32_t)); 
     fwrite(counts, sizeof(uint32_t), nTiles, fp1);
-          
+    
+    char iname[256];          
     for(i=0;i<nTiles;i++){
         k = g2ichr[i];
         sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
@@ -1477,14 +1483,17 @@ void testMain(char* qfName, char* igdName)
 }
 
 void search(char* qfName, char* igdName)
-{   //name standard: igdName has _b14
+{   //name standard: igdName has database.igd
     uint32_t nq=1, nFiles, nCols=2, genome_size=3095677412;
     double mq = 1.0;
-    char idFile[128];
-    strcpy(idFile, igdName);
-    //tmp[strrchr(tmp, '_')-tmp] = '\0';
-    //char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
+    char tmp[128];
+    strcpy(tmp, igdName);
+    tmp[strrchr(tmp, '.')-tmp] = '\0';
+    char *idFile = tmp;    
+    
+    printf("%s", idFile);
     strcat(idFile, "_index.tsv");  
+
     struct igd_info *fi = get_igdinfo(idFile, &nFiles);   
     
     clock_t start, end;
@@ -1521,17 +1530,17 @@ int main(int argc, char **argv)
     }
     //---------------------------------------------------------------------------------  
     //char *ipath = "/media/john/CE30F6EE30F6DC81/ucsc_data/parsed_tracks_sorted/*";//ucscweb_sort/*";//ucsc_data/database/*";//ucscweb_sort/*";//roadmap_sort/*";
-    //char *opath = "/media/john/CE30F6EE30F6DC81/ucsc_igd_b14/";  
-    char *ipath = "/media/john/CE30F6EE30F6DC81/rme/*";//ucscweb_sort/*";//ucsc_data/database/*";//ucscweb_sort/*";//roadmap_sort/*";    
+    //char *opath = "/home/john/iGD_c/roadmap_igd/";  
+    //char *ipath = "/media/john/CE30F6EE30F6DC81/rme/*";//ucscweb_sort/*";//ucsc_data/database/*";//ucscweb_sort/*";//roadmap_sort/*";    
     //char *opath = "/media/john/CE30F6EE30F6DC81/rme_igd_b14/";       
-    char *opath = "/home/john/iGD_c/roadmap_igd/";//ucscweb_sort/*";//ucsc_data/database/*";//ucscweb_sort/*";//roadmap_sort/*"; 
+    //char *opath = "/home/john/ucsc_igd/";//ucscweb_sort/*";//ucsc_data/database/*";//ucscweb_sort/*";//roadmap_sort/*"; 
 
-    create_igd_gz(ipath, opath, "roadmap");
-    //char *qfName = argv[1];
-    //char *igdName = argv[2];
+    //create_igd_gz(ipath, opath, "roadmap");
+    char *qfName = argv[1];
+    char *igdName = argv[2];
     
-    //if(usingw)
-    //    search(qfName, igdName);      
+    if(usingw)
+        search(qfName, igdName);      
         //testMain(fname, igdName);
 
     free(g2ichr);
