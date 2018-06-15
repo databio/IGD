@@ -1,4 +1,4 @@
-# Reshape and integrate large scale data sources for highly efficient genome analysis
+# Reshape and integrate large-scale data sources for highly efficient genome analysis
 
 An example for running the iGD:
   1. Download iGD_b14.ipynb to your local computer
