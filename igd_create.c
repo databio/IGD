@@ -59,6 +59,7 @@ void search(char* qfName, char* igdName);
 void create_igd(char *path, char* igdName);
 void append_igd(struct igd_mix *mdata, uint32_t *counts, struct igd_info *fInfo, int nFiles, char* igdName);
 void store_igd(char*igdName);
+void str_splits( char* str, int *nmax, char **splits);
 
 char *fileBase = "_b14_";         	//14 bits block
 uint32_t nmax[] = {15940, 15580, 12760, 12240, 11670, 10990, 10260, 9370, 8860, 8610, 8710, 
@@ -70,8 +71,8 @@ uint32_t gstart[25] = {0, 15940, 31520, 44280, 56520, 68190, 79180, 89440, 98810
         116280, 124990, 133570, 140870, 147710, 154220, 160050, 165420, 170580, 174400, 
         178550, 181530, 184770, 194650, 198160}; 
 uint32_t nTiles = 198160;
-uint32_t nbp = 16384;
-uint32_t maxCount = 134217728, bgz_buf = 1024;//maxCount*16=2GB,67108864,33554432
+uint32_t nbp = 16384, bgz_buf = 1024;
+uint64_t maxCount = 134217728;//maxCount*16=2GB,67108864,33554432, 67108864;//
 uint32_t *g2ichr;
 
 //-------------------------------------------------------------------------------------
@@ -259,6 +260,22 @@ char** str_split_t( char* str, int nItems)
     return splits;
 }
 
+void str_splits( char* str, int *nmax, char **splits)
+{   //tsv 
+    splits[*nmax] = NULL;
+    splits[0] = str;
+    char *ch = str;    
+    int ns = 1;    
+    do {
+        if (*ch == '\t'){
+            splits[ns++] = &ch[1];
+            *ch = '\0';
+        }
+        ch++;
+    } while (*ch != '\0' && ns < *nmax+1);
+    *nmax = ns;
+}
+
 char** str_split( char* str, char delim, int *nmax)
 {   //slightly faster than _t
     char** splits;
@@ -381,7 +398,6 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     char idFile[256];  
     //-------------------------------------------------------------------------
     char *ftype;
-    char **splits;
     int nCols=5, err;                    
     int tlen, bytes_read;
     unsigned char buffer[bgz_buf]; 
@@ -389,9 +405,9 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     //1. find record lines (from one part of big file or many samll files) of size ~maxCount
     //2. procese and save (n0: starting file index, n1 ending file' n0 start line, n2 ending line)
     //(i0, L0)-->(i1, L1): i1 can be the same as i0 if filesize>maxCount
-    uint32_t i0=0, i1=0, L0=0, L1=1, m;
-    struct igd_data **gData;
-    i0=500;   
+    uint32_t i0=0, i1=0, L0=0, L1=1, m;  
+    struct igd_data **gData; 
+    char **splits = malloc((nCols+1)*sizeof(char *)); 
     while(i0<n_files){
         //1. start from (i0, L0): find (i1, L1)
         cTotal = 0;
@@ -399,7 +415,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         m = 0;              
         memset(counts, 0, nTiles*sizeof(uint32_t));
         printf("start: %u\n", i0);
-        while(i<n_files && m==0){   //n>0 defines breaks when reading a big file
+        while(i<n_files && m==0){   //n>0 defines breaks when reading a big file         
             ftype = file_ids[i] + strlen(file_ids[i]) - 7;
             if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
                 //a. Prepare: get the counts               
@@ -410,7 +426,10 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
                     fprintf (stderr, "gzopen of '%s' failed: %s.\n", file_ids[i],
                              strerror (errno));
                     exit (EXIT_FAILURE);
-                } 
+                }             
+                
+                printf("%u %u\t", i, (uint32_t)cTotal);
+                
                 nL = 0; 
                 if(i==i0 && L0>0){   //pass n0 lines of a big file
                     while(nL<L0 && gzgets(zfile, buffer, bgz_buf)!=NULL)
@@ -418,7 +437,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
                 }                 
                 while(m==0 && gzgets(zfile, buffer, bgz_buf)!=NULL){
                     nL++;
-                    splits = str_split(buffer,'\t', &nCols);  
+                    //splits = str_split_t(buffer, nCols); 
+                    str_splits(buffer, &nCols, splits);  
                     ichr = -1;
                     tlen = strlen(splits[0]);
                     if(tlen<6 && tlen>3){
@@ -449,7 +469,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
                             i1 = i;
                             L1 = nL;    //number of total lines or next line
                         }
-                    }                
+                    } 
+                    //free(splits);               
                 }   //while getLine 
                 gzclose(zfile);      
             }   //if bed.gz
@@ -458,7 +479,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         }   //while i<n_files
         //---------------------------------------------------------------------
         //2. process files i0--i           
-        /*gData = malloc(nTiles*sizeof(struct igd_data*));
+        gData = malloc(nTiles*sizeof(struct igd_data*));
         for(j=0; j<nTiles; j++){
             if(counts[j]>0)
                 gData[j] = malloc(counts[j]*sizeof(struct igd_data));  
@@ -477,7 +498,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
                         nL++;              
                 }                
                 while(gzgets(zfile, buffer, bgz_buf)!=NULL){//tbd: read 1Mb each time
-                    splits = str_split(buffer,'\t', &nCols);  
+                    //splits = str_split(buffer,'\t', &nCols);  
+                    str_splits(buffer, &nCols, splits);
                     ichr = -1;
                     tlen = strlen(splits[0]);
                     if(tlen<6 && tlen>3){
@@ -516,6 +538,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
                             }
                         }
                     }  
+                    //free(splits);
                 }   //while gzgets           
                 gzclose (zfile);               
             }   //gz file
@@ -532,7 +555,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
                         nL++; 
                 }                            
                 while(nL<L1 && gzgets(zfile, buffer, bgz_buf)!=NULL){//tbd: read 1Mb each time
-                    splits = str_split(buffer,'\t', &nCols);  
+                    //splits = str_split(buffer,'\t', &nCols);  
+                    str_splits(buffer, &nCols, splits);
                     ichr = -1;
                     tlen = strlen(splits[0]);
                     if(tlen<6 && tlen>3){
@@ -571,15 +595,16 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
                             }
                         }
                     }  
+                    //free(splits);
                     nL++;
                 }            
                 gzclose (zfile);               
             }   //gz file  
-        } */   
+        }    
         //---------------------------------------------------------------------           
         //save gData
         printf("save data....\n");
-        /*for(j=0;j<nTiles;j++){
+        for(j=0;j<nTiles;j++){
             if(counts[j]>0){    
                 k = g2ichr[j];                      
                 sprintf(idFile, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, j-gstart[k], ".igd");
@@ -596,7 +621,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
             gData[j] = NULL;
         }
         free(gData);
-        gData = NULL; */                                     
+        printf("free data....\n");
+        gData = NULL;                                      
         //---------------------------------------------------------------------
         i0 = i; 
         L0 = L1;
@@ -658,7 +684,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     fseek(fp1, 0, SEEK_SET);
     fwrite(counts, sizeof(uint32_t), nTiles, fp1);
     fclose(fp1); 
-    //-------------------------------------------------------------------------   
+    //------------------------------------------------------------------------- 
+    free(splits);  
     free(counts);
     globfree(&gResult); 
 }
