@@ -785,7 +785,9 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                 }
             }   
         }   //if
-    }   //while             
+    }   //while  
+    if(splits!=NULL)
+        free(splits);           
     free(gdata);
     *mean_size = delta/nRegions;
     *nregions = nRegions;
@@ -806,7 +808,8 @@ void search(char* qfName, char* igdName)
     char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
     strcat(idFile, "_index.tsv");     
  
-    struct igd_info *fi = get_igdinfo(idFile, &nFiles);   
+    struct igd_info *fi = get_igdinfo(idFile, &nFiles); 
+    printf("nfiles: %u", nFiles);  
     
     clock_t start, end;
     start = clock();
@@ -818,7 +821,7 @@ void search(char* qfName, char* igdName)
     printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
     printf("%u %u %u %f \n", nFiles, (int)nOL, nq, mq);
     printf("index\t File_name\t number of regions\t mean-region-size \t number of hits\n");
-    for(i=0;i<nFiles/50;i++)
+    for(i=0;i<10;i++)
         printf("%i %s %u %u %u\n", i, fi[i].fileName, fi[i].nd, (uint32_t)fi[i].md, hits[i]);
     //---------------------------------------------------------------------------------
     free(fi->fileName);
