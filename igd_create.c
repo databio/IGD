@@ -48,14 +48,7 @@ struct igd_info
 char** str_split( char* str, char delim, int *nmax);
 char** str_split_t( char* str, int nItems);
 struct query_data* get_igdlist(char *qfName, uint32_t *nblocks, uint32_t *nRegions, double *mRegion);	
-struct igd_mix* get_overlaps(struct query_data *query, uint32_t nblocks, uint32_t nmax, uint32_t *nOL);
-struct igd_mix* get_overlaps_w(struct query_data *query, uint32_t nblocks, char *igdName, uint32_t nmax, uint32_t *nOL);
 struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles);
-uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
-uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
-void test1(char* qfName, char* igdName);
-void testMain(char* qfName, char* igdName);
-void search(char* qfName, char* igdName);
 void create_igd(char *path, char* igdName);
 void append_igd(struct igd_mix *mdata, uint32_t *counts, struct igd_info *fInfo, int nFiles, char* igdName);
 void store_igd(char*igdName);
@@ -225,11 +218,25 @@ int compare_iidx(const void *a, const void *b)
     return pa->i_idx - pb->i_idx;
 }
 
+int compare_rend(const void *a, const void *b)
+{
+    struct igd_data *pa = (struct igd_data *) a;
+    struct igd_data *pb = (struct igd_data *) b;
+    return pa->r_end - pb->r_end;
+}
+
 int compare_qidx(const void *a, const void *b)
 {
     struct query_data *pa = (struct query_data *) a;
     struct query_data *pb = (struct query_data *) b;
     return pa->q_idx - pb->q_idx;
+}
+
+int compare_rstart(const void *a, const void *b)
+{
+    struct query_data *pa = (struct query_data *) a;
+    struct query_data *pb = (struct query_data *) b;
+    return pa->r_start - pb->r_start;
 }
 
 int compare_midx(const void *a, const void *b)
@@ -356,7 +363,7 @@ void store_igd(char *igdName)
             if(nrec>0){
                 gdata = malloc(nrec*sizeof(struct igd_data));
                 fread(gdata, sizeof(struct igd_data), nrec, fp0);
-                qsort(gdata, nrec, sizeof(struct igd_data), compare_iidx);
+                qsort(gdata, nrec, sizeof(struct igd_data), compare_rend);
                 //append the data to fp1
                 fwrite(gdata, sizeof(struct igd_data), nrec, fp1);
                 counts[i] = nrec;
@@ -394,8 +401,12 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
 
     double delta;    
-
     char idFile[256];  
+    clock_t start, end;
+    start = clock();  
+    end = clock();    
+    printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);   
+    
     //-------------------------------------------------------------------------
     char *ftype;
     int nCols=5, err;                    
@@ -602,8 +613,9 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
             }   //gz file  
         }    
         //---------------------------------------------------------------------           
+        end = clock();    
+        printf("File %u processing time: %f \n", i, ((double)(end-start))/CLOCKS_PER_SEC);        
         //save gData
-        printf("save data....\n");
         for(j=0;j<nTiles;j++){
             if(counts[j]>0){    
                 k = g2ichr[j];                      
@@ -621,7 +633,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
             gData[j] = NULL;
         }
         free(gData);
-        printf("free data....\n");
+        end = clock();    
+        printf("Saving time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC); 
         gData = NULL;                                      
         //---------------------------------------------------------------------
         i0 = i; 
@@ -629,18 +642,21 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         L1 = 0;
     }    
     char *tchr;
-    //save _index.tsv
+    //save _index.tsv: 4 columns--index, filename, nd, md
+    //Also has a header line: 
     sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
-    FILE *fpi = fopen(idFile, "a");
+    FILE *fpi = fopen(idFile, "w");
     if(fpi==NULL)
         printf("Can't open file %s", idFile);
+        
+    fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
     for(i=0; i<n_files; i++){
         tchr = strrchr(file_ids[i], '/');
         if(tchr!=NULL)
             tchr+=1;
         else
             tchr = file_ids[i];
-        fprintf(fpi, "%s\t%u\t%f\n", file_ids[i], nd[i], md[i]/nd[i]);     
+        fprintf(fpi, "%u\t%s\t%u\t%f\n", i, tchr, nd[i], md[i]/nd[i]);     
     }
     fclose(fpi);   
     free(nd);
@@ -655,11 +671,15 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         printf("Can't open file %s", idFile);     
     uint32_t nrec;  
     FILE *fp0; 
+    
+    end = clock();    
+    printf("TSV saved: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);     
     //struct igd_data *gdata;
     memset(counts, 0, nTiles*sizeof(uint32_t)); 
     fwrite(counts, sizeof(uint32_t), nTiles, fp1);
 
-    char iname[256];          
+    char iname[256]; 
+    struct igd_data *gdata;            
     for(i=0;i<nTiles;i++){
         k = g2ichr[i];
         sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
@@ -669,9 +689,9 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
             nrec = ftell(fp0)/sizeof(struct igd_data);
             fseek(fp0, 0, SEEK_SET);
             if(nrec>0){
-                struct igd_data *gdata = malloc(nrec*sizeof(struct igd_data));
+                gdata = malloc(nrec*sizeof(struct igd_data));
                 fread(gdata, sizeof(struct igd_data), nrec, fp0);
-                qsort(gdata, nrec, sizeof(struct igd_data), compare_iidx);
+                qsort(gdata, nrec, sizeof(struct igd_data), compare_rend);
                 //append the data to fp1
                 fwrite(gdata, sizeof(struct igd_data), nrec, fp1);
                 counts[i] = nrec;
@@ -684,6 +704,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     fseek(fp1, 0, SEEK_SET);
     fwrite(counts, sizeof(uint32_t), nTiles, fp1);
     fclose(fp1); 
+    end = clock();    
+    printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
     //------------------------------------------------------------------------- 
     free(splits);  
     free(counts);
@@ -1017,7 +1039,7 @@ struct query_data* get_igdlist(char *qfName, uint32_t *nblocks, uint32_t *nRegio
             }
         }
     }
-    qsort(query, *nblocks, sizeof(struct query_data), compare_qidx);
+    qsort(query, *nblocks, sizeof(struct query_data), compare_rstart);
     free(df0);
     free(df1);
     free(df2);
@@ -1064,504 +1086,11 @@ struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles)
     return fi;
 }
 
-
-struct igd_mix* get_overlaps(struct query_data *query, uint32_t nblocks, uint32_t nmax, uint32_t* nOL)
-{
-    uint32_t i, j, i1, i2, bk, ichr, k, nrec, nols=0, q1, q2, m;
-    char iname[128];
-    struct igd_mix *overlaps = malloc(nmax*sizeof(struct igd_mix));
-    struct igd_data *gdata;
-    m = 0;
-    while (m<nblocks) {    
-        i1 = m;
-        bk = query[i1].q_idx;
-        while(m<nblocks-1 && query[m+1].q_idx==bk)
-            m++;
-        i2 = m;
-        //-----------------------------------------------------------------------------
-        ichr = (uint8_t)g2ichr[bk];
-        k = bk - gstart[ichr];
-        sprintf(iname, "%s%s%s%i%s", "igdata/",folder[ichr], "/b14_", k, ".igd");
-        FILE *fp = fopen(iname, "rb");
-
-        if(fp!=NULL){
-            fseek(fp, 0, SEEK_END);
-            nrec = ftell(fp)/sizeof(struct igd_data);
-            fseek(fp, 0, SEEK_SET);
-            if(nrec>0){
-                gdata = malloc(nrec*sizeof(struct igd_data));
-                fread(gdata, sizeof(struct igd_data), nrec, fp);
-         	    //printf("%i %i %i \n", nrec, gdata[0].r_start, gdata[0].r_end);               
-                for(i=i1; i<=i2; i++){
-                    q1 = query[i].r_start;
-                    q2 = query[i].r_end;
-                    for(j=0;j<nrec;j++){
-                        if(!(q1>gdata[j].r_end || q2<gdata[j].r_start)){
-                    			overlaps[nols].igd = gdata[j];
-                    			overlaps[nols].m_idx   = bk;
-                    			nols++;
-                        }
-                    }	    
-                }
-                free(gdata);
-            }
-            fclose(fp);
-        }
-        m++;
-    }
-    *nOL = nols;
-    return overlaps;
-}
-
-//using single-file igd_data
-struct igd_mix* get_overlaps_w(struct query_data *query, uint32_t nblocks, char *igdName, uint32_t nmax, uint32_t* nOL)
-{   //add alignment: padding 
-    //assume in-tile igdata is sorted by region end 
-    FILE* fp = fopen(igdName, "rb");
-    if(!fp)
-        return NULL;    
-        
-    uint32_t i, j, t1, t2, i1, i2, bk, ichr, nols=0, q1, q2, m;
-    struct igd_mix *overlaps = malloc(nmax*sizeof(struct igd_mix));
-    struct igd_data *gdata;
-    uint32_t len0 = nTiles*sizeof(uint32_t);
-    uint32_t *counts = malloc(len0);//number of struct
-    uint64_t *mloc = malloc((nTiles+1)*sizeof(uint64_t));
-    //fseek(fp, 0, SEEK_SET);
-    fread(counts, sizeof(uint32_t), nTiles, fp);   
-    for(i=0; i<nTiles; i++)
-        mloc[i+1] = counts[i]*16;
-   
-    mloc[0]=len0;
-    for(i=1; i<nTiles; i++)
-        mloc[i] += mloc[i-1];    
-    m = 0;
-    while (m<nblocks) {    
-        i1 = m;
-        bk = query[i1].q_idx;
-        while(m<nblocks-1 && query[m+1].q_idx==bk)
-            m++;
-        i2 = m;
-        if(bk<nTiles && counts[bk]>0){      
-            ichr = (uint8_t)g2ichr[bk];
-            fseek(fp, mloc[bk], SEEK_SET);
-            gdata = malloc(counts[bk]*16);
-            fread(gdata, 16, counts[bk], fp);
-            //update the in-tile db start j0: not really faster
-            for(i=i1; i<=i2; i++){
-        	    q1 = query[i].r_start;
-        	    q2 = query[i].r_end;             
-            	for(j=0;j<counts[bk];j++){
-          		    t2 = gdata[j].r_end;
-        		    if(q1<=t2){
-            	       t1 = gdata[j].r_start;
-        		       if(q2>=t1){    		          		    
-                    		overlaps[nols].igd = gdata[j];
-                    		overlaps[nols].m_idx   = bk;
-                			nols++;
-            			}
-        		    }
-        		}	    
-    	    }
-    	    free(gdata);
-        }
-        m++;
-    }  
-    //check for everlaps: only needed for duplicated queries       
-    fclose(fp);
-    *nOL = nols;
-    free(counts);
-    free(mloc);
-    return overlaps;
-}
-
-//using single-file igd_data
-uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits)
-{   //no need to store every overlaps, only get the number of hits
-    //faster if in-tile igdata is sorted by region end 
-    FILE* fi = fopen(igdName, "rb");
-    if(!fi)
-        return 0;    
-    FILE* fq = fopen(qfName, "r");
-    if(!fq)
-        return 0;    
-    int ichr;           
-    uint32_t i, j, t1, t2, q1, q2, m;
-    uint32_t n1, n2, idx, nRegions=0, nCols = 5, bd;  
-    struct igd_data *gdata;
-    uint32_t len0 = nTiles*sizeof(uint32_t);
-    uint32_t *counts = malloc(len0);//number of struct
-    uint64_t *mloc = calloc((nTiles+1),sizeof(uint64_t));
-    //fseek(fp, 0, SEEK_SET);
-    fread(counts, sizeof(uint32_t), nTiles, fi);   
-    for(i=0; i<nTiles; i++)
-        mloc[i+1] = counts[i]*16;
-    mloc[0]=len0;
-    for(i=1; i<nTiles; i++)
-        mloc[i] += mloc[i-1];  
-   
-   //----read qf for a region--------
-    char buf[1024];
-    char **splits;
-    double delta=0.0;
-    uint64_t nols=0;
-    while(fgets(buf, 1024, fq)!=NULL){	
-        splits = str_split(buf,'\t', &nCols);   
-        if(strlen(splits[0])>5)
-            ichr = -1;  
-        else if(strcmp(splits[0], "chrX")==0)
-            ichr = 22;
-        else if(strcmp(splits[0], "chrY")==0)
-            ichr = 23;
-        else{
-            ichr = (int)(atoi(&splits[0][3])-1);
-        }           
-        if(ichr>=0){       
-            if(strcmp(splits[0], "chrX")==0)
-                ichr = 22;
-            else if(strcmp(splits[0], "chrY")==0)
-                ichr = 23;
-            else
-                ichr = (uint32_t)(atoi(&splits[0][3])-1);
-            q1  = (uint32_t)atoi(splits[1]);
-            q2  = (uint32_t)atoi(splits[2]);
-            delta += q2 - q1;
-            nRegions++;
-            n1 = q1/nbp;
-            n2 = q2/nbp-n1;   
-            idx = n1 + gstart[ichr];         
-            //find overlaps with this region          
-            if(n2==0){
-                //printf("%u\t %u\t %u\t", counts[idx], q1, q2); 
-                if(counts[idx]>0){          
-                    fseek(fi, mloc[idx], SEEK_SET);
-                    gdata = malloc(counts[idx]*16);
-                    fread(gdata, 16, counts[idx], fi);
-                    //update the in-tile db start j0: not really faster           
-                    for(j=0;j<counts[idx];j++){
-                        t2 = gdata[j].r_end;
-                        if(q1<=t2){
-                            t1 = gdata[j].r_start;
-                            if(q2>=t1){    		          		    
-                                hits[gdata[j].i_idx]++;
-                                //if(gdata[j].i_idx==12)
-                                //    printf("%i %i %i %i\n", q1, q2, t1, t2);
-                                nols++;
-                            }
-                        }
-                    } 
-                    free(gdata);  
-                }        
-            }
-            else{ 
-                //deal with duplicates: find the unique list before or after 
-                bd = nbp*(n1+1); 
-                //in tiles (m=0, m=n2-1): t2<bd(m)-----------------        
-                for(m=idx; m<idx+n2; m++){
-                    if(counts[m]>0){                
-                        //printf("--%u\t %u\t %u\t", counts[m], q1, q2); //cause core dumped! 
-                        fseek(fi, mloc[m], SEEK_SET);
-                        gdata = malloc(counts[m]*16);
-                        fread(gdata, 16, counts[m], fi);
-                        //update the in-tile db start j0: not really faster           
-                        for(j=0;j<counts[m];j++){
-                            t2 = gdata[j].r_end;
-                            if(q1<=t2 && t2<bd){
-                                t1 = gdata[j].r_start;
-                                if(q2>=t1){ 
-                                    hits[gdata[j].i_idx]++; 
-                                    //if(gdata[j].i_idx==12)
-                                    //    printf("--%i %i %i %i\n", q1, q2, t1, t2);
-                                    nols++;
-                                }
-                            }
-                        }
-                        free(gdata);
-                    }                        
-                    bd += nbp;
-                }	
-                //--last tile: normal------------------------------
-                m=idx+n2;
-                if(counts[m]>0){
-                    //printf("--%u\t %u\t %u\t", counts[m], q1, q2); //cause core dumped!               
-                    fseek(fi, mloc[m], SEEK_SET);
-                    gdata = malloc(counts[m]*16);
-                    fread(gdata, 16, counts[m], fi);
-                    //update the in-tile db start j0: not really faster           
-                    for(j=0;j<counts[m];j++){
-                        t2 = gdata[j].r_end;
-                        if(q1<=t2){
-                            t1 = gdata[j].r_start;
-                            if(q2>=t1){    		          		    
-                                hits[gdata[j].i_idx]++;
-                                //if(gdata[j].i_idx==12)
-                                //    printf("----%i %i %i %i\n", q1, q2, t1, t2); 
-                                nols++;
-                            }
-                        }
-                    }
-                    free(gdata);
-                }
-            }   
-        }   //if
-    }   //while  
-    *mq = delta/nRegions;
-    *nq = nRegions;
-    fclose(fq);   
-    fclose(fi);
-    free(counts);
-    free(mloc);
-    return nols;
-}
-
-//using single-file igd_data
-uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double *mean_size, uint32_t *hits)
-{   //no need to store every overlaps, only get the number of hits
-    //assume in-tile igdata is sorted by region end 
-    //.Reuse igddata if current query is in the same tile as the previous
-    FILE* fi = fopen(igdName, "rb");
-    if(!fi)
-        return 0;    
-    FILE* fq = fopen(qfName, "r");
-    if(!fq)
-        return 0;    
-     
-    int ichr;      
-    uint32_t i, j, t1, t2, q1, q2, m;
-    uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 5, bd;  
-    struct igd_data *gdata = malloc(1*sizeof(struct igd_data));
-    uint32_t len0 = nTiles*sizeof(uint32_t);
-    uint32_t *counts = malloc(len0);//number of struct
-    uint64_t *mloc = malloc((nTiles+1)*sizeof(uint64_t));
-    //fseek(fp, 0, SEEK_SET);
-    fread(counts, sizeof(uint32_t), nTiles, fi);   
-    for(i=0; i<nTiles; i++)
-        mloc[i+1] = counts[i]*16;
-    mloc[0]=len0;
-    for(i=1; i<nTiles; i++)
-        mloc[i] += mloc[i-1];  
-   
-   //----read qf for a region--------
-    char buf[1024], ch;
-    char **splits;
-    double delta=0.0;
-    uint64_t nols=0;
-    idx0 = nTiles+10;
-    while(fgets(buf, 1024, fq)!=NULL){	
-	//printf("%u %s",(uint32_t)nols, buf); 
-        splits = str_split(buf,'\t', &nCols); 
-        if(strlen(splits[0])>5)
-            ichr = -1;  
-        else if(strcmp(splits[0], "chrX")==0)
-            ichr = 22;
-        else if(strcmp(splits[0], "chrY")==0)
-            ichr = 23;
-        else{
-            ichr = (int)(atoi(&splits[0][3])-1);
-        }           
-        if(ichr>=0){
-            q1  = (uint32_t)atoi(splits[1]);
-            q2  = (uint32_t)atoi(splits[2]);
-            delta += q2 - q1;
-            nRegions++;
-            n1 = q1/nbp;
-            n2 = q2/nbp-n1;   
-            idx = n1 + gstart[ichr];
-            //find overlaps with this region  
-            if(n2==0){
-                if(counts[idx]>0){
-                    if(idx!=idx0){
-                        free(gdata);
-                        fseek(fi, mloc[idx], SEEK_SET);
-                        gdata = malloc(counts[idx]*16);
-                        fread(gdata, 16, counts[idx], fi);
-                        idx0 = idx;
-                    }
-                    //update the in-tile db start j0: not really faster           
-                    for(j=0;j<counts[idx0];j++){
-                        t2 = gdata[j].r_end;
-                        if(q1<=t2){
-                            t1 = gdata[j].r_start;
-                            if(q2>=t1){    		          		    
-                                hits[gdata[j].i_idx]++;
-                                nols++;
-                            }
-                        }
-                    } 
-                }          
-            }
-            else{ 
-                //deal with duplicates: find the unique list before or after 
-                bd = nbp*(idx+1); 
-                //in tiles (m=0, m=n2-1): t2<bd(m)-----------------        
-                for(m=idx; m<idx+n2; m++){
-                    if(counts[m]>0){
-                        if(m!=idx0){
-                            free(gdata);
-                            fseek(fi, mloc[m], SEEK_SET);
-                            gdata = malloc(counts[m]*16);
-                            fread(gdata, 16, counts[m], fi);
-                            idx0 = m;
-                        }
-                        //update the in-tile db start j0: not really faster           
-                        for(j=0;j<counts[m];j++){
-                            t2 = gdata[j].r_end;
-                            if(q1<=t2 && t2<bd){
-                                t1 = gdata[j].r_start;
-                                if(q2>=t1){ 
-                                    hits[gdata[j].i_idx]++; 
-                                    nols++;
-                                }
-                            }
-                        }
-                    }                   
-                    bd += nbp;
-                }	
-                //--last tile: normal------------------------------
-                m=idx+n2;
-                if(counts[m]>0){
-                    if(m!=idx0){
-                        free(gdata);
-                        fseek(fi, mloc[m], SEEK_SET);
-                        gdata = malloc(counts[m]*16);
-                        fread(gdata, 16, counts[m], fi);
-                        idx0 = m;
-                    }
-                    //update the in-tile db start j0: not really faster           
-                    for(j=0;j<counts[m];j++){
-                        t2 = gdata[j].r_end;
-                        if(q1<=t2){
-                            t1 = gdata[j].r_start;
-                            if(q2>=t1){    		          		    
-                                hits[gdata[j].i_idx]++; 
-                                nols++;
-                            }
-                        }
-                    }
-                }
-            }   
-        }   //if
-    }   //while             
-    free(gdata);
-    *mean_size = delta/nRegions;
-    *nregions = nRegions;
-    fclose(fq);   
-    fclose(fi);
-    free(counts);
-    free(mloc);
-    return nols;
-}
-
-void test1(char* qfName, char* igdName)
-{
-    uint32_t nblocks=0, nq=1, nCols=2, nFiles;
-    double mq = 1.0;
-    struct query_data *query = get_igdlist(qfName, &nblocks, &nq, &mq);
-    
-    //-----open idfile-----
-    char tmp[128];
-    strcpy(tmp, igdName);
-    char *idFile = str_split(tmp, '_', &nCols)[0];
-    strcat(idFile, "_index.tsv");  
-    struct igd_info *fi = get_igdinfo(idFile, &nFiles);
-    printf("%s %u %f\n", fi[10].fileName, fi[10].nd, fi[10].md);     
-    
-    clock_t start, end;
-    start = clock();
-    uint32_t nOL=0, nmax=15000000;
-    struct igd_mix *overlaps;   
-    overlaps = get_overlaps_w(query, nblocks, igdName, nmax, &nOL);
-    
-    end = clock();   
-    printf("time: %f\n", ((double)(end-start))/CLOCKS_PER_SEC);
-    printf("nblock: %u %u %f \n", nblocks, nq, mq);
-    printf("number of overlaps:%i\n", nOL);
-    //---------------------------------------------------------------------------------
-    free(fi->fileName);
-    free(fi);
-    free(query);
-    free(overlaps);
-}
-
-void testMain(char* qfName, char* igdName)
-{
-    uint32_t i, nq=1, nFiles, nCols=2, genome_size=3095677412;
-    double mq = 1.0;
-    char tmp[256];
-    strcpy(tmp, igdName);
-    char *idFile = str_split(tmp, '_', &nCols)[0];
-    strcat(idFile, "_index.tsv");  
-    struct igd_info *fi = get_igdinfo(idFile, &nFiles);   
-    
-    clock_t start, end;
-    start = clock();
-    uint32_t *hits = calloc(sizeof(uint32_t), nFiles);
-    uint64_t nOL = get_overlaps_n(qfName, igdName, &nq, &mq, hits);   
-    end = clock();   
-    
-    printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
-    printf("%u %u %u %f \n", nFiles, (int)nOL, nq, mq);
-    long long n11, n12, n21, n22, n22_full, n3;
-    double comp_mean, ratio;
-    long double left, right, two, r;
-    for(i=0;i<nFiles;i++){
-        //printf("%i %s %i %i %i\n", i, fi[i].fileName, fi[i].nd, (int)fi[i].md, hits[i]);
-        n11 = (long long)(hits[i]);
-        n12 = (long long)(MAX(0,nq-hits[i]));
-        n21 = (long long)(MAX(0,fi[i].nd-hits[i]));
-        comp_mean = fi[i].md + mq;
-        n3 = n11 + n12 + n21;
-        n22_full = (long long)MAX(n3, genome_size/comp_mean);
-        n22 = MAX(1, n22_full - n3);
-        left, right, two;
-        //printf("%i %u %f %lli %lli %lli %lli\n", i, hits[i], comp_mean, n11, n12, n21, n22);
-        r = _kt_fisher_exact(n11,n12,n21,n22,&left,&right,&two);
-        ratio = (((double)(n11 + 1)/(double)MAX(1,n12))/((double)(n21 + 1)/(double)(n22 + 1)));
-        printf("%s\t %u\t %u\t %.17g\t %.17Lg\t %.17Lg\t %.17Lg\t %.17Lg\t \n",
-            fi[i].fileName, fi[i].nd, hits[i], ratio, two, left, right, 
-            log2fc(ratio) * neglog10p(two));
-    }
-    //---------------------------------------------------------------------------------
-    free(fi->fileName);
-    free(fi);
-    free(hits);
-}
-
-void search(char* qfName, char* igdName)
-{   //name standard: igdName--dbname.igd
-    uint32_t i, nq=1, nFiles, nCols=2, genome_size=3095677412;
-    double mq = 1.0;
-    char tmp[128];
-    strcpy(tmp, igdName);
-    tmp[strrchr(tmp, '.')-tmp] = '\0';
-    char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
-    strcat(idFile, "_index.tsv");     
- 
-    struct igd_info *fi = get_igdinfo(idFile, &nFiles);   
-    
-    clock_t start, end;
-    start = clock();
-    uint32_t *hits = calloc(nFiles, sizeof(uint32_t));
-
-    uint64_t nOL = get_overlaps_n(qfName, igdName, &nq, &mq, hits);   
-    end = clock();   
-    
-    printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
-    printf("%u %u %u %f \n", nFiles, (int)nOL, nq, mq);
-    printf("index\t File_name\t number of regions\t mean-region-size \t number of hits\n");
-    for(i=0;i<nFiles/50;i++)
-        printf("%i %s %u %u %u\n", i, fi[i].fileName, fi[i].nd, (uint32_t)fi[i].md, hits[i]);
-    //---------------------------------------------------------------------------------
-    free(fi->fileName);
-    free(fi);
-    free(hits);
-}
-
 //-------------------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
     if (argc < 4) 
-        errx(1, "usage:\t%s <input path>\n", argv[0]);   
+        errx(1, "usage:\t%s <input path><ouput path><dbName>\n", argv[0]);   
     int usingw = 0;
     if (argc==3)
         usingw = 1;     
