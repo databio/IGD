@@ -1,6 +1,10 @@
-# Reshape and integrate large-scale data sources for highly efficient genome analysis
+# iGD: Reshape and integrate large-scale data sources for highly efficient genome analysis
 
-An example for running the iGD:
+Genome analysis usually requires comparing one set of genomic loci (region set) to other known genomic features. 
+
+This repository contains ...
+
+An example for running iGD:
   1. Download iGD_b14.ipynb to your local computer
   2. Download roadmap_ex from data/ and mkdir (roadmap_igd)
   3. Open a terminal (linux) and cd to iGD_b14.ipynb folder 
