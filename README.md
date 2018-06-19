@@ -1,6 +1,6 @@
 # iGD: Reshape and integrate large-scale data sources for highly efficient genome analysis
 
-Genome analysis usually requires comparing one set of genomic loci (region set) to other known genomic features. 
+Genome analysis usually requires comparing one set of genomic loci (region set) to many other annotated region sets that may come from one or more large-scale data sources. A wide variety of computational tools, such as LOLA, BART, Bedtools, Tabix, GenomeRunner and Giggle, have been developed for this purpose.  
 
 This repository contains ...
 
