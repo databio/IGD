@@ -1,6 +1,8 @@
 //=====================================================================================
 //Read igd region data and query data, and then find all overlaps 
 //by Jianglin Feng  05/12/2018
+//
+//time ./igd_search Test110000.bed /media/john/Extra/ucsc_igd/ucsc.igd
 //-------------------------------------------------------------------------------------
 #include <stdint.h>
 #include <stdlib.h>
@@ -396,8 +398,8 @@ struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles)
         str_splits(buf, &ncols, splits);        
         fi[i].fileName = (char *)calloc(strlen(splits[1]) + 1, sizeof(char));
         strcpy(fi[i].fileName, splits[1]);
-        fi[i].nd = (uint32_t)atoi(splits[3]);
-        fi[i].md = (double)atoi(splits[2]);   
+        fi[i].nd = (uint32_t)atoi(splits[2]);
+        fi[i].md = (double)atoi(splits[3]);   
         i++;
     }        
     //printf("%s %i %f \n", fNames[6], nd[6], md[6]);  
@@ -785,9 +787,8 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                 }
             }   
         }   //if
+        free(splits);     
     }   //while  
-    if(splits!=NULL)
-        free(splits);           
     free(gdata);
     *mean_size = delta/nRegions;
     *nregions = nRegions;
@@ -809,7 +810,7 @@ void search(char* qfName, char* igdName)
     strcat(idFile, "_index.tsv");     
  
     struct igd_info *fi = get_igdinfo(idFile, &nFiles); 
-    printf("nfiles: %u", nFiles);  
+    printf("nfiles: %u\n", nFiles);  
     
     clock_t start, end;
     start = clock();
@@ -819,7 +820,7 @@ void search(char* qfName, char* igdName)
     end = clock();   
     
     printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
-    printf("%u %u %u %f \n", nFiles, (int)nOL, nq, mq);
+    printf("%u %u %f \n", (uint32_t)nOL, nq, mq);
     printf("index\t File_name\t number of regions\t mean-region-size \t number of hits\n");
     for(i=0;i<10;i++)
         printf("%i %s %u %u %u\n", i, fi[i].fileName, fi[i].nd, (uint32_t)fi[i].md, hits[i]);
@@ -968,5 +969,30 @@ printf outputs to the standard output stream (stdout)
 fprintf goes to a file handle (FILE*)
 
 sprintf goes to a buffer you allocated. (char*)
+
+iGD: Reshape and integrate large-scale data sources for highly efficient genome analysis
+
+Genome analysis usually requires comparing one set of genomic loci (region set) to many 
+other annotated region sets that may come from one or more large-scale data sources. 
+A wide variety of computational tools, such as LOLA, BART, Bedtools, Tabix, GenomeRunner 
+and Giggle, have been developed for this purpose. Among these tools, Giggle claims to be 
+over three orders of magnitude faster than others in searching millions to billions of 
+genomic intervals. iGD takes a database approach that directly integrates large-scale 
+data sources into an easily searchable database by reshaping the data records. As a 
+database, iGD takes not only the genomic regions, but also the signal levels and/or 
+strand info, which makes the parameterized query (dynamic searching) possible. The 
+searching speed of iGD is one to two orders of magnitude faster than Giggle while 
+the database size is serval times smaller than that of the Giggle index files.
+
+#Basic idea
+
+An example for running iGD:
+
+Download iGD_b14.ipynb to your local computer
+Download roadmap_ex from data/ and mkdir (roadmap_igd)
+Open a terminal (linux) and cd to iGD_b14.ipynb folder
+Type: jupyter notebook iGD_b14.ipynb
+In the last cell: Change the ifilePath to the roadmap_ex folder and ofilePath to the folder of roadmap_igd
+Run all cells--an igd database roadmap_b14.igd and roadmap_index.tsv will be created in the roadmap_igd folder
    
 */

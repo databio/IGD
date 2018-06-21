@@ -85,6 +85,7 @@ void tiles2w(char *tPath, char* oPath, char *igdName)
             if(nrec>0){
                 gdata = malloc(nrec*sizeof(struct igd_data));
                 fread(gdata, sizeof(struct igd_data), nrec, fp0);
+                fclose(fp0);
                 qsort(gdata, nrec, sizeof(struct igd_data), compare_rend);
                 //append the data to fp1
                 fwrite(gdata, sizeof(struct igd_data), nrec, fp1);
@@ -92,7 +93,7 @@ void tiles2w(char *tPath, char* oPath, char *igdName)
                 free(gdata);
                 //gdata = NULL;
             }      
-            fclose(fp0);
+            //fclose(fp0);
         }
         if(i%1000==0)
             printf("%u\t%u\t%f \n", i, nrec, (double)(clock()-start)/CLOCKS_PER_SEC);
@@ -124,3 +125,8 @@ int main(int argc, char **argv)
 
     free(g2ichr);
 }
+
+/*
+echo cfq > /sys/block/hda/queue/scheduler
+
+*/

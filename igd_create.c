@@ -65,7 +65,7 @@ uint32_t gstart[25] = {0, 15940, 31520, 44280, 56520, 68190, 79180, 89440, 98810
         178550, 181530, 184770, 194650, 198160}; 
 uint32_t nTiles = 198160;
 uint32_t nbp = 16384, bgz_buf = 1024;
-uint64_t maxCount = 134217728;//maxCount*16=2GB,67108864,33554432, 67108864;//
+uint64_t maxCount = 536870912;//134217728;//maxCount*16=2GB,67108864,33554432, 67108864;//
 uint32_t *g2ichr;
 
 //-------------------------------------------------------------------------------------
@@ -399,7 +399,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     //2. Read region data
     uint32_t i, ii, j, k, t, df1, df2, df4, ichr, n1, n2, ti, nR;
     uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
-
+    uint32_t *Counts = calloc(nTiles, sizeof(uint32_t));    //total
     double delta;    
     char idFile[256];  
     clock_t start, end;
@@ -617,20 +617,23 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         printf("File %u processing time: %f \n", i, ((double)(end-start))/CLOCKS_PER_SEC);        
         //save gData
         for(j=0;j<nTiles;j++){
+            if(j%1000==0)
+                printf("%u %u\n", j, counts[j]);
             if(counts[j]>0){    
+                Counts[j] += counts[j];
                 k = g2ichr[j];                      
                 sprintf(idFile, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, j-gstart[k], ".igd");
                 FILE *fp = fopen(idFile, "ab");
                 if(fp==NULL)
                     printf("Can't open file %s", idFile);
                 fwrite(gData[j], sizeof(struct igd_data), counts[j], fp);
-                fclose(fp);  
+                fclose(fp); 
+                //free(gData[j]); 
             }
-        }      
-        for(j = 0; j < nTiles; j++){
+        }   
+        for(j=0;j<nTiles;j++){;
             if(counts[j]>0)
-                free(gData[j]);
-            gData[j] = NULL;
+                free(gData[j]);   
         }
         free(gData);
         end = clock();    
@@ -640,10 +643,10 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         i0 = i; 
         L0 = L1;
         L1 = 0;
-    }    
-    char *tchr;
+    }  
     //save _index.tsv: 4 columns--index, filename, nd, md
     //Also has a header line: 
+    char *tchr;   
     sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
     FILE *fpi = fopen(idFile, "w");
     if(fpi==NULL)
@@ -660,55 +663,44 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     }
     fclose(fpi);   
     free(nd);
-    free(md);
-    //free(fi->fileName);
-    //free(fi);      
-    //reopen all tile-files and sort them and save them into a single file
-    //qsort(query, *nblocks, sizeof(struct query_data), compare_qidx); 
+    free(md);    
+    end = clock();    
+    printf("TSV saved: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC); 
+    //-------------------------------------------------------------------------
+    //Reload tile data, sort and save them into a single file
     sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");    
     FILE *fp1 = fopen(idFile, "wb"); 
     if(fp1==NULL)
         printf("Can't open file %s", idFile);     
     uint32_t nrec;  
-    FILE *fp0; 
-    
-    end = clock();    
-    printf("TSV saved: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);     
-    //struct igd_data *gdata;
-    memset(counts, 0, nTiles*sizeof(uint32_t)); 
-    fwrite(counts, sizeof(uint32_t), nTiles, fp1);
-
+    FILE *fp0;    
+    fwrite(Counts, sizeof(uint32_t), nTiles, fp1);
     char iname[256]; 
     struct igd_data *gdata;            
     for(i=0;i<nTiles;i++){
-        k = g2ichr[i];
-        sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
-        fp0 = fopen(iname, "rb");
-        if(fp0!=NULL){   
-            fseek(fp0, 0, SEEK_END);
-            nrec = ftell(fp0)/sizeof(struct igd_data);
-            fseek(fp0, 0, SEEK_SET);
-            if(nrec>0){
+        if(Counts[i]>0){
+            k = g2ichr[i];
+            sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
+            fp0 = fopen(iname, "rb");
+            if(fp0!=NULL){   
+                nrec = Counts[i];
                 gdata = malloc(nrec*sizeof(struct igd_data));
                 fread(gdata, sizeof(struct igd_data), nrec, fp0);
                 qsort(gdata, nrec, sizeof(struct igd_data), compare_rend);
                 //append the data to fp1
                 fwrite(gdata, sizeof(struct igd_data), nrec, fp1);
-                counts[i] = nrec;
                 free(gdata);
-                gdata = NULL;
             }      
             fclose(fp0);
         }
     }
-    fseek(fp1, 0, SEEK_SET);
-    fwrite(counts, sizeof(uint32_t), nTiles, fp1);
     fclose(fp1); 
     end = clock();    
     printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
     //------------------------------------------------------------------------- 
     free(splits);  
     free(counts);
+    free(Counts);
     globfree(&gResult); 
 }
 
@@ -1233,5 +1225,41 @@ printf outputs to the standard output stream (stdout)
 fprintf goes to a file handle (FILE*)
 
 sprintf goes to a buffer you allocated. (char*)
+   
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+ 
+// Let us create a global variable to change it in threads
+int g = 0;
+ 
+// The function to be executed by all threads
+void *myThreadFun(void *vargp)
+{
+    // Store the value argument passed to this thread
+    int *myid = (int *)vargp;
+ 
+    // Let us create a static variable to observe its changes
+    static int s = 0;
+ 
+    // Change static and global variables
+    ++s; ++g;
+ 
+    // Print the argument, static and global variables
+    printf("Thread ID: %d, Static: %d, Global: %d\n", *myid, ++s, ++g);
+}
+ 
+int main()
+{
+    int i;
+    pthread_t tid;
+ 
+    // Let us create three threads
+    for (i = 0; i < 3; i++)
+        pthread_create(&tid, NULL, myThreadFun, (void *)&i);
+ 
+    pthread_exit(NULL);
+    return 0;
+}   
    
 */
