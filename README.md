@@ -18,11 +18,12 @@ To compile igd_create.c to get executable igd_create on a linux terminal: gcc -o
 
 To run the executable: ./igd_create "/path...to data source fold/*" "/path...to igd fold/" "databaseName"
 
-where: 	"path...to data source fold" is the path of the fold that contains .bed.gz data files (function to process non-gz bed files will be added later)
+where: 	
+-"path...to data source fold" is the path of the fold that contains .bed.gz data files (function to process non-gz bed files will be added later)
 
-	"path...to igd fold" is the path to the output igd fold: this fold should be made first with mkdir and it should contain a subfold named as data0, where 			data0 should contain 24 subfolds: chr1, chr2, ..., chr22, chrX and chrY. An example is: /home/john/rme_igd/, where rme_igd has data0/chr*
+-"path...to igd fold" is the path to the output igd fold: this fold should be made first with mkdir and it should contain a subfold named as data0, where 			data0 should contain 24 subfolds: chr1, chr2, ..., chr22, chrX and chrY. An example is: /home/john/rme_igd/, where rme_igd has data0/chr*
 
-	"database name" is the name you give for the database, for eaxmple, "roadmap"
+-"database name" is the name you give for the database, for eaxmple, "roadmap"
 
 This will generate a total of ~200,000 igd bin files (mode 0) in the subfolds chr1,...chrY; a single igd dataabse file (mode 1) databaseName.igd and dataset index file databaseName_index.tsv in the igd fold.
 
