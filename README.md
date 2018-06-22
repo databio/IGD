@@ -16,15 +16,15 @@ Jupyter notebook program .ipynb can be run directly -- Python 3.0 is used. This 
 ### 1. Create iGD database from a genome data source
 To compile igd_create.c to get executable igd_create on a linux terminal: gcc -o igd_create igd_create.c -lm -lz
 
-To run the executable: ./igd_create "/path...to data source fold/*" "/path...to igd fold/" "databaseName", where:
+To run the executable: ./igd_create "/path...to data source folder/*" "/path...to igd folder/" "databaseName", where:
 
-- "path...to data source fold" is the path of the fold that contains .bed.gz data files (function to process non-gz bed files will be added later)
+- "path...to data source folder" is the path of the folder that contains .bed.gz data files (function to process non-gz bed files will be added later)
 
-- "path...to igd fold" is the path to the output igd fold: this fold should be made first with mkdir and it should contain a subfold named as data0, where data0 should contain 24 subfolds: chr1, chr2, ..., chr22, chrX and chrY. An example is: /home/john/rme_igd/, where rme_igd has data0/chr*
+- "path...to igd folder" is the path to the output igd folder: this folder should be made first with mkdir and it should contain a subfolder named as data0, where data0 should contain 24 subfolders: chr1, chr2, ..., chr22, chrX and chrY. An example is: /home/john/rme_igd/, where rme_igd has data0/chr*
 
-- "database name" is the name you give for the database, for eaxmple, "roadmap"
+- "database name" is the name you give to the database, for eaxmple, "roadmap"
 
-This will generate a total of ~200,000 igd bin files (mode 0) in the subfolds chr1,...chrY; a single igd dataabse file (mode 1) databaseName.igd and dataset index file databaseName_index.tsv in the igd fold.
+This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders chr1,...chrY; a single igd database file (mode 1) databaseName.igd and dataset index file databaseName_index.tsv in the igd folder.
 
 ### 2. Search iGD for overlaps
 
