@@ -4,11 +4,20 @@ Genome analysis usually requires comparing one set of genomic loci (region set) 
 
 ## Introduction
 Genome data sources, such as Roadmap, UCSC, and Cistrome, contain thousand of annotated data sets and each dataset has thousands to millions of genomic regions. 
-The enrichment analysis is to find overlaps between regions of all data sets in the data source and all regions in the query data set. This becomes complicated when the size of data source regions and the size of query regions are large. For example, UCSC human data source contains ~7 billion of regions or intervals, if the query set has 100,000 interavls, then a total of 100 trillion comparisons may be involved. To effectively search the overlaps, different indexing techniques have been developed. For example, Giggle employs a B+ tree to build a bunch of pure indexing files and then a qurey is carried out on these indexing files instead of the original data. With the indexing, the actual searching space is significantly reduced. 
-The goal of iGD is to build a database that integrates all genomic data sets in one or more data sources and minimizes the actual searching space for a general query. To achieve this, iGD reshapes the data sources by dividing the genome into a large number of equal-size bins (~200,000 bins), and putting data records of the data sources into the bin or bins they intersect. Data in each bin will be saved as a file (mode 0) or as a block of a single file (mode 1). For mode 0, each file is named according to index of the bin and for mode 1 the file head contains the index and sizes of the bins. Each iGD data element contains the index of the original dataset, the original genomic region (start and end coordinates), and a value (signal level and/or strand info). To find overlaps of a query, one only needs to load one or a few bin files (mode 0) or bin block data (mode 1) instead of all data sets, which minimizes the data loading time; and more importantly, the comparisons are carried out only in one or a few bins, which minimizes the actual search space.  
+The enrichment analysis is to find overlaps between regions of all data sets in the data source and all regions in the query data set. This becomes complicated when the size of data source regions and the size of query regions are large. For example, UCSC human data source contains ~7 billion of regions or intervals, if the query set has 100,000 interavls, then a total of 100 trillion comparisons may be involved. To effectively search the overlaps, different indexing techniques have been developed. For example, Giggle employs a B+ tree to build a bunch of pure indexing files and then a qurey is carried out on these indexing files instead of the original data. With the indexing, the actual searching space is significantly reduced.
+ 
+The goal of iGD is to build a database that integrates all genomic data sets in one or more data sources and minimizes the actual searching space for a general query. To achieve this, iGD reshapes the data sources by dividing the genome into a large number of equal-size bins (~200,000 bins), and putting data records of the data sources into the bin or bins they intersect. Data in each bin will be saved as a file (mode 0) or as a block of a single file (mode 1). For mode 0, each file is named according to index of the bin and for mode 1 the file head contains the index and sizes of the bins. Each iGD data element contains the index of the original dataset, the original genomic region (start and end coordinates), and a value (signal level and/or strand info). To find overlaps of a query, one only needs to load one or a few bin files (mode 0) or bin block data (mode 1) instead of all data sets, which minimizes the data loading time; and more importantly, the comparisons are carried out only in one or a few bins, which minimizes the actual searching space. Details about the implimentation (a link) will be provided later. 
  
 ## How to run iGD
- 
+All .c programs can be compiled and run on their own -- no dependence among them. Precompiled versions are also included. These programs are tested on Linux systems and the installation of some librays like zlib may be needed.
+
+Jupyter notebook program .ipynb can be run directly -- Python 3.0 is used. This program was written earlier than the above C programs, the variable definitions and results may not be the same as those of the C programs.
+
+### 1. Create iGD database from a genome data source
+
+
+### 2. Search iGD for overlaps
+
 
 An example for running iGD:
   1. Download iGD_b14.ipynb to your local computer
