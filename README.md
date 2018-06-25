@@ -15,9 +15,9 @@ Jupyter notebook program .ipynb can be run directly -- Python 3.0 is used. This 
 
 ### 1. Create iGD database from a genome data source
 To compile igd_create.c to get executable igd_create on a linux terminal: 
-	~~gcc -o igd_create igd_create.c -lm -lz~~
+	**gcc -o igd_create igd_create.c -lm -lz**
 
-To run the executable: ~~./igd_create "/path...to data source folder/*" "/path...to igd folder/" "databaseName"~~, 
+To run the executable: **./igd_create "/path...to data source folder/*" "/path...to igd folder/" "databaseName"**, 
 
 where:
 
@@ -28,7 +28,7 @@ where:
 - "database name" is the name you give to the database, for eaxmple, "roadmap"
 
 An example:
-	~~./igd_create "rme/*" "rme_igd/" "roadmap"~~
+	**./igd_create "rme/*" "rme_igd/" "roadmap"**
 
 This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders chr1,...chrY; a single igd database file (mode 1) roadmap.igd and dataset index file roadmap_index.tsv in the igd folder.
 
@@ -38,5 +38,5 @@ This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders 
 ### 3. Run the Jupyter notebook
   1. Clone the site including the folder structure
   2. Open a terminal (linux) and cd to the iGD folder 
-  3. Type: ~~jupyter notebook iGD_b14.ipynb~~
+  3. Type: **jupyter notebook iGD_b14.ipynb**
   4. Run all cells--an igd database roadmap.igd and roadmap_index.tsv will be created in the roadmap_igd folder
