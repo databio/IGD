@@ -14,7 +14,7 @@ Clone the site including the subfolders. All .c programs can be compiled and run
 Jupyter notebook program .ipynb can be run directly -- Python 3.0 is used. This program was written earlier than the above C programs, the variable definitions and results may not be the same as those of the C programs.
 
 ### 1. Create iGD database from a genome data source
-To compile igd_create.c to get executable igd_create on a linux terminal: 
+To compile igd_create.c to executable igd_create on a linux terminal: 
 	**gcc -o igd_create igd_create.c -lm -lz**
 
 To run the executable: **./igd_create "/path...to data source folder/*" "/path...to igd folder/" "databaseName"**, 
@@ -33,6 +33,20 @@ An example:
 This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders chr1,...chrY; a single igd database file (mode 1) roadmap.igd and dataset index file roadmap_index.tsv in the igd folder.
 
 ### 2. Search iGD for overlaps
+To compile igd_search.c to executable igd_seach on a linux terminal:
+	**gcc -o igd_search igd_search.c -lm -lz**
+
+To run the executable: **./igd_search "/path...to query file/" "/path...to igd data (mode 1) file/"**, 
+
+where:
+
+- "path...to igd folder" is the path to the query file
+
+- "path...to igd data folder" is the path to the igd data
+
+
+An example:
+	**./igd_search query100.bed rme_igd/roadmap.igd**
 
 
 ### 3. Run the Jupyter notebook
