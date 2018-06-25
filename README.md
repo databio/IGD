@@ -9,31 +9,32 @@ The enrichment analysis is to find overlaps between regions of all data sets in 
 The goal of iGD is to build a database that integrates all genomic data sets in one or more data sources and minimizes the actual searching space for a general query. To achieve this, iGD reshapes the data sources by dividing the genome into a large number of equal-size bins (~200,000 bins), and putting data records of the data sources into the bin or bins they intersect. Data in each bin will be saved as a file (mode 0) or as a block of a single file (mode 1). For mode 0, each file is named according to the index of the bin and for mode 1 the file head contains the index and sizes of the bins. Each iGD data element contains the index of the original dataset, the original genomic region (start and end coordinates), and a value (signal level and/or strand info). To find overlaps of a query, one only needs to load one or a few bin files (mode 0) or bin block data (mode 1) instead of all data sets, which minimizes the data loading time; and more importantly, the comparisons are carried out only in the loaded one or a few bins, which minimizes the actual searching space. Details about the implimentation (a link) will be provided later. 
  
 ## How to run iGD
-All .c programs can be compiled and run on their own -- no dependence among them. Precompiled versions are also included. These programs are tested on Linux systems and the installation of some librays like zlib may be needed.
+Clone the site including the subfolders. All .c programs can be compiled and run on their own -- no dependence among them. These programs are tested on Linux systems and the installation of some librays like zlib may be needed.
 
 Jupyter notebook program .ipynb can be run directly -- Python 3.0 is used. This program was written earlier than the above C programs, the variable definitions and results may not be the same as those of the C programs.
 
 ### 1. Create iGD database from a genome data source
-To compile igd_create.c to get executable igd_create on a linux terminal: gcc -o igd_create igd_create.c -lm -lz
+To compile igd_create.c to get executable igd_create on a linux terminal: 
+	gcc -o igd_create igd_create.c -lm -lz
 
 To run the executable: ./igd_create "/path...to data source folder/*" "/path...to igd folder/" "databaseName", where:
 
 - "path...to data source folder" is the path of the folder that contains .bed.gz data files (function to process non-gz bed files will be added later)
 
-- "path...to igd folder" is the path to the output igd folder: this folder should be made first with mkdir and it should contain a subfolder named as data0, where data0 should contain 24 subfolders: chr1, chr2, ..., chr22, chrX and chrY. An example is: /home/john/rme_igd/, where rme_igd has data0/chr*
+- "path...to igd folder" is the path to the output igd folder: this folder should be made first with mkdir and it should contain a subfolder named as data0, where data0 should contain 24 subfolders: chr1, chr2, ..., chr22, chrX and chrY.
 
 - "database name" is the name you give to the database, for eaxmple, "roadmap"
 
-This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders chr1,...chrY; a single igd database file (mode 1) databaseName.igd and dataset index file databaseName_index.tsv in the igd folder.
+An example:
+	./igd_create "rme/*" "rme_igd/" "roadmap"
+
+This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders chr1,...chrY; a single igd database file (mode 1) roadmap.igd and dataset index file roadmap_index.tsv in the igd folder.
 
 ### 2. Search iGD for overlaps
 
 
 ### 3. Run the Jupyter notebook
-An example for running iGD:
-  1. Download iGD_b14.ipynb to your local computer
-  2. Download roadmap_ex from data/ and mkdir (roadmap_igd)
-  3. Open a terminal (linux) and cd to iGD_b14.ipynb folder 
-  4. Type: jupyter notebook iGD_b14.ipynb
-  5. In the last cell: Change the ifilePath to the roadmap_ex folder and ofilePath to the folder of roadmap_igd 
-  6. Run all cells--an igd database roadmap_b14.igd and roadmap_index.tsv will be created in the roadmap_igd folder
+  1. Clone the site including the folder structure
+  2. Open a terminal (linux) and cd to the iGD folder 
+  3. Type: jupyter notebook iGD_b14.ipynb
+  4. Run all cells--an igd database roadmap.igd and roadmap_index.tsv will be created in the roadmap_igd folder
