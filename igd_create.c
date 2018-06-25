@@ -617,8 +617,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         printf("File %u processing time: %f \n", i, ((double)(end-start))/CLOCKS_PER_SEC);        
         //save gData
         for(j=0;j<nTiles;j++){
-            if(j%1000==0)
-                printf("%u %u\n", j, counts[j]);
+            //if(j%1000==0)
+            //    printf("%u %u\n", j, counts[j]);
             if(counts[j]>0){    
                 Counts[j] += counts[j];
                 k = g2ichr[j];                      
