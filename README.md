@@ -49,12 +49,14 @@ where:
 
 - "path...to igd data folder" is the path to the igd data
 
-
 An example:
 	**./igd_search query100.bed rme_igd/roadmap.igd**
 
 
 ### 3. Run the Jupyter notebook
-  1. Open a terminal (linux) and cd to the iGD folder 
-  2. Type: **jupyter notebook iGD_b14.ipynb**
-  3. Run all cells--an igd database roadmap.igd and roadmap_index.tsv will be created in the rme_igd folder
+- Open a terminal (linux) and cd to the iGD folder 
+
+- Type: **jupyter notebook iGD_b14.ipynb**
+
+- Run all cells--an igd database roadmap.igd and roadmap_index.tsv will be created in the rme_igd folder
+
