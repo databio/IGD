@@ -12,51 +12,53 @@ The goal of iGD is to build a database that integrates all genomic data sets in 
  
 
 ## How to run iGD
-Clone the site including the subfolders. All .c programs can be compiled and run on their own -- no dependence among them. These programs are tested on Linux systems and the installation of some librays like zlib may be needed.
+Clone the site including the subfolders. All .c programs can be compiled and run on their own -- **no dependence among them**. These programs are tested on Linux systems and the installation of some librays like zlib may be needed.
 
-Jupyter notebook program .ipynb can be run directly -- Python 3.0 is used. This program was written earlier than the above C programs, the variable definitions and results may not be the same as those of the C programs.
+Jupyter notebook program .ipynb can be run directly -- Python 3.6 is used. This program was written earlier than the above C programs, the variable definitions and results may not be the same as those of the C programs.
 
 
 ### 1. Create iGD database from a genome data source
-To compile igd_create.c to executable igd_create on a linux terminal: 
-	**gcc -o igd_create igd_create.c -lm -lz**
+To compile `igd_create.c` on a linux terminal: 
+	`gcc -o igd_create igd_create.c -lm -lz`
 
-To run the executable: **./igd_create "/path...to data source folder/*" "/path...to igd folder/" "databaseName"**, 
+To run the executable `igd_create`: 
+	`./igd_create "/path...to data source folder/*" "/path...to igd folder/" "databaseName"` 
 
 where:
 
-- "path...to data source folder" is the path of the folder that contains .bed.gz data files (function to process non-gz bed files will be added later)
+- `"path...to data source folder"` is the path of the folder that contains `.bed.gz` data files (function to process non-gz bed files will be added later)
 
-- "path...to igd folder" is the path to the output igd folder: this folder should be made first with mkdir and it should contain a subfolder named as data0, where data0 should contain 24 subfolders: chr1, chr2, ..., chr22, chrX and chrY.
+- `"path...to igd folder"` is the path to the output igd folder: this folder should be made first with mkdir and it should contain a subfolder named as data0, where data0 should contain 24 subfolders: chr1, chr2, ..., chr22, chrX and chrY.
 
-- "database name" is the name you give to the database, for eaxmple, "roadmap"
+- `"database name"` is the name you give to the database, for eaxmple, `"roadmap"`
 
 An example:
-	**./igd_create "rme/*" "rme_igd/" "roadmap"**
+	`./igd_create "rme/*" "rme_igd/" "roadmap"`
 
-This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders chr1,...chrY; a single igd database file (mode 1) roadmap.igd and dataset index file roadmap_index.tsv in the igd folder.
+This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders chr1,...chrY; a single igd database file (mode 1) `roadmap.igd` and dataset index file `roadmap_index.tsv` in the igd folder.
 
 
 ### 2. Search iGD for overlaps
-To compile igd_search.c to executable igd_seach on a linux terminal:
-	**gcc -o igd_search igd_search.c -lm -lz**
+To compile `igd_search.c` on a linux terminal:
+	`gcc -o igd_search igd_search.c -lm -lz`
 
-To run the executable: **./igd_search "path...to query file" "path...to igd data (mode 1) file"**, 
+To run the executable `igd_search`: 
+	`./igd_search "path...to query file" "path...to igd data (mode 1) file"`
 
 where:
 
-- "path...to igd folder" is the path to the query file
+- `path...to igd folder` is the path to the query file
 
-- "path...to igd data folder" is the path to the igd data
+- `path...to igd data folder` is the path to the igd data
 
 An example:
-	**./igd_search query100.bed rme_igd/roadmap.igd**
+	`./igd_search query100.bed rme_igd/roadmap.igd`
 
 
 ### 3. Run the Jupyter notebook
-- Open a terminal (linux) and cd to the iGD folder 
+- Open a terminal (linux) and `cd to the iGD` folder 
 
-- Type: **jupyter notebook iGD_b14.ipynb**
+- Type: `jupyter notebook iGD_b14.ipynb`
 
-- Run all cells--an igd database roadmap.igd and roadmap_index.tsv will be created in the rme_igd folder
+- Run all cells--an igd database `roadmap.igd` and `roadmap_index.tsv` will be created in the `rme_igd` folder
 
