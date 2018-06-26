@@ -17,9 +17,11 @@ Clone the site including the subfolders. All .c programs can be compiled and run
 
 ### 1. Create iGD database from a genome data source
 To compile `igd_create.c` on a linux terminal: 
+
 	`gcc -o igd_create igd_create.c -lm -lz`
 
 To run the executable `igd_create`: 
+
 	`./igd_create "/path...to data source folder/*" "/path...to igd folder/" "databaseName"` 
 
 where:
@@ -30,7 +32,8 @@ where:
 
 - `"databaseName"` is the name you give to the database, for eaxmple, `"roadmap"`
 
-An example: `"rme"` is an example folder containing `.bed.gz` files, `"rme_igd"` is an example igd database folder  
+An example: `"rme"` is an example folder containing `.bed.gz` files, `"rme_igd"` is an example igd database folder
+
 	`./igd_create "rme/*" "rme_igd/" "roadmap"`
 
 This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders chr1,...chrY; a single igd database file (mode 1) `roadmap.igd` and dataset index file `roadmap_index.tsv` in the igd folder.
@@ -38,9 +41,11 @@ This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders 
 
 ### 2. Search iGD for overlaps
 To compile `igd_search.c` on a linux terminal:
+
 	`gcc -o igd_search igd_search.c -lm -lz`
 
 To run the executable `igd_search`: 
+
 	`./igd_search "path...to query file" "path...to igd data (mode 1) file"`
 
 where:
@@ -50,6 +55,7 @@ where:
 - `path...to igd data folder` is the path to the igd data
 
 An example: `query100.bed` is an example query file
+
 	`./igd_search query100.bed rme_igd/roadmap.igd`
 
 
