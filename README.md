@@ -23,7 +23,7 @@ gcc -o igd_create igd_create.c -lm -lz
 
 To run the executable `igd_create`: 
 ```
-./igd_create "/path...to data source folder/*" "/path...to igd folder/" "databaseName"
+./igd_create "/path/to/data source folder/*" "/path/to/igd folder/" "databaseName"
 ``` 
 
 where:
@@ -50,7 +50,7 @@ gcc -o igd_search igd_search.c -lm -lz
 
 To run the executable `igd_search`: 
 ```
-./igd_search "path...to query file" "path...to igd data (mode 1) file"
+./igd_search "path/to/query file" "path/to/igd data (mode 1) file"
 ```
 
 where:
