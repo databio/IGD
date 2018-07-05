@@ -23,14 +23,14 @@ gcc -o igd_create igd_create.c -lm -lz
 
 To run the executable `igd_create`: 
 ```
-./igd_create "/path/to/data source folder/*" "/path/to/igd folder/" "databaseName"
+./igd_create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName"
 ``` 
 
 where:
 
-- `"path...to data source folder"` is the path of the folder that contains `.bed.gz` data files (function to process non-gz bed files will be added later)
+- `"path/to/data_source_folder"` is the path of the folder that contains `.bed.gz` data files (function to process non-gz bed files will be added later)
 
-- `"path...to igd folder"` is the path to the output igd folder: this folder should be made first with mkdir and it should contain a subfolder named as data0, where data0 should contain 24 subfolders: chr1, chr2, ..., chr22, chrX and chrY.
+- `"path/to/igd_folder"` is the path to the output igd folder: this folder should be made first with mkdir and it should contain a subfolder named as data0, where data0 should contain 24 subfolders: chr1, chr2, ..., chr22, chrX and chrY.
 
 - `"databaseName"` is the name you give to the database, for eaxmple, `"roadmap"`
 
@@ -50,14 +50,14 @@ gcc -o igd_search igd_search.c -lm -lz
 
 To run the executable `igd_search`: 
 ```
-./igd_search "path/to/query file" "path/to/igd data (mode 1) file"
+./igd_search "path/to/query_file" "path/to/igd_data_file"
 ```
 
 where:
 
-- `path...to query file` is the path to the query file
+- `path/to/query_file` is the path to the query file
 
-- `path...to igd data (mode 1) file` is the path to the igd data
+- `path/to/igd_data_file` is the path to the igd data (mode 1)
 
 An example: `query100.bed` is an example query file
 ```
