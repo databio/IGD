@@ -18,7 +18,7 @@ Clone the site including the subfolders. All `.c` programs can be compiled and r
 ### 1. Create iGD database from a genome data source
 To compile `igd_create.c` on a linux terminal: 
 ```
-gcc -o igd_create igd_create.c -lm -lz
+gcc -o igd_create src/igd_create.c -lm -lz
 ```
 
 To run the executable `igd_create`: 
@@ -45,7 +45,7 @@ This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders 
 ### 2. Search iGD for overlaps
 To compile `igd_search.c` on a linux terminal:
 ```
-gcc -o igd_search igd_search.c -lm -lz
+gcc -o igd_search src/igd_search.c -lm -lz
 ```
 
 To run the executable `igd_search`: 
