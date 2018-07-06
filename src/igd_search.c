@@ -15,7 +15,7 @@
 #include <glob.h>
 #include <zlib.h>
 #include <errno.h>
-
+#include <sysexits.h>
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 //-------------------------------------------------------------------------------------
 struct igd_data
@@ -831,7 +831,7 @@ void search(char* qfName, char* igdName)
 }
 
 //-------------------------------------------------------------------------------------
-int main(int argc, char **argv)
+int igd_search(int argc, char **argv)
 {
     if (argc < 2) 
         errx(1, "usage:\t%s <input path>\n", argv[0]);   
@@ -852,147 +852,6 @@ int main(int argc, char **argv)
         search(qfName, igdName);      
 
     free(g2ichr);
+    return EX_OK;
 }
 
-//-------------------------------------------------------------------------------------
-//notes section
-/*
-.Initialized on may 10, 2018
-.ulimit -s: soft limit of system-->core dumped?
-    $ulimit -s 16384 # 16MB stack
-    $ulimit -s unlimited # "unlimited" stack
-.giggle -s option for significance analysis with query file:
-    use without -s for pure search comparing 
-.https://codeforwin.org/2015/05/list-of-all-format-specifiers-in-c-programming.html
-.Inlcude <float.h> for DBL_MAX definition
-.Using -lm  option to compile linked to math lib
-    gcc -o get_overlaps_b14 get_overlaps_b14.c -lm
-    use .lz to link zlib
-.calloc() is similar to malloc() but the former does initialize memory to 0
-.may not free gdata but slower
-.chrM: core dumped
-.glob--path for files in a path with path/*
-.!/bin/sh may not work =>/bin/bash --version
-.if python parse.py not work =>try python2 parse.py 
-.Error info (giggle index): Could not open...=> ulimit -Sn 16384
-
-r or rb
-    Open file for reading.
-w or wb
-    Truncate to zero length or create file for writing.
-a or ab
-    Append; open or create file for writing at end-of-file.
-r+ or rb+ or r+b
-    Open file for update (reading and writing).
-w+ or wb+ or w+b
-    Truncate to zero length or create file for update.
-a+ or ab+ or a+b
-    Append; open or create file for update, writing at end-of-file. 
-john@JCloud:/media/john/CE30F6EE30F6DC81/ucsc_data$ time giggle  index   
-   -i "parsed_tracks_sorted/*gz" -o parsed_tracks_sorted_b -s -f
-Indexed 7456805968 intervals.
-real	909m59.405s
-user	367m22.618s
-sys	29m51.091s
-  rme_data/split_sort$ time ls *.bed.gz | gargs "tabix {}"
-
-real	4m34.347s
-user	2m8.513s
-sys	0m20.360s
-rme_data$ time giggle index -i "split_sort/*gz" -o split_sort_b -f -s
-Indexed 55605005 intervals.
-
-real	1m59.529s
-user	1m31.234s
-sys	0m7.898s
-  ucsc_data$ time giggle search -i parsed_tracks_sorted_b -q ucsc_r100.bed.gz >/dev/null 
-real	1m44.226s
-user	0m0.196s
-sys	0m1.983s
-ucsc_data$ time giggle search -i parsed_tracks_sorted_b -q ucsc_r10000.bed.gz >/dev/null 
-real	33m59.485s
-user	0m12.011s
-sys	0m34.640s 
- ucsc_data$ time giggle search -i parsed_tracks_sorted_b -q ucsc_r100000.bed.gz >/dev/null 
-real	54m26.230s
-user	1m22.248s
-sys	0m52.168s
-ucsc_data$ time giggle search -i parsed_tracks_sorted_b -q ucsc_r1000.bed.gz >/dev/null 
-real	8m42.814s
-user	0m1.373s
-sys	0m7.795s
-ucsc_data$ time giggle search -i parsed_tracks_sorted_b -q ucsc_r1000000.bed.gz >/dev/null 
-Killed
-real	114m56.288s
-user	2m5.064s
-sys	1m24.374s
-
-/rme_data$     for Q_SIZE in $Q_SIZES; do
->         speed_test.sh \
->             rme_r$Q_SIZE.bed.gz \
->             split_sort \
->             rme.human.hg19.genome
->     done \
->     > $RESULTS
-0.09 real	0.01 user	0.03 sys
-29.25 real	28.29 user	0.69 sys
-33.83 real	20.90 user	8.49 sys
-
-0.13 real	0.01 user	0.04 sys
-33.09 real	32.17 user	0.68 sys
-55.95 real	41.66 user	9.74 sys
-
-0.25 real	0.05 user	0.08 sys
-35.32 real	34.38 user	0.68 sys
-275.11 real	258.66 user	11.72 sys
-
-1.30 real	0.64 user	0.31 sys
-40.56 real	39.53 user	0.83 sys
-5845.14 real	2457.11 user	29.63 sys
-
-189.47 real	14.39 user	3.30 sys
-285.91 real	101.11 user	2.02 sys
-25046.15 real	24023.17 user	173.08 sys
-
-112.97 real	65.53 user	3.74 sys
-477.85 real	428.48 user	2.13 sys
-
-
-
-   fprintf(fp, "%s %s %s %d", "We", "are", "in", 2012);
-
-  
-
-
-printf outputs to the standard output stream (stdout)
-
-fprintf goes to a file handle (FILE*)
-
-sprintf goes to a buffer you allocated. (char*)
-
-iGD: Reshape and integrate large-scale data sources for highly efficient genome analysis
-
-Genome analysis usually requires comparing one set of genomic loci (region set) to many 
-other annotated region sets that may come from one or more large-scale data sources. 
-A wide variety of computational tools, such as LOLA, BART, Bedtools, Tabix, GenomeRunner 
-and Giggle, have been developed for this purpose. Among these tools, Giggle claims to be 
-over three orders of magnitude faster than others in searching millions to billions of 
-genomic intervals. iGD takes a database approach that directly integrates large-scale 
-data sources into an easily searchable database by reshaping the data records. As a 
-database, iGD takes not only the genomic regions, but also the signal levels and/or 
-strand info, which makes the parameterized query (dynamic searching) possible. The 
-searching speed of iGD is one to two orders of magnitude faster than Giggle while 
-the database size is serval times smaller than that of the Giggle index files.
-
-#Basic idea
-
-An example for running iGD:
-
-Download iGD_b14.ipynb to your local computer
-Download roadmap_ex from data/ and mkdir (roadmap_igd)
-Open a terminal (linux) and cd to iGD_b14.ipynb folder
-Type: jupyter notebook iGD_b14.ipynb
-In the last cell: Change the ifilePath to the roadmap_ex folder and ofilePath to the folder of roadmap_igd
-Run all cells--an igd database roadmap_b14.igd and roadmap_index.tsv will be created in the roadmap_igd folder
-   
-*/
