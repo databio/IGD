@@ -4,300 +4,8 @@
 //
 //time ./igd_search Test110000.bed /media/john/Extra/ucsc_igd/ucsc.igd
 //-------------------------------------------------------------------------------------
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <err.h>
-#include <time.h>
-#include <math.h>
-#include <float.h>
-#include <glob.h>
-#include <zlib.h>
-#include <errno.h>
-#include <sysexits.h>
-#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+#include "igd_search.h"
 //-------------------------------------------------------------------------------------
-struct igd_data
-{
-    uint32_t i_idx;        			//genomic object--data set index
-    uint32_t r_start;      			//region start
-    uint32_t r_end;        			//region end
-    uint32_t g_val;        			//signal level
-};
-
-struct query_data
-{
-    uint32_t q_idx;        			//tile index--locus position
-    uint32_t r_start;      			//region start
-    uint32_t r_end;        			//region end
-    uint32_t g_val;        			//signal level
-};
-
-struct igd_mix
-{    
-    uint32_t m_idx;                 //tile index--chr 
-    struct igd_data igd;
-};
-
-struct igd_info
-{
-    char* fileName;
-    uint32_t nd;
-    double md;
-};
-
-char** str_split( char* str, char delim, int *nmax);
-char** str_split_t( char* str, int nItems);
-struct query_data* get_igdlist(char *qfName, uint32_t *nblocks, uint32_t *nRegions, double *mRegion);	
-struct igd_mix* get_overlaps(struct query_data *query, uint32_t nblocks, uint32_t nmax, uint32_t *nOL);
-struct igd_mix* get_overlaps_w(struct query_data *query, uint32_t nblocks, char *igdName, uint32_t nmax, uint32_t *nOL);
-struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles);
-uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
-uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
-void search(char* qfName, char* igdName);
-void str_splits(char* str, int *nmax, char **splits);
-
-char *fileBase = "_b14_";         	//14 bits block
-uint32_t nmax[] = {15940, 15580, 12760, 12240, 11670, 10990, 10260, 9370, 8860, 8610, 8710, 
-        8580, 7300, 6840, 6510, 5830, 5370, 5160, 3820, 4150, 2980, 3240, 9880, 3510};
-char *folder[] = {"chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", 
-        "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", 
-     	 "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY"};
-uint32_t gstart[25] = {0, 15940, 31520, 44280, 56520, 68190, 79180, 89440, 98810, 107670, 
-        116280, 124990, 133570, 140870, 147710, 154220, 160050, 165420, 170580, 174400, 
-        178550, 181530, 184770, 194650, 198160}; 
-uint32_t nTiles = 198160;
-uint32_t nbp = 16384;
-uint32_t maxCount = 67108864, bgz_buf = 1024;//maxCount*16=2GB134217728,
-uint32_t *g2ichr;
-
-//-------------------------------------------------------------------------------------
-//This section is taken from giggle package
-/* Log gamma function
- * \log{\Gamma(z)}
- * AS245, 2nd algorithm, http://lib.stat.cmu.edu/apstat/245
- * kfunc.h
- *  Created on: May 1, 2015
- *      Author: nek3d
- */
-long double _lbinom(long long n, long long k);
-long double _hypergeo(long long n11, long long n1_, long long n_1, long long n);
-
-typedef struct {
-    long long n11, n1_, n_1, n;
-    long double p;
-} _hgacc_t;
-
-// incremental version of hypergenometric distribution
-long double _hypergeo_acc(long long n11, long long n1_, long long n_1, long long n, _hgacc_t *aux);
-long double _kt_fisher_exact(long long n11, long long n12, long long n21, long long n22, long double *_left, long double *_right, long double *two);
- 
-// log\binom{n}{k}
-long double _lbinom(long long n, long long k)
-{
-    if (k == 0 || n == k) return 0;
-    return lgammal(n+1) - lgammal(k+1) - lgammal(n-k+1);
-}
-
-// n11  n12  | n1_
-// n21  n22  | n2_
-//-----------+----
-// n_1  n_2  | n
-
-// hypergeometric distribution
-long double _hypergeo(long long n11, long long n1_, long long n_1, long long n)
-{
-    //***DEBUG***
-    return expl(_lbinom(n1_, n11) + _lbinom(n-n1_, n_1-n11) - _lbinom(n, n_1));
-}
-
-// incremental version of hypergenometric distribution
-long double _hypergeo_acc(long long n11, long long n1_, long long n_1, long long n, _hgacc_t *aux)
-{
-    if (n1_ || n_1 || n) {
-        aux->n11 = n11; aux->n1_ = n1_; aux->n_1 = n_1; aux->n = n;
-    } else { // then only n11 changed; the rest fixed
-        if (n11%11 && n11 + aux->n - aux->n1_ - aux->n_1) {
-            if (n11 == aux->n11 + 1) { // incremental
-                aux->p *= (long double)(aux->n1_ - aux->n11) / n11
-                    * (aux->n_1 - aux->n11) / (n11 + aux->n - aux->n1_ - aux->n_1);
-                aux->n11 = n11;
-                return aux->p;
-            }
-            if (n11 == aux->n11 - 1) { // incremental
-                aux->p *= (long double)aux->n11 / (aux->n1_ - n11)
-                    * (aux->n11 + aux->n - aux->n1_ - aux->n_1) / (aux->n_1 - n11);
-                aux->n11 = n11;
-                return aux->p;
-            }
-        }
-        aux->n11 = n11;
-    }
-    aux->p = _hypergeo(aux->n11, aux->n1_, aux->n_1, aux->n);
-
-    return aux->p;
-}
-
-long double _kt_fisher_exact(long long n11,
-                             long long n12,
-                             long long n21,
-                             long long n22,
-                             long double *_left,
-                             long double *_right,
-                             long double *two)
-{
-    long long i, j, max, min;
-    long double p, q, left, right;
-    _hgacc_t aux;
-    long long n1_, n_1, n;
-
-    n1_ = n11 + n12; n_1 = n11 + n21; n = n11 + n12 + n21 + n22; // calculate n1_, n_1 and n
-
-    max = (n_1 < n1_) ? n_1 : n1_; // max n11, for right tail
-    min = n1_ + n_1 - n;    // not sure why n11-n22 is used instead of min(n_1,n1_)
-    if (min < 0) min = 0; // min n11, for left tail
-    *two = *_left = *_right = 1.;
-
-    if (min == max) return 1.; // no need to do test
-
-
-    q = _hypergeo_acc(n11, n1_, n_1, n, &aux); // the probability of the current table
-    if (q < 1e-200) q = 1e-200;
-
-    // left tail
-    p = _hypergeo_acc(min, 0, 0, 0, &aux);
-    for (left = 0., i = min + 1; p < 0.99999999 * q && i<=max; ++i) // loop until underflow
-        left += p, p = _hypergeo_acc(i, 0, 0, 0, &aux);
-    --i;
-    if (p < 1.00000001 * q) left += p;
-    else --i;
-    // right tail
-    p = _hypergeo_acc(max, 0, 0, 0, &aux);
-    for (right = 0., j = max - 1; p < 0.99999999 * q && j>=0; --j) // loop until underflow
-        right += p, p = _hypergeo_acc(j, 0, 0, 0, &aux);
-    ++j;
-    if (p < 1.00000001 * q) right += p;
-    else ++j;
-    // two-tail
-    *two = left + right;
-    if (*two > 1.) *two = 1.;
-    // adjust left and right
-    if (labs((long) (i - n11)) < labs((long) (j - n11)) && q != 0.0) right = 1. - left + q;
-    else left = 1.0 - right + q;
-    *_left = left; *_right = right;
-    return q;
-}
-
-//The following 2 are from giggle
-//{{{double log2fc(double ratio)
-double log2fc(double ratio)
-{
-    if (fabs(ratio) < 0.0001)
-        return 0.0;
-
-    if (ratio < 1) {
-        ratio = 1.0/ratio;
-        return -1.0 * log2(ratio);
-    }
-
-    return log2(ratio);
-}
-//}}}
-
-//{{{double neglog10p(double sig)
-long double neglog10p(long double sig)
-{
-    if (fabsl(sig) < -DBL_MAX)
-        return 10.0;
-    return -1.0 * log10l(sig);
-}
-//}}}
-
-//-------------------------------------------------------------------------------------
-int compare_iidx(const void *a, const void *b)
-{
-    struct igd_data *pa = (struct igd_data *) a;
-    struct igd_data *pb = (struct igd_data *) b;
-    return pa->i_idx - pb->i_idx;
-}
-
-int compare_qidx(const void *a, const void *b)
-{
-    struct query_data *pa = (struct query_data *) a;
-    struct query_data *pb = (struct query_data *) b;
-    return pa->q_idx - pb->q_idx;
-}
-
-int compare_midx(const void *a, const void *b)
-{
-    struct igd_mix *pa = (struct igd_mix *) a;
-    struct igd_mix *pb = (struct igd_mix *) b;
-    return pa->m_idx - pb->m_idx;
-}
-
-char** str_split_t( char* str, int nItems)
-{
-    char **splits;
-    char *tmp;
-    int i;
-    if (str == NULL)
-        return NULL;
-    else {    
-        splits = malloc((nItems+1)*sizeof(*splits)); 
-        i=0;
-        tmp = strtok(str, "\t");
-        while(tmp!=NULL && i<nItems){
-            splits[i] = tmp;
-            tmp = strtok(NULL, "\t");
-            i++;
-        }
-    }
-    //printf("%s %s %s \n", splits[0], splits[1], splits[2]);
-    return splits;
-}
-
-char** str_split( char* str, char delim, int *nmax)
-{   //slightly faster than _t
-    char** splits;
-    char* ch;    
-    int ns;
-    if (str == NULL || delim=='\0')
-        return NULL;
-    else {
-        splits = malloc((*nmax+1) * sizeof(*splits));
-        splits[*nmax] = NULL;
-        ch = str;
-        ns = 1;
-        splits[0] = str;
-        do {
-            if (*ch == delim)
-            {
-                splits[ns++] = &ch[1];
-                *ch = '\0';
-            }
-            ch++;
-        } while (*ch != '\0' && ns < *nmax+1);
-    }
-    *nmax = ns;
-    return splits;
-}
-
-void str_splits(char* str, int *nmax, char **splits)
-{   //tsv 
-    splits[*nmax] = NULL;
-    splits[0] = str;
-    char *ch = str;    
-    int ns = 1;    
-    do {
-        if (*ch == '\t'){
-            splits[ns++] = &ch[1];
-            *ch = '\0';
-        }
-        ch++;
-    } while (*ch != '\0' && ns < *nmax+1);
-    *nmax = ns;
-}
 
 struct query_data* get_igdlist(char *qfName, uint32_t *nblocks, uint32_t *nRegions, double *mRegion)
 {  
@@ -316,15 +24,14 @@ struct query_data* get_igdlist(char *qfName, uint32_t *nblocks, uint32_t *nRegio
     uint32_t *n1 = malloc(nregions*sizeof(uint32_t));
     uint8_t *n2 = malloc(nregions*sizeof(uint8_t)); 
 
-    int nCols = 5;    
-    char **splits = malloc((nCols+1)*sizeof(char *)); 
-  
+    char **splits;
+    int nCols = 5;  
     fseek(fp, 0, SEEK_SET);
     int k, nm, i=0, nextras=0;
     double delta=0.0;//number of regions that cross the tile boundary
     while(fgets(buf, 1024, fp)!=NULL){	
         //splits = str_split_t(buf, nItems);
-        str_splits(buf, &nCols, splits);       
+        splits = str_split(buf,'\t', &nCols);       
         if(strlen(splits[0])<6){
     	   if(strcmp(splits[0], "chrX")==0)
             	df0[i] = 22;
@@ -363,8 +70,7 @@ struct query_data* get_igdlist(char *qfName, uint32_t *nblocks, uint32_t *nRegio
             }
         }
     }
-    qsort(query, *nblocks, sizeof(struct query_data), compare_qidx);
-    free(splits);
+    qsort(query, *nblocks, sizeof(struct query_data), compare_rstart);
     free(df0);
     free(df1);
     free(df2);
@@ -387,29 +93,29 @@ struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles)
         	    nfiles++;
     }
     struct igd_info *fi = (struct igd_info*)malloc(nfiles*sizeof(struct igd_info));
-    //-----------------------------------------------------
-    int ncols = 4;    
-    char **splits = malloc((ncols+1)*sizeof(char *));     
-    
+    //char** fNames = malloc(nfiles*sizeof(char*));
+    //uint32_t *nd = malloc(nfiles*sizeof(uint32_t));
+    //double *md = malloc(nfiles*sizeof(double));
+    //------------
+    char **splits;
+    int ncols = 4;  
     fseek(fp, 0, SEEK_SET);
     i=0;
     fgets(buf, 1024, fp);   //header
     while(fgets(buf, 1024, fp)!=NULL){	
-        str_splits(buf, &ncols, splits);        
+        splits = str_split(buf,'\t', &ncols);        
         fi[i].fileName = (char *)calloc(strlen(splits[1]) + 1, sizeof(char));
         strcpy(fi[i].fileName, splits[1]);
-        fi[i].nd = (uint32_t)atoi(splits[2]);
-        fi[i].md = (double)atoi(splits[3]);   
+        fi[i].nd = (uint32_t)atoi(splits[3]);
+        fi[i].md = (double)atoi(splits[2]);   
         i++;
     }        
     //printf("%s %i %f \n", fNames[6], nd[6], md[6]);  
     //printf("Total file: %i\n", i);
-    free(splits);
     *nFiles = nfiles;
     fclose(fp);
     return fi;
 }
-
 
 struct igd_mix* get_overlaps(struct query_data *query, uint32_t nblocks, uint32_t nmax, uint32_t* nOL)
 {
@@ -832,12 +538,8 @@ void search(char* qfName, char* igdName)
 
 //-------------------------------------------------------------------------------------
 int igd_search(int argc, char **argv)
-{
-    if (argc < 2) 
-        errx(1, "usage:\t%s <input path>\n", argv[0]);   
-    int usingw = 0;
-    if (argc==3)
-        usingw = 1;     
+{   //igd[0] search[1] query100.bed[2] home/john/iGD/rme_igd/roadmap.igd[3]
+    
     //convert block index to chr index for convenience
     g2ichr = malloc(nTiles*sizeof(uint32_t));
     uint32_t i, j;
@@ -845,11 +547,10 @@ int igd_search(int argc, char **argv)
         	for(j=gstart[i]; j<gstart[i+1]; j++)      
         	    g2ichr[j] = i;
     }
-    char *qfName = argv[1];
-    char *igdName = argv[2];
-    
-    if(usingw)
-        search(qfName, igdName);      
+    char *qfName = argv[2];
+    char *igdName = argv[3];
+
+    search(qfName, igdName);      
 
     free(g2ichr);
     return EX_OK;
