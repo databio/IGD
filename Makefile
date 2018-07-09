@@ -1,14 +1,26 @@
-objs = igd_base.o igd_create.o igd_search.o igd.o 
+BIN = bin
+OBJ = obj
 VPATH = src
+LIB = igd_base.o igd_create.o igd_search.o igd.o 
+OBJS = $(addprefix $(OBJ)/, $(LIB))
 
-igd: $(objs)
-	cc -o igd $(objs) -lm -lz
+$(OBJ)/%.o: %.c
+	cc -c $(CFLAGS) $< -o $@ 
 
-igd_base.o: igd_base.c
-igd_create.o: igd_create.c
-igd_search.o: igd_search.c
-igd.o: igd.c
+igd: $(OBJS)
+	cc -o $(BIN)/igd $(OBJS) -lm -lz
+
+all: $(OBJS)
+
+$(OBJS): | $(OBJ) $(BIN)
+
+$(OBJ):
+	mkdir -p $(OBJ)
+
+$(BIN):
+	mkdir -p $(BIN)
 
 .PHONY: clean
 clean:
-	rm igd $(objs)
+	rm -rf $(BIN)/*
+	rm -rf $(OBJ)/*
