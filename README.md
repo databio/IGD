@@ -11,15 +11,20 @@ The enrichment analysis is to find overlaps between regions of all data sets in 
 The goal of iGD is to build a database that integrates all genomic data sets in one or more data sources and minimizes the actual searching space for a general query. To achieve this, iGD reshapes the data sources by dividing the genome into a large number of equal-size bins (~200,000 bins), and arranging data records of the data sources into the bin or bins they intersect. Data in each bin will be saved as a file (mode 0) or as a block of a single file (mode 1). Mode 0 iGD database  can be extended easily while using mode 1 database is slightly faster for searching.  For mode 0, each file is named according to the index of the bin and for mode 1 the file head contains the location of the bins and the number of iGD data elements in each bin. Each iGD data element contains the index of the original dataset, the original genomic region (start and end coordinates), and a value (signal level and/or strand info). To find overlaps of a query, one only needs to load one or a few bin files (mode 0) or bin block data (mode 1) instead of all data sets, which minimizes the data loading time; and more importantly, the comparisons are carried out only in the loaded one or a few bins, which minimizes the actual searching space. Details about the implementation (a link) will be provided later. 
  
 
-## How to run iGD
-Clone the site to a local `dir` and then cd to the `dir`. Build the executable `igd` by using `make` at a linux terminal. The executable is in the subfolder `bin`. 
+## How to build iGD
+```
+git clone https://github.com/databio/iGD.git
+cd iGD
+make
+```
+the executable `igd` is in the subfolder `bin`.
 
+## How to run iGD
 
 ### 1. Create iGD database from a genome data source
  
 ```
 ./igd create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName"
-``` 
 
 where:
 
@@ -28,6 +33,7 @@ where:
 - `"path/to/igd_folder"` is the path to the output igd folder: this folder should be made first with mkdir and it should contain a subfolder named as data0, where data0 should contain 24 subfolders: chr1, chr2, ..., chr22, chrX and chrY.
 
 - `"databaseName"` is the name you give to the database, for eaxmple, `"roadmap"`
+```
 
 An example: `"rme"` is an example folder containing `.bed.gz` files, `"rme_igd"` is an example igd database folder
 ```
@@ -40,13 +46,13 @@ This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders 
 ### 2. Search iGD for overlaps
 ```
 ./igd search "path/to/query_file" "path/to/igd_data_file"
-```
 
 where:
 
 - `path/to/query_file` is the path to the query file
 
 - `path/to/igd_data_file` is the path to the igd data (mode 1)
+```
 
 An example: `query100.bed` is an example query file
 ```
