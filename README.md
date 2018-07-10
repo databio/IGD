@@ -12,18 +12,13 @@ The goal of iGD is to build a database that integrates all genomic data sets in 
  
 
 ## How to run iGD
-Clone the site including the subfolders. All `.c` programs can be compiled and run on their own -- **no dependency among them**. These programs are tested on Linux systems and the installation of some librays like zlib may be needed.
+Clone the site to a local `dir` and then cd to the dir. Build the executable `igd` by using `make` at a linux terminal. The executable is in the subfolder `bin`. 
 
 
 ### 1. Create iGD database from a genome data source
-To compile `igd_create.c` on a linux terminal: 
+ 
 ```
-gcc -o igd_create src/igd_create.c -lm -lz
-```
-
-To run the executable `igd_create`: 
-```
-./igd_create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName"
+./igd create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName"
 ``` 
 
 where:
@@ -43,12 +38,6 @@ This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders 
 
 
 ### 2. Search iGD for overlaps
-To compile `igd_search.c` on a linux terminal:
-```
-gcc -o igd_search src/igd_search.c -lm -lz
-```
-
-To run the executable `igd_search`: 
 ```
 ./igd_search "path/to/query_file" "path/to/igd_data_file"
 ```
@@ -63,4 +52,8 @@ An example: `query100.bed` is an example query file
 ```
 ./igd_search query100.bed rme_igd/roadmap.igd
 ```
+
+## iGD databases
+Downloads of some iGD databases are at databio.org/iGD.
+
 
