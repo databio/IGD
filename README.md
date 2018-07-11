@@ -60,6 +60,6 @@ An example: `query100.bed` is an example query file
 ```
 
 ## iGD databases
-Downloads of some iGD databases (fully created and directly searchable by using iGD) are at databio.org/iGD.
+Downloads of some iGD databases (fully created and directly searchable by using iGD) are at [databio.org/igd](http://big.databio.org/igd).
 
 
