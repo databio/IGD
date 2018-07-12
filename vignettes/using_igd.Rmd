@@ -1,0 +1,51 @@
+---
+title: "Using iGD"
+author: "John Feng"
+date: "06/18/2018"
+output:
+  BiocStyle::html_document
+---
+
+This vignette shows how to create an iGD database from roadmap dataset and then search the iGD database for overlaps with a query file.
+
+## Create roadmap iGD database
+
+First download [roadmap dataset](http://big.databio.org/roadmap.tgz) and unpack it. 
+
+
+```
+igd create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName"
+
+where:
+
+- `"path/to/data_source_folder"` is the path of the folder that contains `.bed.gz` data files (function to process non-gz bed files will be added later)
+
+- `"path/to/igd_folder"` is the path to the output igd folder: this folder should be made first with mkdir and it should contain a subfolder named as data0, where data0 should contain 24 subfolders: chr1, chr2, ..., chr22, chrX and chrY.
+
+- `"databaseName"` is the name you give to the database, for eaxmple, `"roadmap"`
+```
+
+An example: `"rme"` is an example folder containing `.bed.gz` files, `"rme_igd"` is an example igd database folder
+```
+igd create "rme/*" "rme_igd/" "roadmap"
+```
+
+This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders chr1,...chrY; a single igd database file (mode 1) `roadmap.igd` and dataset index file `roadmap_index.tsv` in the igd folder.
+
+
+## Search iGD for overlaps
+```
+igd search "path/to/query_file" "path/to/igd_data_file"
+
+where:
+
+- `path/to/query_file` is the path to the query file
+
+- `path/to/igd_data_file` is the path to the igd data (mode 1)
+```
+
+An example: `query100.bed` is an example query file
+```
+igd search query100.bed rme_igd/roadmap.igd
+```
+
