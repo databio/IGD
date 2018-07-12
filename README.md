@@ -17,14 +17,14 @@ git clone https://github.com/databio/iGD.git
 cd iGD
 make
 ```
-the executable `igd` is in the subfolder `bin`.
+the executable `igd` is in the subfolder `bin`. And then copy it to /usr/local/bin.
 
 ## How to run iGD
 
 ### 1. Create iGD database from a genome data source
  
 ```
-./igd create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName"
+igd create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName"
 
 where:
 
@@ -37,7 +37,7 @@ where:
 
 An example: `"rme"` is an example folder containing `.bed.gz` files, `"rme_igd"` is an example igd database folder
 ```
-./igd create "rme/*" "rme_igd/" "roadmap"
+igd create "rme/*" "rme_igd/" "roadmap"
 ```
 
 This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders chr1,...chrY; a single igd database file (mode 1) `roadmap.igd` and dataset index file `roadmap_index.tsv` in the igd folder.
@@ -45,7 +45,7 @@ This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders 
 
 ### 2. Search iGD for overlaps
 ```
-./igd search "path/to/query_file" "path/to/igd_data_file"
+igd search "path/to/query_file" "path/to/igd_data_file"
 
 where:
 
@@ -56,7 +56,7 @@ where:
 
 An example: `query100.bed` is an example query file
 ```
-./igd search query100.bed rme_igd/roadmap.igd
+igd search query100.bed rme_igd/roadmap.igd
 ```
 
 ## iGD databases
