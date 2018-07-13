@@ -6,7 +6,7 @@ output:
   BiocStyle::html_document
 ---
 
-This vignette shows how to create an iGD database from roadmap dataset and then search the iGD database for overlaps with a query file.
+This vignette shows how to create an iGD database from roadmap dataset and then search the iGD database for overlaps with a query file. Make sure your computer memory is at least 4GB.
 
 ## Create roadmap iGD database
 

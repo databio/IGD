@@ -1,10 +1,10 @@
-#ifndef __IGD_BASE_H__
-#define __IGD_BASE_H__
-
 //=====================================================================================
 //Common structs, parameters, functions
 //by Jianglin Feng  05/12/2018
 //-------------------------------------------------------------------------------------
+#ifndef __IGD_BASE_H__
+#define __IGD_BASE_H__
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>

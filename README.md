@@ -19,7 +19,7 @@ make
 ```
 the executable `igd` is in the subfolder `bin`. And then copy it to /usr/local/bin.
 
-## How to run iGD (see vignettes for detailed example)
+## How to run iGD
 
 ### 1. Create iGD database from a genome data source
  
@@ -55,6 +55,7 @@ An example: `query100.bed` is an example query file.
 ```
 igd search query100.bed rme_igd/roadmap.igd
 ```
+For a detailed example, please check out the `vignettes`.
 
 ## iGD databases
 Downloads of some iGD databases (fully created and directly searchable by using iGD) are at [databio.org/igd](http://big.databio.org/igd).

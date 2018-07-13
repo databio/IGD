@@ -1,3 +1,8 @@
+//=====================================================================================
+//Common igd struct, parameters, functions
+//by Jianglin Feng  05/12/2018
+//-------------------------------------------------------------------------------------
+
 #include "igd_base.h"
 #include "igd_create.h"
 #include "igd_search.h"
