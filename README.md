@@ -8,7 +8,7 @@ Genome analysis usually requires comparing one set of genomic loci (region set) 
 Genome data sources, such as Roadmap, UCSC, and Cistrome, contain thousand of annotated data sets and each dataset has thousands to millions of genomic regions. 
 The enrichment analysis is to find overlaps between regions of all data sets in the data source and all regions in the query data set. This becomes challenging when the size of data source regions and the size of query regions are large. For example, UCSC human data source contains ~7 billion of regions or intervals, if the query set has 100,000 interavls, then a total of 100 trillion comparisons may be involved. To effectively search the overlaps, different indexing techniques have been developed. For example, Giggle employs a B+ tree to build a bunch of pure indexing files and then a qurey is carried out on these indexing files instead of the original data. With the indexing, the actual searching space is significantly reduced.
  
-The goal of iGD is to build a database that integrates all genomic data sets in one or more data sources and minimizes the actual searching space for a general query. To achieve this, iGD reshapes the data sources by dividing the genome into a large number of equal-size bins (~200,000 bins), and arranging data records of the data sources into the bin or bins they intersect. Data in each bin will be saved as a file (mode 0) or as a block of a single file (mode 1). Mode 0 iGD database  can be extended easily while using mode 1 database is slightly faster for searching.  For mode 0, each file is named according to the index of the bin and for mode 1 the file head contains the location of the bins and the number of iGD data elements in each bin. Each iGD data element contains the index of the original dataset, the original genomic region (start and end coordinates), and a value (signal level and/or strand info). To find overlaps of a query, one only needs to load one or a few bin files (mode 0) or bin block data (mode 1) instead of all data sets, which minimizes the data loading time; and more importantly, the comparisons are carried out only in the loaded one or a few bins, which minimizes the actual searching space. Details about the implementation (a link) will be provided later. 
+The goal of iGD is to build a database that integrates all genomic data sets in one or more data sources and minimizes the actual searching space for a general query. To achieve this, iGD reshapes the data sources by dividing the genome into a large number of equal-size bins (~200,000 bins), and arranging data records of the data sources into the bin or bins they intersect. Data in each bin will be saved as a file (mode 0) or as a block of a single file (mode 1). Mode 0 iGD database can be extended easily while using mode 1 database is faster for searching.  For mode 0, each file is named according to the index of the bin and for mode 1 the file head contains the location of the bins and the number of iGD data elements in each bin. Each iGD data element contains the index of the original dataset, the original genomic region (start and end coordinates), and a value (signal level and/or strand info). To find overlaps of a query, one only needs to load one or a few bin files (mode 0) or bin block data (mode 1) instead of all data sets, which minimizes the data loading time; and more importantly, the comparisons are carried out only in the loaded one or a few bins, which minimizes the actual searching space. Details about the implementation (a link) will be provided later. 
  
 
 ## How to build iGD
@@ -19,7 +19,7 @@ make
 ```
 the executable `igd` is in the subfolder `bin`. And then copy it to /usr/local/bin.
 
-## How to run iGD
+## How to run iGD (see vignettes for detailed example)
 
 ### 1. Create iGD database from a genome data source
  
@@ -28,7 +28,7 @@ igd create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName"
 
 where:
 
-- `"path/to/data_source_folder"` is the path of the folder that contains `.bed.gz` data files (function to process non-gz bed files will be added later)
+- `"path/to/data_source_folder"` is the path of the folder that contains `.bed.gz` data files.
 
 - `"path/to/igd_folder"` is the path to the output igd folder;
 
@@ -39,9 +39,6 @@ An example: `"rme"` is an example folder containing `.bed.gz` files, `"rme_igd"`
 ```
 igd create "rme/*" "rme_igd/" "roadmap"
 ```
-
-This will generate a total of ~200,000 igd bin files (mode 0) in the subfolders chr1,...chrY; a single igd database file (mode 1) `roadmap.igd` and dataset index file `roadmap_index.tsv` in the igd folder.
-
 
 ### 2. Search iGD for overlaps
 ```
