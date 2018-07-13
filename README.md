@@ -30,7 +30,7 @@ where:
 
 - `"path/to/data_source_folder"` is the path of the folder that contains `.bed.gz` data files (function to process non-gz bed files will be added later)
 
-- `"path/to/igd_folder"` is the path to the output igd folder: this folder should be made first with mkdir and it should contain a subfolder named as data0, where data0 should contain 24 subfolders: chr1, chr2, ..., chr22, chrX and chrY.
+- `"path/to/igd_folder"` is the path to the output igd folder;
 
 - `"databaseName"` is the name you give to the database, for eaxmple, `"roadmap"`
 ```
@@ -54,7 +54,7 @@ where:
 - `path/to/igd_data_file` is the path to the igd data (mode 1)
 ```
 
-An example: `query100.bed` is an example query file
+An example: `query100.bed` is an example query file.
 ```
 igd search query100.bed rme_igd/roadmap.igd
 ```
