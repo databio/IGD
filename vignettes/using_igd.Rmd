@@ -10,7 +10,7 @@ This vignette shows how to create an iGD database from roadmap dataset and then 
 
 ## Create roadmap iGD database
 
-First download the entire rme folder of the [roadmap data source](http://big.databio.org/igd/data) to the current working directory. The rme contains 1905 `.bed.gz` data files;
+First download the entire rme folder of the [roadmap data source](http://big.databio.org/igd/data) to the current working directory. The rme contains 1905 `.bed.gz` data files.
 Then:  
 ```
 igd create "rme/*" "rme_igd/" "roadmap"
@@ -23,7 +23,7 @@ This will generate
 
 ## Search iGD for overlaps
 
-Download a sample query file--[query100.bed] (http://big.databio.org/igd/data) to the same directory as above.
+Download a sample query file [query100.bed] (http://big.databio.org/igd/data) to the same directory as above.
  
 Then:
 ```
