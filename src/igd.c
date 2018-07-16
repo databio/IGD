@@ -24,7 +24,7 @@ uint32_t gstart[25] = {0, 15940, 31520, 44280, 56520, 68190, 79180, 89440, 98810
         178550, 181530, 184770, 194650, 198160}; 
 uint32_t nTiles = 198160;
 uint32_t nbp = 16384, bgz_buf = 1024;
-uint64_t maxCount = 536870912;		
+uint64_t maxCount = 268435456;//*16 Bytes;//536870912;		
 uint32_t *g2ichr;
 
 int igd_help(int argc, char **argv, int exit_code);

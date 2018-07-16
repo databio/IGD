@@ -4,6 +4,8 @@
 //-------------------------------------------------------------------------------------
 #include "igd_base.h"
 #include <zlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 //-------------------------------------------------------------------------------------
 void append_igd(struct igd_mix *mdata, uint32_t *counts, struct igd_info *fInfo, int nFiles, char* igdName)
@@ -88,11 +90,12 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     
     char** file_ids = gResult.gl_pathv;
     uint32_t n_files = gResult.gl_pathc; 
-    if(n_files<6)   
+    if(n_files<2)   
         printf("Too few files (add to path /*): %u\n", n_files); 
      
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));
     float *md = calloc(n_files, sizeof(float)); 
+
     //2. Read region data
     uint32_t i, ii, j, k, t, df1, df2, df4, ichr, n1, n2, ti, nR;
     uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
@@ -674,14 +677,29 @@ int igd_create(int argc, char **argv)
     g2ichr = malloc(nTiles*sizeof(uint32_t));
     uint32_t i, j;
     for(i=0; i<24; i++){  
-        	for(j=gstart[i]; j<gstart[i+1]; j++)      
-        	    g2ichr[j] = i;
+        for(j=gstart[i]; j<gstart[i+1]; j++)      
+	    g2ichr[j] = i;
     }
     char *ipath = argv[2];
     char *opath = argv[3];
     char *dbname = argv[4];
-    create_igd_gz(ipath, opath, dbname);    
-
+    //check if the subfolders exist:    
+    char ftmp[128];      
+    struct stat st = {0};  
+    sprintf(ftmp, "%s%s%s", opath, dbname, ".igd");
+    if(stat(ftmp, &st) == 0)
+        printf("The igd database file %s exists!\n", ftmp);  
+    else{
+        sprintf(ftmp, "%s%s", opath, "data0");
+        if (stat(ftmp, &st) == -1)
+            mkdir(ftmp, 0777);
+        for (i=0;i<24;i++){	    
+            sprintf(ftmp, "%s%s%s", opath, "data0/", folder[i]);
+            if (stat(ftmp, &st) == -1)   
+                mkdir(ftmp, 0777);
+        }
+        create_igd_gz(ipath, opath, dbname); 
+    }  
     free(g2ichr);
     return EX_OK;
 }
