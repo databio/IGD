@@ -35,11 +35,6 @@ where:
 - `"databaseName"` is the name you give to the database, for eaxmple, `"roadmap"`
 ```
 
-An example: `"rme"` is an example folder containing `.bed.gz` files, `"rme_igd"` is an example igd database folder
-```
-igd create "rme/*" "rme_igd/" "roadmap"
-```
-
 ### 2. Search iGD for overlaps
 ```
 igd search "path/to/query_file" "path/to/igd_data_file"
@@ -51,10 +46,6 @@ where:
 - `path/to/igd_data_file` is the path to the igd data (mode 1)
 ```
 
-An example: `query100.bed` is an example query file.
-```
-igd search query100.bed rme_igd/roadmap.igd
-```
 For a detailed example, please check out the `vignettes`.
 
 ## iGD databases
