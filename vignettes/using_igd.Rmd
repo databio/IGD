@@ -17,9 +17,9 @@ Then:
 igd create "rme/*" "rme_igd/" "roadmap"
 ```
 
-This will generate
-1. a folder `data0` and subfolders `chr1,..., chr22, chrX, chrY` with ~180,000 igd bin files (mode 0); 
-2. a folder `rme_igd` with a single igd database file (mode 1) `roadmap.igd` and dataset index file `roadmap_index.tsv`.
+This will generate the following in the output folder `rme_igd`:
+1. a subfolder `data0` and its subfolders `chr1,..., chr22, chrX, chrY` with ~180,000 igd bin files (mode 0); 
+2. a single igd database file (mode 1) `roadmap.igd` and dataset index file `roadmap_index.tsv`.
 
 
 ## Search iGD for overlaps
