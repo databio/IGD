@@ -14,6 +14,7 @@ First download the entire `rme` folder of the [roadmap data source](http://big.d
 
 Then:  
 ```
+mkdir rme_igd
 igd create "rme/*" "rme_igd/" "roadmap"
 ```
 
