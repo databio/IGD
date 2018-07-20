@@ -1,0 +1,41 @@
+---
+title: "benchmarks"
+author: "John Feng"
+date: "07/18/2018"
+output:
+  BiocStyle::html_document
+---
+
+This vignette shows benchmarks of iGD for searching igd database `roadmap.igd` and `ucsc.igd` with `igd search`.
+
+## Benchmarks for roadmap.igd
+
+Database roadmap.igd  is created from Roadmap data source by using iGD, see vignettes `using_igd.Rmd` for detained info. It can also be downloaded from [databio.org/igd](http://big.databio.org/igd). Unzip it after download (`~1.3GB`).
+
+A series [query files](http://big.databio.org/igd/queries) of various number of region sets are used for the testing:
+
+```
+for i in 10 100 1000 10000 100000 1000000
+do
+time igd search queries/r$i.bed rme_igd/roadmap.igd 
+done
+```
+The following results are from a laptop of 2.5GZ cpu:
+0.009s, 0.009s, 0.014s, 0.051s, 0.338s, 2.085s. 
+
+
+## Benchmarks for ucsc.igd
+
+Database ucsc.igd is created from ucsc data source and it can be downloaded from [databio.org/igd](http://big.databio.org/igd). The compressed file `ucsc.igd.tgz` is 22GB and unzipped database file ucsc.igd is about ~123GB. 
+
+Using the same query series for the testing:
+
+```
+for i in 10 100 1000 10000 100000 1000000
+do
+time igd search queries/r$i.bed ucsc_igd/ucsc.igd
+done
+```
+The following results are from a laptop of 2.5GZ cpu:
+0.206s, 1.671s, 16.239s, 144.222s, 13m26.413s, 17m6.142s. 
+
