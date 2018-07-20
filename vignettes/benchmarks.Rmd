@@ -20,7 +20,7 @@ do
 time igd search queries/r$i.bed rme_igd/roadmap.igd 
 done
 ```
-The following results are from a laptop of 2.5GZ cpu:
+The following results are from a laptop of 2.5GHz cpu:
 0.009s, 0.009s, 0.014s, 0.051s, 0.338s, 2.085s. 
 
 
@@ -36,6 +36,6 @@ do
 time igd search queries/r$i.bed ucsc_igd/ucsc.igd
 done
 ```
-The following results are from a laptop of 2.5GZ cpu:
+The following results are from a laptop of 2.5GHz cpu:
 0.206s, 1.671s, 16.239s, 144.222s, 13m26.413s, 17m6.142s. 
 
