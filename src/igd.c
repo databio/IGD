@@ -35,11 +35,9 @@ int main(int argc, char **argv)
     char *cmd = argv[1];
 
     if (strcmp(cmd,"create") == 0 && argc == 5){
-
         return igd_create(argc, argv);
     }
-    else if (strcmp(cmd,"search") == 0 && argc == 4){
-
+    else if (strcmp(cmd,"search") == 0 && argc >= 4){
         return igd_search(argc, argv);
     }
     else {
