@@ -521,11 +521,11 @@ void search(char* qfName, char* igdName, uint32_t v)
     clock_t start, end;
     start = clock();
     uint32_t *hits = calloc(nFiles, sizeof(uint32_t));
-
+    uint64_t nOL;
     if(v>0)
-        uint64_t nOL = get_overlaps_v(qfName, igdName, v, &nq, &mq, hits);
+        nOL = get_overlaps_v(qfName, igdName, v, &nq, &mq, hits);
     else   
-        uint64_t nOL = get_overlaps_n(qfName, igdName, &nq, &mq, hits);   
+        nOL = get_overlaps_n(qfName, igdName, &nq, &mq, hits);   
     end = clock();   
     
     printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
@@ -554,7 +554,7 @@ int igd_search(int argc, char **argv)
     char *qfName = argv[2];
     char *igdName = argv[3];
     if(argc>4)
-        v = argv[4];
+        v = atoi(argv[4]);
         
     search(qfName, igdName, v);      
 
