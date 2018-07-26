@@ -16,6 +16,9 @@ void store_igd(char *igdName);
 //create ucsc igd from gz
 void create_igd_gz(char *iPath, char *oPath, char *igdName);
 
+//create ucsc igd plain bed files
+void create_igd(char *iPath, char *oPath, char *igdName);
+
 //main
 int igd_create(int argc, char **argv);
 
