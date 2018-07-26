@@ -593,7 +593,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
                     while(nL<L0 && fgets(buffer, bgz_buf, fp)!=NULL)
                         nL++; 
                 }                            
-                while(nL<L1 && gets(buffer, bgz_buf, fp)!=NULL){//tbd: read 1Mb each time
+                while(nL<L1 && fgets(buffer, bgz_buf, fp)!=NULL){//tbd: read 1Mb each time
                     //splits = str_split(buffer,'\t', &nCols);  
                     str_splits(buffer, &nCols, splits);
                     ichr = -1;
