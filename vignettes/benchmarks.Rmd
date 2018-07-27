@@ -10,20 +10,20 @@ This vignette shows benchmarks of iGD for searching igd databases `roadmap.igd` 
 
 ## Benchmarks for roadmap.igd
 
-Database roadmap.igd  is created from Roadmap data source by using iGD, see vignettes `using_igd.Rmd` for detailed info. It can also be downloaded from [databio.org/igd](http://big.databio.org/igd). Unzip it after download(`~1.3GB` with folder `rme_igd`).
+Database roadmap.igd  is created from Roadmap data source by using iGD, see vignettes `using_igd.Rmd` for detailed information. It can also be downloaded from [databio.org/igd](http://big.databio.org/igd). Unzip it after download(`~1.3GB` with folder `rme_igd`).
 
 A series query files [queries](http://big.databio.org/igd) of various number of region sets are used for testing:
 
 ```
 for i in 10 100 1000 10000 100000 1000000
 do
-time igd search queries/r$i.bed rme_igd/roadmap.igd 
+time igd search queries/r$i.bed rme_igd/roadmap.igd >/dev/null 
 done
 ```
-The following results are from a laptop of 2.5GHz cpu:
+The following speed results are from a laptop of 2.5GHz cpu:
 0.009s, 0.009s, 0.014s, 0.051s, 0.338s, 2.085s.
 
-The corresponding giggle index is [rme_index.tgz](http://big.databio.org/igd) and query files in .gz format is [queries_gz](http://big.databio.org/igd). The size of unziped rme_index is ~2.3GB.
+For giggle: download the index rme_index.tgz and queries queries_gz from http://big.databio.org/igd. The size of unziped rme_index is ~2.3GB.
 
 ```
 for i in 10 100 1000 10000 100000 1000000
@@ -31,7 +31,7 @@ do
 time giggle search -i rme_index -q queries_gz/ucsc_r$i.bed.gz >/dev/null 
 done
 ```
-The corresponding times on the same machine are:
+The corresponding times are:
 0.013s, 0.017s, 0.064s, 0.582s, 5.241s, 45.439s. 
 
 
@@ -44,13 +44,13 @@ Using the same query series for testing:
 ```
 for i in 10 100 1000 10000 100000 1000000
 do
-time igd search queries/r$i.bed ucsc_igd/ucsc.igd
+time igd search queries/r$i.bed ucsc_igd/ucsc.igd >/dev/null
 done
 ```
-The following results are from a laptop of 2.5GHz cpu:
+The times are:
 0.206s, 1.671s, 16.239s, 2m24.222s, 13m26.413s, 17m6.142s. 
 
-The corresponding giggle index is [ucsc_index.tgz](http://big.databio.org/igd). The size of unziped ucsc_index is ~620GB.
+For giggle: download the index ucsc_index.tgz at http://big.databio.org/igd. The size of unziped ucsc_index is ~620GB.
 
 ```
 for i in 10 100 1000 10000 100000 1000000
@@ -58,6 +58,6 @@ do
 time giggle search -i ucsc_index -q queries_gz/ucsc_r$i.bed.gz >/dev/null 
 done
 ```
-The corresponding times on the same machine are:
+The results are:
 17.169s, 1m18.631s, 5m31.372s, 18m27.102s, 73m50.718s, 138m20.332(killed for unknown reason).
 

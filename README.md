@@ -24,26 +24,36 @@ the executable `igd` is in the subfolder `bin`. And then copy it to /usr/local/b
 ### 1. Create iGD database from a genome data source
  
 ```
-igd create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName"
+igd create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName" [option]
 
 where:
 
-- "path/to/data_source_folder/" is the path of the folder that contains .bed.gz data files.
+- "path/to/data_source_folder/" is the path of the folder that contains .bed.gz or .bed data files.
 
 - "path/to/igd_folder/" is the path to the output igd folder;
 
 - "databaseName" is the name you give to the database, for eaxmple, "roadmap"
+
+option:
+
+-t: data source in .bed (default .bed.gz)
 ```
 
 ### 2. Search iGD for overlaps
 ```
-igd search "path/to/query_file" "path/to/igd_data_file"
+igd search "path/to/query_file" "path/to/igd_data_file" [options]
 
 where:
 
 - path/to/query_file is the path to the query file
 
 - path/to/igd_data_file is the path to the igd data (mode 1)
+
+options:
+
+-v: dynamic search with threshold signal value
+
+-o: output file-name
 ```
 
 For a detailed example, please check out the `vignettes`.
