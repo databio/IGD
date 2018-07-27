@@ -505,7 +505,7 @@ uint64_t get_overlaps_v(char *qfName, char *igdName, uint32_t v, uint32_t *nregi
     return nols;
 }
 
-void search(char* qfName, char* igdName, uint32_t v)
+void search(char* qfName, char* igdName, uint32_t v, char *out)
 {   //name standard: igd_file(dbname.igd), index_file(dbname_index.tsv)
     uint32_t i, nq=1, nFiles, nCols=2, genome_size=3095677412;
     double mq = 1.0;
@@ -528,11 +528,23 @@ void search(char* qfName, char* igdName, uint32_t v)
         nOL = get_overlaps_n(qfName, igdName, &nq, &mq, hits);   
     end = clock();   
     
-    printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
-    printf("%u %u %f \n", (uint32_t)nOL, nq, mq);
-    printf("index\t File_name\t number of regions\t mean-region-size \t number of hits\n");
-    for(i=0;i<10;i++)
-        printf("%i %s %u %u %u\n", i, fi[i].fileName, fi[i].nd, (uint32_t)fi[i].md, hits[i]);
+    if(strlen(out)>1){
+        FILE *fp = fopen(out, "w");
+        if(fp==NULL)
+            printf("Can't open file %s\n", idFile);
+        fprintf(fp, "Number of overlaps: %u, number of query regions: %u, mean query size: %f \n", (uint32_t)nOL, nq, mq);     
+        fprintf(fp, "index\t File_name\t number of regions\t mean-region-size \t number of hits\n");
+        for(i=0;i<nFiles;i++)
+            fprintf(fp, "%i %s %u %u %u\n", i, fi[i].fileName, fi[i].nd, (uint32_t)fi[i].md, hits[i]);  
+        fclose(fp);     
+    }
+    else{
+        printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
+        printf("Number of overlaps: %u, number of query regions: %u, mean query size: %f \n", (uint32_t)nOL, nq, mq);  
+        printf("index\t File_name\t number of regions\t mean-region-size \t number of hits\n");        
+        for(i=0;i<nFiles/20;i++)
+            printf("%i %s %u %u %u\n", i, fi[i].fileName, fi[i].nd, (uint32_t)fi[i].md, hits[i]);         
+    }
     //---------------------------------------------------------------------------------
     free(fi->fileName);
     free(fi);
@@ -542,21 +554,30 @@ void search(char* qfName, char* igdName, uint32_t v)
 //-------------------------------------------------------------------------------------
 int igd_search(int argc, char **argv)
 {   //igd[0] search[1] query100.bed[2] home/john/iGD/rme_igd/roadmap.igd[3]
-    uint32_t v = 0;   
+    uint32_t v = 0;
+    char out[64]="";   
     //convert block index to chr index for convenience
-    
     g2ichr = malloc(nTiles*sizeof(uint32_t));
     uint32_t i, j;
     for(i=0; i<24; i++){  
-        	for(j=gstart[i]; j<gstart[i+1]; j++)      
-        	    g2ichr[j] = i;
+    	for(j=gstart[i]; j<gstart[i+1]; j++)      
+    	    g2ichr[j] = i;
     }
     char *qfName = argv[2];
     char *igdName = argv[3];
-    if(argc>4)
-        v = atoi(argv[4]);
-        
-    search(qfName, igdName, v);      
+    if(argc==6){
+        if(strcmp(argv[4], "-v")==0)
+            v = atoi(argv[5]);
+        else if(strcmp(argv[4], "-o")==0)
+            strcpy(out, argv[5]);
+    }
+    else if(argc==8){
+        if(strcmp(argv[6], "-v")==0)
+            v = atoi(argv[7]);
+        else if(strcmp(argv[6], "-o")==0)
+            strcpy(out, argv[7]);
+    }
+    search(qfName, igdName, v, out);      
 
     free(g2ichr);
     return EX_OK;

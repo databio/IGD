@@ -762,7 +762,10 @@ int igd_create(int argc, char **argv)
             if (stat(ftmp, &st) == -1)   
                 mkdir(ftmp, 0777);
         }
-        create_igd_gz(ipath, opath, dbname); 
+        if(argc==6 && strcmp(argv[5], "-t") == 0)
+            create_igd(ipath, opath, dbname);
+        else
+            create_igd_gz(ipath, opath, dbname); 
     }  
     free(g2ichr);
     return EX_OK;

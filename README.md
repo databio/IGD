@@ -28,9 +28,9 @@ igd create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName"
 
 where:
 
-- "path/to/data_source_folder" is the path of the folder that contains .bed.gz data files.
+- "path/to/data_source_folder/" is the path of the folder that contains .bed.gz data files.
 
-- "path/to/igd_folder" is the path to the output igd folder;
+- "path/to/igd_folder/" is the path to the output igd folder;
 
 - "databaseName" is the name you give to the database, for eaxmple, "roadmap"
 ```
