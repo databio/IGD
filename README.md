@@ -12,6 +12,12 @@ The goal of iGD is to build a database that integrates all of the genomic data s
  
 
 ## How to build iGD
+
+If zlib is not already installed, install it:
+```
+sudo apt-get install libpng12-0
+```
+Then:
 ```
 git clone https://github.com/databio/iGD.git
 cd iGD
@@ -51,7 +57,7 @@ where:
 
 options:
 
--v: dynamic search with threshold signal value
+-v: dynamic search with threshold signal value (0-1000)
 
 -o: output file-name
 ```
