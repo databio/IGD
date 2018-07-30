@@ -8,9 +8,14 @@ This vignette shows how to create an iGD database from roadmap dataset and then 
 
 ## Create roadmap iGD database
 
-First download the roadmap data source [rme.tgz](http://big.databio.org/igd/data) to the current working directory and unzip it. The `rme` folder contains 1905 `.bed.gz` data files.
+First download the roadmap data source [rme.tgz](http://big.databio.org/igd/data) and extract it:
+```
+wget http://big.databio.org/igd/data/rme.tgz
+tar -xzf rme.tgz
+```
+The `rme` folder contains 1905 `.bed.gz` data files.
 
-Then:  
+Then: 
 ```
 mkdir rme_igd
 igd create "rme/*" "rme_igd/" "roadmap"
