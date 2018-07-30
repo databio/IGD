@@ -2,8 +2,6 @@
 title: "benchmarks"
 author: "John Feng"
 date: "07/18/2018"
-output:
-  BiocStyle::html_document
 ---
 
 This vignette shows benchmarks of iGD for searching igd databases `roadmap.igd` and `ucsc.igd` with `igd search`. The corressponding benchmarks of [giggle](https://github.com/ryanlayer/giggle) index folders `rme_index` and `ucsc_index` are also presented. 

@@ -2,15 +2,13 @@
 title: "Using iGD"
 author: "John Feng"
 date: "06/18/2018"
-output:
-  BiocStyle::html_document
 ---
 
 This vignette shows how to create an iGD database from roadmap dataset and then search the iGD database for overlaps with a query file. Make sure your computer memory is at least 4GB.
 
 ## Create roadmap iGD database
 
-First download the [roadmap data source rme.tgz](http://big.databio.org/igd/data) to the current working directory and unzip it. The `rme` folder contains 1905 `.bed.gz` data files.
+First download the entire `rme` folder of the [roadmap data source](http://big.databio.org/igd/data) to the current working directory. The `rme` folder contains 1905 `.bed.gz` data files.
 
 Then:  
 ```
