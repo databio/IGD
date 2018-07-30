@@ -516,8 +516,8 @@ void search(char* qfName, char* igdName, uint32_t v, char *out)
     strcat(idFile, "_index.tsv");     
  
     struct igd_info *fi = get_igdinfo(idFile, &nFiles); 
-    printf("nfiles: %u\n", nFiles);  
-    
+    //printf("nfiles: %u\n", nFiles);  
+       
     clock_t start, end;
     start = clock();
     uint32_t *hits = calloc(nFiles, sizeof(uint32_t));
@@ -539,10 +539,10 @@ void search(char* qfName, char* igdName, uint32_t v, char *out)
         fclose(fp);     
     }
     else{
-        printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
-        printf("Number of overlaps: %u, number of query regions: %u, mean query size: %f \n", (uint32_t)nOL, nq, mq);  
+        //printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
+        //printf("Number of overlaps: %u, number of query regions: %u, mean query size: %f \n", (uint32_t)nOL, nq, mq);  
         printf("index\t File_name\t number of regions\t mean-region-size \t number of hits\n");        
-        for(i=0;i<nFiles/20;i++)
+        for(i=0;i<nFiles;i++)
             printf("%i %s %u %u %u\n", i, fi[i].fileName, fi[i].nd, (uint32_t)fi[i].md, hits[i]);         
     }
     //---------------------------------------------------------------------------------
@@ -565,6 +565,21 @@ int igd_search(int argc, char **argv)
     }
     char *qfName = argv[2];
     char *igdName = argv[3];
+    
+    //check if fils exist
+    FILE* fi = fopen(igdName, "rb");
+    if(!fi){
+        printf("%s does not exist", igdName);
+        return EX_OK;
+    }
+    fclose(fi); 
+    fi = fopen(qfName, "rb");
+    if(!fi){
+        printf("%s does not exist", qfName);
+        return EX_OK;
+    }
+    fclose(fi); 
+       
     if(argc==6){
         if(strcmp(argv[4], "-v")==0)
             v = atoi(argv[5]);

@@ -105,7 +105,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     clock_t start, end;
     start = clock();  
     end = clock();    
-    printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);   
+    //printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);   
     
     //-------------------------------------------------------------------------
     char *ftype;
@@ -125,7 +125,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         i = i0; 
         m = 0;              
         memset(counts, 0, nTiles*sizeof(uint32_t));
-        printf("start: %u\n", i0);
+        //printf("start: %u\n", i0);
         while(i<n_files && m==0){   //n>0 defines breaks when reading a big file         
             ftype = file_ids[i] + strlen(file_ids[i]) - 7;
             if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
@@ -139,7 +139,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
                     exit (EXIT_FAILURE);
                 }             
                 
-                printf("%u %u\t", i, (uint32_t)cTotal);
+                //printf("%u %u\t", i, (uint32_t)cTotal);
                 
                 nL = 0; 
                 if(i==i0 && L0>0){   //pass n0 lines of a big file
@@ -198,7 +198,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         if(gData==NULL)
             printf("Error: memory allocation with igd_data");        
         memset(counts, 0, nTiles*sizeof(uint32_t));
-        printf("(%u, %u) (%u, %u) \n", i0, L0, i, L1);           
+        //printf("(%u, %u) (%u, %u) \n", i0, L0, i, L1);           
         for(ii=i0; ii<i; ii++){   //n>0 defines breaks when reading a big file
             ftype = file_ids[ii] + strlen(file_ids[ii]) - 7;
             if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
@@ -314,7 +314,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         }    
         //---------------------------------------------------------------------           
         end = clock();    
-        printf("File %u processing time: %f \n", i, ((double)(end-start))/CLOCKS_PER_SEC);        
+        //printf("File %u processing time: %f \n", i, ((double)(end-start))/CLOCKS_PER_SEC);        
         //save gData
         for(j=0;j<nTiles;j++){
             //if(j%1000==0)
@@ -337,7 +337,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         }
         free(gData);
         end = clock();    
-        printf("Saving time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC); 
+        //printf("Saving time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC); 
         gData = NULL;                                      
         //---------------------------------------------------------------------
         i0 = i; 
@@ -365,7 +365,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     free(nd);
     free(md);    
     end = clock();    
-    printf("TSV saved: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC); 
+    //printf("TSV saved: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC); 
     //-------------------------------------------------------------------------
     //Reload tile data, sort and save them into a single file
     sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");    
@@ -396,7 +396,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     }
     fclose(fp1); 
     end = clock();    
-    printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
+    //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
     //------------------------------------------------------------------------- 
     free(splits);  
     free(counts);
@@ -433,7 +433,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
     clock_t start, end;
     start = clock();  
     end = clock();    
-    printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);   
+    //printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);   
     
     //-------------------------------------------------------------------------
     char *ftype;
@@ -453,7 +453,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
         i = i0; 
         m = 0;              
         memset(counts, 0, nTiles*sizeof(uint32_t));
-        printf("start: %u\n", i0);
+        //printf("start: %u\n", i0);
         while(i<n_files && m==0){   //n>0 defines breaks when reading a big file         
             //ftype = file_ids[i] + strlen(file_ids[i]) - 7;
             //if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
@@ -467,7 +467,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
                     exit (EXIT_FAILURE);
                 }             
                 
-                printf("%u %u\t", i, (uint32_t)cTotal);
+                //printf("%u %u\t", i, (uint32_t)cTotal);
                 
                 nL = 0; 
                 if(i==i0 && L0>0){   //pass n0 lines of a big file
@@ -526,7 +526,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
         if(gData==NULL)
             printf("Error: memory allocation with igd_data");        
         memset(counts, 0, nTiles*sizeof(uint32_t));
-        printf("(%u, %u) (%u, %u) \n", i0, L0, i, L1);           
+        //printf("(%u, %u) (%u, %u) \n", i0, L0, i, L1);           
         for(ii=i0; ii<i; ii++){   //n>0 defines breaks when reading a big file
             //ftype = file_ids[ii] + strlen(file_ids[ii]) - 7;
             //if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
@@ -642,7 +642,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
         }    
         //---------------------------------------------------------------------           
         end = clock();    
-        printf("File %u processing time: %f \n", i, ((double)(end-start))/CLOCKS_PER_SEC);        
+        //printf("File %u processing time: %f \n", i, ((double)(end-start))/CLOCKS_PER_SEC);        
         //save gData
         for(j=0;j<nTiles;j++){
             //if(j%1000==0)
@@ -665,7 +665,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
         }
         free(gData);
         end = clock();    
-        printf("Saving time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC); 
+        //printf("Saving time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC); 
         gData = NULL;                                      
         //---------------------------------------------------------------------
         i0 = i; 
@@ -693,7 +693,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
     free(nd);
     free(md);    
     end = clock();    
-    printf("TSV saved: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC); 
+    //printf("TSV saved: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC); 
     //-------------------------------------------------------------------------
     //Reload tile data, sort and save them into a single file
     sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");    
@@ -724,7 +724,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
     }
     fclose(fp1); 
     end = clock();    
-    printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
+    //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
     //------------------------------------------------------------------------- 
     free(splits);  
     free(counts);
