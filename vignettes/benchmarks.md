@@ -65,10 +65,6 @@ do
 time igd search queries_igd/r$i.bed ucsc_igd/ucsc.igd >/dev/null 
 done
 ```
-The following results are from a laptop of 2.5GHz cpu:
-```
-0.009s, 0.009s, 0.014s, 0.051s, 0.338s, 2.085s.
-```
 The times are:
 ```
 0.206s, 1.671s, 16.239s, 2m24.222s, 13m26.413s, 17m6.142s. 
