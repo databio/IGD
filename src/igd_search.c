@@ -522,21 +522,25 @@ void search(char* qfName, char* igdName, uint32_t v, char *out)
     start = clock();
     uint32_t *hits = calloc(nFiles, sizeof(uint32_t));
     uint64_t nOL;
-    if(v>0)
+    if(v>0){
         nOL = get_overlaps_v(qfName, igdName, v, &nq, &mq, hits);
-    else   
-        nOL = get_overlaps_n(qfName, igdName, &nq, &mq, hits);   
-    end = clock();   
-    
+    }
+    else{  
+        nOL = get_overlaps_n(qfName, igdName, &nq, &mq, hits);  
+    } 
+    end = clock();  
+ 
     if(strlen(out)>1){
         FILE *fp = fopen(out, "w");
         if(fp==NULL)
             printf("Can't open file %s\n", idFile);
-        fprintf(fp, "Number of overlaps: %u, number of query regions: %u, mean query size: %f \n", (uint32_t)nOL, nq, mq);     
-        fprintf(fp, "index\t File_name\t number of regions\t mean-region-size \t number of hits\n");
-        for(i=0;i<nFiles;i++)
-            fprintf(fp, "%i %s %u %u %u\n", i, fi[i].fileName, fi[i].nd, (uint32_t)fi[i].md, hits[i]);  
-        fclose(fp);     
+        else{
+            fprintf(fp, "Number of overlaps: %u, number of query regions: %u, mean query size: %f \n", (uint32_t)nOL, nq, mq);     
+            fprintf(fp, "index\t File_name\t number of regions\t mean-region-size \t number of hits\n");
+            for(i=0;i<nFiles;i++)
+                fprintf(fp, "%i %s %u %u %u\n", i, fi[i].fileName, fi[i].nd, (uint32_t)fi[i].md, hits[i]);  
+            fclose(fp);
+        }     
     }
     else{
         //printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
@@ -544,7 +548,10 @@ void search(char* qfName, char* igdName, uint32_t v, char *out)
         printf("index\t File_name\t number of regions\t mean-region-size \t number of hits\n");        
         for(i=0;i<nFiles;i++)
             printf("%i %s %u %u %u\n", i, fi[i].fileName, fi[i].nd, (uint32_t)fi[i].md, hits[i]);         
-    }
+    }   
+    
+    //printf("out=%s\n", out);
+    //printf("v=%u\n", v); 
     //---------------------------------------------------------------------------------
     free(fi->fileName);
     free(fi);
@@ -591,13 +598,13 @@ int igd_search(int argc, char **argv)
     }
     fclose(fi); 
        
-    if(argc==6){
+    if(argc>=6){
         if(strcmp(argv[4], "-v")==0)
             v = atoi(argv[5]);
         else if(strcmp(argv[4], "-o")==0)
             strcpy(out, argv[5]);
     }
-    else if(argc==8){
+    if(argc>=8){   
         if(strcmp(argv[6], "-v")==0)
             v = atoi(argv[7]);
         else if(strcmp(argv[6], "-o")==0)
