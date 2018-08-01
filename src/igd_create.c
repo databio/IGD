@@ -455,8 +455,8 @@ void create_igd(char *iPath, char *oPath, char *igdName)
         memset(counts, 0, nTiles*sizeof(uint32_t));
         //printf("start: %u\n", i0);
         while(i<n_files && m==0){   //n>0 defines breaks when reading a big file         
-            //ftype = file_ids[i] + strlen(file_ids[i]) - 7;
-            //if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
+            ftype = file_ids[i] + strlen(file_ids[i]) - 4;
+            if(strcmp(".bed", ftype)==0){        
                 //a. Prepare: get the counts               
                 //printf("%s", file_ids[i]);
                 FILE *fp;
@@ -580,13 +580,15 @@ void create_igd(char *iPath, char *oPath, char *igdName)
                     //free(splits);
                 }   //while gzgets           
                 fclose(fp);               
-            //}   //gz file
+            }   //.bed file
         }   //ii
         //--------------------------------------------------------------------- 
         if(m>0){
             ii=i;  //m>0 defines breaks when reading a big file
             //ftype = file_ids[ii] + strlen(file_ids[ii]) - 7;
-            //if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
+            //if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){ 
+            ftype = file_ids[i] + strlen(file_ids[i]) - 4;
+            if(strcmp(".bed", ftype)==0){    
                 FILE *fp = fopen (file_ids[ii], "r"); 
                 nL = 0;
                 if(ii==i0 && L0>0){
@@ -638,7 +640,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
                     nL++;
                 }            
                 fclose(fp);               
-            //}   //gz file  
+            }   //bed file  
         }    
         //---------------------------------------------------------------------           
         end = clock();    
@@ -746,7 +748,11 @@ int igd_create(int argc, char **argv)
     }
     char *ipath = argv[2];
     char *opath = argv[3];
-    char *dbname = argv[4];
+    char *dbname = argv[4];    
+    if(opath[strlen(opath)-1]!='/')
+        strcat(opath, "/");
+    if(ipath[strlen(ipath)-1]!='*')
+        strcat(ipath, "*");
     //check if the subfolders exist:    
     char ftmp[128];      
     struct stat st = {0};  
@@ -766,7 +772,8 @@ int igd_create(int argc, char **argv)
             create_igd(ipath, opath, dbname);
         else
             create_igd_gz(ipath, opath, dbname); 
-    }  
+    } 
+
     free(g2ichr);
     return EX_OK;
 }

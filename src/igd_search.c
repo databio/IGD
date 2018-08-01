@@ -567,6 +567,17 @@ int igd_search(int argc, char **argv)
     char *igdName = argv[3];
     
     //check if fils exist
+    char *ftype = igdName + strlen(igdName) - 4;
+    char *qtype = qfName + strlen(qfName) - 4;    
+    if(strcmp(".igd", ftype)!=0){
+        printf("%s is not an igd database", igdName);
+        return EX_OK;
+    }
+    if(strcmp(".bed", qtype)!=0){
+        printf("%s is not a bed file", qfName);
+        return EX_OK;
+    }
+            
     FILE* fi = fopen(igdName, "rb");
     if(!fi){
         printf("%s does not exist", igdName);
