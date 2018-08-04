@@ -31,7 +31,7 @@ The following results are from a laptop of 2.5GHz cpu:
 0.009s, 0.009s, 0.014s, 0.051s, 0.338s, 2.085s.
 ```
 ### giggle:
-Download and unzip the pre-indexed roadmap giggle database (~2.3GB) and queries:
+Download and unzip the pre-indexed roadmap giggle index files (~2.3GB) and queries:
 ```
 wget http://big.databio.org/igd/rme_giggle.tgz
 tar -xf rme_giggle.tgz
@@ -71,7 +71,7 @@ The times are:
 ```
 
 ### giggle:
-Download and unzip the pre-indexed ucsc giggle database (~620GB):
+Download and unzip the pre-indexed ucsc giggle index files (~620GB):
 ```
 wget http://big.databio.org/igd/ucsc_giggle.tgz
 tar -xf ucsc_giggle.tgz

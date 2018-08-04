@@ -316,6 +316,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
         end = clock();    
         //printf("File %u processing time: %f \n", i, ((double)(end-start))/CLOCKS_PER_SEC);        
         //save gData
+        printf("igdName %s", igdName);
         for(j=0;j<nTiles;j++){
             //if(j%1000==0)
             //    printf("%u %u\n", j, counts[j]);
@@ -418,8 +419,10 @@ void create_igd(char *iPath, char *oPath, char *igdName)
     
     char** file_ids = gResult.gl_pathv;
     uint32_t n_files = gResult.gl_pathc; 
-    if(n_files<2)   
+    if(n_files<2){   
         printf("Too few files (add to path /*): %u\n", n_files); 
+        return;
+    }
      
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));
     float *md = calloc(n_files, sizeof(float)); 
@@ -512,7 +515,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
                     //free(splits);               
                 }   //while getLine 
                 fclose(fp);      
-            //}   //if bed.gz
+            }   //if bed.gz
             if(m==0)
                 i++;
         }   //while i<n_files
@@ -523,13 +526,15 @@ void create_igd(char *iPath, char *oPath, char *igdName)
             if(counts[j]>0)
                 gData[j] = malloc(counts[j]*sizeof(struct igd_data));  
         }  
-        if(gData==NULL)
-            printf("Error: memory allocation with igd_data");        
+        if(gData==NULL){
+            printf("Error: memory allocation with igd_data"); 
+            return;
+        }       
         memset(counts, 0, nTiles*sizeof(uint32_t));
         //printf("(%u, %u) (%u, %u) \n", i0, L0, i, L1);           
         for(ii=i0; ii<i; ii++){   //n>0 defines breaks when reading a big file
-            //ftype = file_ids[ii] + strlen(file_ids[ii]) - 7;
-            //if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
+            ftype = file_ids[ii] + strlen(file_ids[ii]) - 4;
+            if(strcmp(".bed", ftype)==0){        
                 FILE *fp = fopen (file_ids[ii], "r"); 
                 nL = 0; 
                 if(ii==i0 && L0>0){   //pass n0 lines of a big file
@@ -679,8 +684,10 @@ void create_igd(char *iPath, char *oPath, char *igdName)
     char *tchr;   
     sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
     FILE *fpi = fopen(idFile, "w");
-    if(fpi==NULL)
+    if(fpi==NULL){
         printf("Can't open file %s", idFile);
+        return;
+    }
         
     fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
     for(i=0; i<n_files; i++){
@@ -746,20 +753,31 @@ int igd_create(int argc, char **argv)
         for(j=gstart[i]; j<gstart[i+1]; j++)      
 	    g2ichr[j] = i;
     }
-    char *ipath = argv[2];
-    char *opath = argv[3];
+    char ipath[128];
+    char opath[128];
+    strcpy(ipath, argv[2]);
+    strcpy(opath, argv[3]);
     char *dbname = argv[4];    
-    if(opath[strlen(opath)-1]!='/')
+    if(opath[strlen(opath)-1]!='/'){
         strcat(opath, "/");
-    if(ipath[strlen(ipath)-1]!='*')
+    }
+    if(ipath[strlen(ipath)-1]=='/'){
         strcat(ipath, "*");
+    }
+    else if(ipath[strlen(ipath)-1]!='*'){
+        strcat(ipath, "/*");
+    }
     //check if the subfolders exist:    
     char ftmp[128];      
     struct stat st = {0};  
+    
     sprintf(ftmp, "%s%s%s", opath, dbname, ".igd");
     if(stat(ftmp, &st) == 0)
         printf("The igd database file %s exists!\n", ftmp);  
     else{
+        if (stat(opath, &st) == -1){
+            mkdir(opath, 0777);    
+        }
         sprintf(ftmp, "%s%s", opath, "data0");
         if (stat(ftmp, &st) == -1)
             mkdir(ftmp, 0777);
