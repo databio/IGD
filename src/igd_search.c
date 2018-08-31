@@ -106,8 +106,8 @@ struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles)
         splits = str_split(buf,'\t', &ncols);        
         fi[i].fileName = (char *)calloc(strlen(splits[1]) + 1, sizeof(char));
         strcpy(fi[i].fileName, splits[1]);
-        fi[i].nd = (uint32_t)atoi(splits[3]);
-        fi[i].md = (double)atoi(splits[2]);   
+        fi[i].nd = (uint32_t)atoi(splits[2]);
+        fi[i].md = (double)atoi(splits[3]);   
         i++;
     }        
     //printf("%s %i %f \n", fNames[6], nd[6], md[6]);  
@@ -263,7 +263,7 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
     while(fgets(buf, 1024, fq)!=NULL){	
 	//printf("%u %s",(uint32_t)nols, buf); 
         splits = str_split(buf,'\t', &nCols); 
-        if(strlen(splits[0])>5)
+        if(strlen(splits[0])>5 || strlen(splits[0])<4)
             ichr = -1;  
         else if(strcmp(splits[0], "chrX")==0)
             ichr = 22;
@@ -463,7 +463,7 @@ uint64_t get_overlaps_v(char *qfName, char *igdName, uint32_t v, uint32_t *nregi
     while(fgets(buf, 1024, fq)!=NULL){	
 	//printf("%u %s",(uint32_t)nols, buf); 
         splits = str_split(buf,'\t', &nCols); 
-        if(strlen(splits[0])>5)
+        if(strlen(splits[0])>5 || strlen(splits[0])<4)
             ichr = -1;  
         else if(strcmp(splits[0], "chrX")==0)
             ichr = 22;
