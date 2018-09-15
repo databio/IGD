@@ -302,7 +302,7 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                         for(j=tS;j<tc;j++){
                             t1 = gdata[j].r_start;
                             if(q2>=t1){    		          		    
-                                hits[gdata[j].i_idx]++;
+                                hits[gdata[j].i_idx]++;                               
                                 nols++;
                             }
                         }                     
@@ -326,7 +326,7 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                         for(j=tS;j<tc;j++){
                             t1 = gdata[j].r_start;
                             if(q2>=t1){    		          		    
-                                hits[gdata[j].i_idx]++;
+                                hits[gdata[j].i_idx]++;                               
                                 nols++;
                             }
                         }                                       
@@ -335,7 +335,7 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
             }
             else{ 
                 //deal with duplicates: find the unique list before or after 
-                bd = nbp*(idx+1); 
+                bd = nbp*(n1+1); 
                 //in tiles (m=0, m=n2-1): t2<bd(m)-----------------        
                 for(m=idx; m<idx+n2; m++){
                     tc = counts[m];
@@ -354,7 +354,7 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                         for(j=tS;j<tc;j++){
                             t2 = gdata[j].r_end;
                             if(t2<bd && q2>=gdata[j].r_start){
-                                hits[gdata[j].i_idx]++; 
+                                hits[gdata[j].i_idx]++;                               
                                 nols++;
                             }
                         }
@@ -383,7 +383,7 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                             tS++;
                         for(j=tS;j<tc;j++){
                             if(q2>=gdata[j].r_start){    		          		    
-                                hits[gdata[j].i_idx]++;
+                                hits[gdata[j].i_idx]++;                               
                                 nols++;
                             }
                         }                     
@@ -532,7 +532,7 @@ uint64_t get_overlaps_v(char *qfName, char *igdName, uint32_t v, uint32_t *nregi
             }
             else{ 
                 //deal with duplicates: find the unique list before or after 
-                bd = nbp*(idx+1); 
+                bd = nbp*(n1+1); 
                 //in tiles (m=0, m=n2-1): t2<bd(m)-----------------        
                 for(m=idx; m<idx+n2; m++){
                     tc = counts[m];
