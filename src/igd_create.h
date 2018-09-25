@@ -14,10 +14,10 @@ void append_igd(struct igd_mix *mdata, uint32_t *counts, struct igd_info *fInfo,
 void store_igd(char *igdName);
 
 //create ucsc igd from gz
-void create_igd_gz(char *iPath, char *oPath, char *igdName);
+void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode);
 
 //create ucsc igd plain bed files
-void create_igd(char *iPath, char *oPath, char *igdName);
+void create_igd(char *iPath, char *oPath, char *igdName, int mode);
 
 //main
 int igd_create(int argc, char **argv);

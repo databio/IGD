@@ -77,7 +77,7 @@ void store_igd(char *igdName)
 }
 
 //create ucsc igd from gz
-void create_igd_gz(char *iPath, char *oPath, char *igdName)
+void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
 {   //Process line by line
     //1. Get the files  
     glob_t gResult;
@@ -399,6 +399,16 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
     end = clock();    
     //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
     //------------------------------------------------------------------------- 
+    if(mode==0){
+        //remove tile files and folders
+        for(i=0;i<nTiles;i++){
+            if(Counts[i]>0){
+                k = g2ichr[i];
+                sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
+                remove(iname);
+            }
+        }    
+    }       
     free(splits);  
     free(counts);
     free(Counts);
@@ -406,7 +416,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName)
 }
 
 //create ucsc igd from plain text files
-void create_igd(char *iPath, char *oPath, char *igdName)
+void create_igd(char *iPath, char *oPath, char *igdName, int mode)
 {   //Process line by line
     //1. Get the files  
     glob_t gResult;
@@ -735,10 +745,20 @@ void create_igd(char *iPath, char *oPath, char *igdName)
     end = clock();    
     //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
     //------------------------------------------------------------------------- 
+    if(mode==0){
+        //remove tile files and folders
+        for(i=0;i<nTiles;i++){
+            if(Counts[i]>0){
+                k = g2ichr[i];
+                sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
+                remove(iname);
+            }
+        }    
+    }     
     free(splits);  
     free(counts);
     free(Counts);
-    globfree(&gResult); 
+    globfree(&gResult);
 }
 
 //-------------------------------------------------------------------------------------
@@ -757,7 +777,10 @@ int igd_create(int argc, char **argv)
     char opath[128];
     strcpy(ipath, argv[2]);
     strcpy(opath, argv[3]);
-    char *dbname = argv[4];    
+    char *dbname = argv[4]; 
+    int mode = 0;//mode 1: save tile data
+    if(argc==6 && strcmp(argv[5], "-m")==0)
+        mode = 1;   
     if(opath[strlen(opath)-1]!='/'){
         strcat(opath, "/");
     }
@@ -787,9 +810,9 @@ int igd_create(int argc, char **argv)
                 mkdir(ftmp, 0777);
         }
         if(argc==6 && strcmp(argv[5], "-t") == 0)
-            create_igd(ipath, opath, dbname);
+            create_igd(ipath, opath, dbname, mode); //test file
         else
-            create_igd_gz(ipath, opath, dbname); 
+            create_igd_gz(ipath, opath, dbname, mode); 
     } 
 
     free(g2ichr);
