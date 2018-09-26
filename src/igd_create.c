@@ -400,7 +400,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
     //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
     //------------------------------------------------------------------------- 
     if(mode==0){
-        //remove tile files and folders
+        //remove tile files 
         for(i=0;i<nTiles;i++){
             if(Counts[i]>0){
                 k = g2ichr[i];
