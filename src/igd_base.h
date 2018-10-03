@@ -30,11 +30,18 @@ extern uint32_t *g2ichr;
 
 //-------------------------------------------------------------------------------------
 struct igd_data
-{
+{   //default data
     uint32_t i_idx;        			//genomic object--data set index
     uint32_t r_start;      			//region start
     uint32_t r_end;        			//region end
     uint32_t g_val;        			//signal level
+};
+
+struct igd_data3
+{   //region only data
+    uint32_t i_idx;        			//genomic object--data set index
+    uint32_t r_start;      			//region start
+    uint32_t r_end;        			//region end
 };
 
 struct query_data
@@ -66,6 +73,10 @@ void str_splits( char* str, int *nmax, char **splits);
 int compare_iidx(const void *a, const void *b);
 
 int compare_rend(const void *a, const void *b);
+
+int compare_iidx3(const void *a, const void *b);
+
+int compare_rend3(const void *a, const void *b);
 
 int compare_qidx(const void *a, const void *b);
 

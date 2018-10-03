@@ -19,6 +19,8 @@ struct igd_mix* get_overlaps_w(struct query_data *query, uint32_t nblocks, char 
 
 uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
 
+uint64_t get_overlaps_n3(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
+
 uint64_t get_overlaps_v(char *qfName, char *igdName, uint32_t v, uint32_t *nq, double *mq, uint32_t *hits);
 
 void search(char* qfName, char* igdName, uint32_t v, char* out);
