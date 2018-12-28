@@ -291,23 +291,22 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                         idx0 = idx;
                     }
                     //optimize the search: b-search 
-                    if(q1>gdata[tc-1].r_end){
+                    if(q1>=gdata[tc-1].r_end){
                         //no overlap:do nothing tL>nc;tR<0
                     } 
                     else if(tc<64){
                         tS=0;
-                        while(gdata[tS].r_end<q1)
+                        while(gdata[tS].r_end<=q1)
                             tS++;
                         for(j=tS;j<tc;j++){
                             t1 = gdata[j].r_start;
-                            if(q2>=t1){    		          		    
+                            if(q2>t1){    		          		    
                                 hits[gdata[j].i_idx]++;                               
                                 nols++;
                             }
                         }                     
                     }
-                    else{//dual-binary search 
-                        //search tS: the 1st t_end on the left of q_start
+                    else{//search tS: the 1st t_end on the left of q_start
                         tL=0;   tR=tc-1;  
                         tS = -1;    //no exclusion; tL<nc-1
                         while(tL<tR-1){
@@ -317,14 +316,15 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                             else
                                 tR = tM - 1;
                         }
-                        if(gdata[tR].r_end<q1)
+                        if(gdata[tR].r_end<=q1)
                             tS = tR;
                         else if(gdata[tL].r_end<q1)
                             tS = tL;
                         tS++; 
+                        //------------------------------
                         for(j=tS;j<tc;j++){
                             t1 = gdata[j].r_start;
-                            if(q2>=t1){    		          		    
+                            if(q2>t1){    		          		    
                                 hits[gdata[j].i_idx]++;                               
                                 nols++;
                             }
