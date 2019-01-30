@@ -35,7 +35,7 @@ int igd_help(int argc, char **argv, int exit_code);
 
 int main(int argc, char **argv)
 {
-    if (argc < 4 || argc > 8) return igd_help(argc, argv, 0);
+    if (argc < 4 || argc > 9) return igd_help(argc, argv, 0);
     char *cmd = argv[1];
 
     if (strcmp(cmd,"create") == 0 && argc >= 5){

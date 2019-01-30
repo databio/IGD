@@ -2220,11 +2220,18 @@ int igd_create(int argc, char **argv)
     strcpy(opath, argv[3]);
     char *dbname = argv[4]; 
     int mode = 0;//mode 1: save tile data
-    int type = 0;//default:g_data 4 items, -s: short 3-items
-    if(argc==6 && strcmp(argv[5], "-m")==0)
-        mode = 1; 
-    if(argc==6 && strcmp(argv[5], "-s")==0)
-        type = 1;            
+    int dtype = 0;//default:g_data 4 items, -1 old, 0 [default], 1 [3 items], 2[ailist]
+    int gztxt = 0;//input type .gz or .bed /txt
+    
+    for(i=5; i<argc; i++){
+        if(strcmp(argv[i], "-t")==0)
+            gztxt = 1; 
+        else if(strcmp(argv[i], "-m")==0)
+            mode = 1; 
+        else if(strcmp(argv[i], "-s")==0 && i+1<argc)//data structure type
+            dtype = atoi(argv[i+1]);              
+    }
+                                   
     if(opath[strlen(opath)-1]!='/'){
         strcat(opath, "/");
     }
@@ -2234,6 +2241,7 @@ int igd_create(int argc, char **argv)
     else if(ipath[strlen(ipath)-1]!='*'){
         strcat(ipath, "/*");
     }
+    
     //check if the subfolders exist:    
     char ftmp[128];      
     struct stat st = {0};  
@@ -2253,20 +2261,20 @@ int igd_create(int argc, char **argv)
             if (stat(ftmp, &st) == -1)   
                 mkdir(ftmp, 0777);
         }
-        if(type==0){
-            if(argc==6 && strcmp(argv[5], "-t") == 0)
+        if(dtype==0){
+            if(gztxt==1)
                 create_igd(ipath, opath, dbname, mode); //test file
             else
                 create_igd_gz(ipath, opath, dbname, mode); 
         }
-        else if(type==1){
-            if(argc==6 && strcmp(argv[5], "-t") == 0)
+        else if(dtype==1){
+            if(gztxt==1)
                 create_igd1(ipath, opath, dbname, mode); //test file
             else
                 create_igd_gz1(ipath, opath, dbname, mode); 
         } 
-        else if(type==2){
-            if(argc==6 && strcmp(argv[5], "-t") == 0)
+        else if(dtype==2){
+            if(gztxt==1)
                 create_igd2(ipath, opath, dbname, mode); //test file
             else
                 create_igd_gz2(ipath, opath, dbname, mode); 
