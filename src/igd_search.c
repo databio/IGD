@@ -904,7 +904,7 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
             n1 = q1/nbp;
             n2 = q2/nbp-n1;   
             idx = n1 + gstart[ichr];
-            //find overlaps with this region 
+            //find overlaps with this region
             if(n2==0){
                 tc = counts[idx];
                 if(tc>0){
@@ -917,7 +917,7 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                         idx0 = idx;
                     }
                     //optimize the search: b-search 
-                    if(q1>gdata[tc-1].r_end){
+                    if(q2 < gdata[tc-1].r_start){
                         //no overlap:do nothing tL>nc;tR<0
                     } 
                     else{
@@ -954,7 +954,27 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                             idx0 = m;
                         }
                         //update the in-tile db start j0: not really faster 
-                        tS=0;
+                        //optimize the search: b-search // t2<bd
+                        if(q2 < gdata[tc-1].r_start){
+                            //no overlap:do nothing tL>nc;tR<0
+                        } 
+                        else{
+                            //BSearch takes very little time!!! 2M bSearch(50M)~0.5s!!!  
+                            rs=0;   
+                            for(k=0; k<header[0]; k++){
+                                re = rs+header[k+1];
+                                t = bSearch(gdata, rs, re, q2); //inline not better 
+                                while(t >= rs && gdata[t].r_max > q1){
+                                    if(gdata[t].r_end < bd && gdata[t].r_end>q1){
+                                        hits[gdata[t].i_idx]++;                               
+                                        nols++;              
+                                    } 
+                                    t--;
+                                }                       
+                                rs = re;    
+                            }
+                        }                        
+                        /*tS=0;
                         while(gdata[tS].r_end<q1)
                             tS++;                                  
                         for(j=tS;j<tc;j++){
@@ -963,7 +983,7 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                                 hits[gdata[j].i_idx]++;                               
                                 nols++;
                             }
-                        }
+                        }*/
                     }                   
                     bd += nbp;
                 }	
@@ -980,7 +1000,7 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                         idx0 = m;
                     }   
                     //optimize the search: b-search 
-                    if(q1>gdata[tc-1].r_end){
+                    if(q2 < gdata[tc-1].r_start){
                         //no overlap:do nothing tL>nc;tR<0
                     } 
                     else{
