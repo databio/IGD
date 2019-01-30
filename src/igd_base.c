@@ -18,17 +18,17 @@ int compare_rend(const void *a, const void *b)
     return pa->r_end - pb->r_end;
 }
 
-int compare_iidx3(const void *a, const void *b)
+int compare_iidx1(const void *a, const void *b)
 {
-    struct igd_data3 *pa = (struct igd_data3 *) a;
-    struct igd_data3 *pb = (struct igd_data3 *) b;
+    struct igd_data1 *pa = (struct igd_data1 *) a;
+    struct igd_data1 *pb = (struct igd_data1 *) b;
     return pa->i_idx - pb->i_idx;
 }
 
-int compare_rend3(const void *a, const void *b)
+int compare_rend1(const void *a, const void *b)
 {
-    struct igd_data3 *pa = (struct igd_data3 *) a;
-    struct igd_data3 *pb = (struct igd_data3 *) b;
+    struct igd_data1 *pa = (struct igd_data1 *) a;
+    struct igd_data1 *pb = (struct igd_data1 *) b;
     return pa->r_end - pb->r_end;
 }
 
@@ -43,6 +43,13 @@ int compare_rstart(const void *a, const void *b)
 {
     struct query_data *pa = (struct query_data *) a;
     struct query_data *pb = (struct query_data *) b;
+    return pa->r_start - pb->r_start;
+}
+
+int compare_rstart2(const void *a, const void *b)
+{
+    struct igd_data2 *pa = (struct igd_data2 *) a;
+    struct igd_data2 *pb = (struct igd_data2 *) b;
     return pa->r_start - pb->r_start;
 }
 

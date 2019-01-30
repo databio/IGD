@@ -14,10 +14,24 @@ void append_igd(struct igd_mix *mdata, uint32_t *counts, struct igd_info *fInfo,
 void store_igd(char *igdName);
 
 //create ucsc igd from gz
-void create_igd_gz3(char *iPath, char *oPath, char *igdName, int mode);
+void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode);
 
 //create ucsc igd plain bed files
-void create_igd3(char *iPath, char *oPath, char *igdName, int mode);
+void create_igd1(char *iPath, char *oPath, char *igdName, int mode);
+
+//create ucsc igd from gz
+void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode);
+
+//create ucsc igd plain bed files
+void create_igd(char *iPath, char *oPath, char *igdName, int mode);
+
+void constructAIList(struct igd_data2* B, int nB, struct igd_data2* aiL);
+
+//create ucsc igd from gz: ailist data structure for in-bin search
+void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode);
+
+//create ucsc igd plain bed files
+void create_igd2(char *iPath, char *oPath, char *igdName, int mode);
 
 //main
 int igd_create(int argc, char **argv);

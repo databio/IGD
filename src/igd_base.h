@@ -37,11 +37,19 @@ struct igd_data
     uint32_t g_val;        			//signal level
 };
 
-struct igd_data3
+struct igd_data1
 {   //region only data
     uint32_t i_idx;        			//genomic object--data set index
     uint32_t r_start;      			//region start
     uint32_t r_end;        			//region end
+};
+
+struct igd_data2                   //ailist data structure
+{   //region only data
+    uint32_t i_idx;        			//genomic object--data set index
+    uint32_t r_start;      			//region start
+    uint32_t r_end;        			//region end
+    uint32_t r_max;               //augment  
 };
 
 struct query_data
@@ -74,13 +82,15 @@ int compare_iidx(const void *a, const void *b);
 
 int compare_rend(const void *a, const void *b);
 
-int compare_iidx3(const void *a, const void *b);
+int compare_iidx1(const void *a, const void *b);
 
-int compare_rend3(const void *a, const void *b);
+int compare_rend1(const void *a, const void *b);
 
 int compare_qidx(const void *a, const void *b);
 
 int compare_rstart(const void *a, const void *b);
+
+int compare_rstart2(const void *a, const void *b);
 
 int compare_midx(const void *a, const void *b);
 
