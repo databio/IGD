@@ -437,7 +437,7 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
         return 0;       
     int ichr, tc, tL, tR, tM, tS;      
     uint32_t i, j, t1, t2, q1, q2, m;
-    uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 5, bd;  
+    uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 16, bd;  
     struct igd_data *gdata = malloc(1*sizeof(struct igd_data));
     uint32_t len0 = nTiles*sizeof(uint32_t);
     uint32_t *counts = malloc(len0);//number of struct
@@ -446,8 +446,8 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
     fread(&i, sizeof(uint32_t), 1, fi);
     fread(counts, sizeof(uint32_t), nTiles, fi);   
     for(i=0; i<nTiles; i++)
-        mloc[i+1] = counts[i]*16;
-    mloc[0]=len0;
+        mloc[i+1] = counts[i]*16;//bytes
+    mloc[0]=len0 + 4;
     for(i=1; i<nTiles; i++)
         mloc[i] += mloc[i-1];  
    
@@ -1249,6 +1249,7 @@ void search(char* qfName, char* igdName, uint32_t v, char *out)
         return;  
     else{
         fread(&i, 4, 1, fp);
+
         if(i==1122331111)
             type = 1;
         else if(i==1122332222)
@@ -1258,7 +1259,8 @@ void search(char* qfName, char* igdName, uint32_t v, char *out)
         else
             type = -1;//old style without type
         fclose(fp);
-    }      
+    }        
+    printf("igdData type %i, %u\n", type, i);      
     clock_t start, end;
     start = clock();
     uint32_t *hits = calloc(nFiles, sizeof(uint32_t));

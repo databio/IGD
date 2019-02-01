@@ -90,7 +90,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
     
     char** file_ids = gResult.gl_pathv;
     uint32_t n_files = gResult.gl_pathc; 
-    if(n_files<2)   
+    if(n_files<1)   
         printf("Too few files (add to path /*): %u\n", n_files); 
      
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));
@@ -431,7 +431,7 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
     
     char** file_ids = gResult.gl_pathv;
     uint32_t n_files = gResult.gl_pathc; 
-    if(n_files<2)   
+    if(n_files<1)   
         printf("Too few files (add to path /*): %u\n", n_files); 
      
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));
@@ -1188,7 +1188,7 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
     
     char** file_ids = gResult.gl_pathv;
     uint32_t n_files = gResult.gl_pathc; 
-    if(n_files<2){   
+    if(n_files<1){   
         printf("Too few files (add to path /*): %u\n", n_files); 
         return;
     }
@@ -1536,7 +1536,7 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
     
     char** file_ids = gResult.gl_pathv;
     uint32_t n_files = gResult.gl_pathc; 
-    if(n_files<2){   
+    if(n_files<1){   
         printf("Too few files (add to path /*): %u\n", n_files); 
         return;
     }
@@ -1874,7 +1874,7 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
     
     char** file_ids = gResult.gl_pathv;
     uint32_t n_files = gResult.gl_pathc; 
-    if(n_files<2){   
+    if(n_files<1){   
         printf("Too few files (add to path /*): %u\n", n_files); 
         return;
     }
