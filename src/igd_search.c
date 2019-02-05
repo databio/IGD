@@ -396,8 +396,8 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                     //else 
                     if(tc<32){
                         tS=0;
-                        while(gdata[tS].r_end<=q1)
-                            tS++;
+                        //while(gdata[tS].r_end<=q1)
+                        //    tS++;
                         for(j=tS;j<tc;j++){
                             if(q2>gdata[j].r_start){    		          		    
                                 hits[gdata[j].i_idx]++;                               
@@ -407,15 +407,7 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                         }                                          
                     }
                     else{//half dual-binary search 
-                        tL=0;   tR=tc-1;  
-                        tS = -1;    //no exclusion; tL<nc-1
-                        while(tL<tR-1){
-                            tM = (tL+tR)/2; 
-                            if(gdata[tM].r_end>q1)
-                                tR = tM;
-                            else
-                                tL = tM+1;
-                        }
+                        tS = 0;
                         if(gdata[tL].r_end>q1)
                             tS = tL;
                         else if(gdata[tR].r_end>q1)
@@ -1045,8 +1037,8 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
                     //else 
                     if(tc<32){
                         tS=0;
-                        while(gdata[tS].r_end<=q1)
-                            tS++;
+                        //while(gdata[tS].r_end<=q1)
+                        //    tS++;
                         for(j=tS;j<tc;j++){
                             if(q2>gdata[j].r_start){    		          		    
                                 hits[gdata[j].i_idx]++;                               
@@ -1056,19 +1048,7 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
                         }                                          
                     }
                     else{//half dual-binary search 
-                        tL=0;   tR=tc-1;  
-                        tS = -1;    //no exclusion; tL<nc-1
-                        while(tL<tR-1){
-                            tM = (tL+tR)/2; 
-                            if(gdata[tM].r_end>q1)
-                                tR = tM;
-                            else
-                                tL = tM+1;
-                        }
-                        if(gdata[tL].r_end>q1)
-                            tS = tL;
-                        else if(gdata[tR].r_end>q1)
-                            tS = tR;
+                        tS=0;
                         //------------------------------
                         //if(tS>0){should be
                         for(j=tS;j<tc;j++){
@@ -1191,7 +1171,7 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                         idx0 = idx;
                     }
                     //optimize the search: b-search 
-                    if(q2 < gdata[tc-1].r_start){
+                    if(q2 < gdata[0].r_start){
                         //no overlap:do nothing tL>nc;tR<0
                     } 
                     else{
@@ -1227,38 +1207,20 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                             fread(gdata, 16, tc, fi);
                             idx0 = m;
                         }
-                        //update the in-tile db start j0: not really faster 
-                        //optimize the search: b-search // t2<bd
-                        if(q2 < gdata[tc-1].r_start){
-                            //no overlap:do nothing tL>nc;tR<0
-                        } 
-                        else{
-                            //BSearch takes very little time!!! 2M bSearch(50M)~0.5s!!!  
-                            rs=0;   
-                            for(k=0; k<header[0]; k++){
-                                re = rs+header[k+1];
-                                t = re; //q2 > bd, bd>all start: no need to binary search
-                                //t = bSearch(gdata, rs, re, q2); //upper limit
-                                while(t >= rs && gdata[t].r_max > q1){
-                                    if(gdata[t].r_end < bd && gdata[t].r_end>q1){
-                                        hits[gdata[t].i_idx]++;                               
-                                        nols++;              
-                                    } 
-                                    t--;
-                                }                       
-                                rs = re;    
-                            }
+                        rs=0;   //q2>all start
+                        for(k=0; k<header[0]; k++){
+                            re = rs+header[k+1];
+                            t = re; //q2 > bd, bd>all start: no need to binary search
+                            //t = bSearch(gdata, rs, re, q2); //upper limit
+                            while(t >= rs && gdata[t].r_max > q1){
+                                if(gdata[t].r_end < bd && gdata[t].r_end>q1){
+                                    hits[gdata[t].i_idx]++;                               
+                                    nols++;              
+                                } 
+                                t--;
+                            }                       
+                            rs = re;    
                         }                        
-                        /*tS=0;
-                        while(gdata[tS].r_end<q1)
-                            tS++;                                  
-                        for(j=tS;j<tc;j++){
-                            t2 = gdata[j].r_end;
-                            if(t2<bd && q2>=gdata[j].r_start){
-                                hits[gdata[j].i_idx]++;                               
-                                nols++;
-                            }
-                        }*/
                     }                   
                     bd += nbp;
                 }	
@@ -1274,26 +1236,19 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                         fread(gdata, 16, tc, fi);
                         idx0 = m;
                     }   
-                    //optimize the search: b-search 
-                    if(q2 < gdata[tc-1].r_start){
-                        //no overlap:do nothing tL>nc;tR<0
-                    } 
-                    else{
-                        //BSearch takes very little time!!! 2M bSearch(50M)~0.5s!!!  
-                        rs=0;   
-                        for(k=0; k<header[0]; k++){
-                            re = rs+header[k+1];
-                            t = bSearch(gdata, rs, re, q2); //inline not better 
-                            while(t >= rs && gdata[t].r_max > q1){
-                                if(gdata[t].r_end>q1){
-                                    hits[gdata[t].i_idx]++;                               
-                                    nols++;              
-                                } 
-                                t--;
-                            }                       
-                            rs = re;    
-                        }
-                    }               
+                    rs=0;   
+                    for(k=0; k<header[0]; k++){
+                        re = rs+header[k+1];
+                        t = bSearch(gdata, rs, re, q2); //Ie 
+                        while(t >= rs && gdata[t].r_max > q1){
+                            if(gdata[t].r_end>q1){
+                                hits[gdata[t].i_idx]++;                               
+                                nols++;              
+                            } 
+                            t--;
+                        }                       
+                        rs = re;    
+                    }             
                 }//if tc>0
             }   //else n2>0            
         }   //if
