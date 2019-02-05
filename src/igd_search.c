@@ -240,6 +240,228 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
         return 0;       
     int ichr, tc, tL, tR, tM, tS;      
     uint32_t i, j, t1, t2, q1, q2, m;
+    uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 16, bd;  
+    struct igd_data *gdata = malloc(1*sizeof(struct igd_data));
+    uint32_t len0 = nTiles*sizeof(uint32_t);
+    uint32_t *counts = malloc(len0);//number of struct
+    uint64_t *mloc = malloc((nTiles+1)*sizeof(uint64_t));
+    //fseek(fp, 0, SEEK_SET);
+    fread(counts, sizeof(uint32_t), nTiles, fi);   
+    for(i=0; i<nTiles; i++){
+        mloc[i+1] = counts[i]*16;//bytes
+        //if(counts[i]>0)
+        //    printf("i %u, counts %u\n", i, counts[i]);
+    }
+    mloc[0]=len0;
+    for(i=1; i<nTiles; i++)
+        mloc[i] += mloc[i-1];  
+   
+   //----read qf for a region--------
+    char buf[1024], ch;
+    char **splits;
+    double delta=0.0;
+    uint64_t nols=0;
+    idx0 = nTiles+10;
+    
+    int tHits;
+    i=0;
+    while(fgets(buf, 1024, fq)!=NULL){	
+	//printf("%u %s",(uint32_t)nols, buf); 
+        tHits = 0;
+        splits = str_split(buf,'\t', &nCols); 
+        if(strlen(splits[0])>5 || strlen(splits[0])<4)
+            ichr = -1;  
+        else if(strcmp(splits[0], "chrX")==0)
+            ichr = 22;
+        else if(strcmp(splits[0], "chrY")==0)
+            ichr = 23;
+        else{
+            ichr = (int)(atoi(&splits[0][3])-1);
+        }           
+        if(ichr>=0){
+            q1  = (uint32_t)atoi(splits[1]);
+            q2  = (uint32_t)atoi(splits[2]);
+            delta += q2 - q1;
+            nRegions++;
+            n1 = q1/nbp;
+            n2 = q2/nbp-n1;   
+            idx = n1 + gstart[ichr];
+            //find overlaps with this region 
+            //printf("%i, %i, %u, %u,  %u, %u\n", i, ichr, n1, n2, idx, counts[idx]);
+            
+            if(n2==0){
+                tc = counts[idx];
+                if(tc>0){
+                    if(idx!=idx0){
+                        free(gdata);
+                        fseek(fi, mloc[idx], SEEK_SET);
+                        gdata = malloc(tc*16);
+                        fread(gdata, 16, tc, fi);
+                        idx0 = idx;
+                    }
+                    //optimize the search: b-search 
+                    if(q1>=gdata[tc-1].r_end){
+                        //no overlap:do nothing tL>nc;tR<0
+                    } 
+                    else if(tc<32){
+                        tS=0;
+                        while(gdata[tS].r_end<=q1)
+                            tS++;
+                        for(j=tS;j<tc;j++){
+                            if(q2>gdata[j].r_start){    		          		    
+                                hits[gdata[j].i_idx]++;                               
+                                nols++;
+                                tHits++;
+                            }
+                        }                     
+                    }
+                    else{//search tS: the 1st, from Left, t_end satisfies [tS].end>q1
+                        tL=0;   tR=tc-1;  
+                        tS = -1;    //no exclusion; tL<nc-1
+                        while(tL<tR-1){
+                            tM = (tL+tR)/2; 
+                            if(gdata[tM].r_end>q1)
+                                tR = tM;
+                            else
+                                tL = tM+1;
+                        }
+                        if(gdata[tL].r_end>q1)
+                            tS = tL;
+                        else if(gdata[tR].r_end>q1)
+                            tS = tR;
+                        //------------------------------
+                        //if(tS>0){should be
+                        for(j=tS;j<tc;j++){
+                            if(q2>gdata[j].r_start){    		          		    
+                                hits[gdata[j].i_idx]++;                               
+                                nols++;
+                                tHits++;
+                            }
+                        } 
+                        //}                                      
+                    } 
+                }          
+            }
+            else{ //n2!=0: tile start at lower boundary, end below upper boundary (open region)
+                //deal with duplicates: find the unique list before or after 
+                bd = nbp*(n1+1); 
+                //in tiles (m=0, m=n2-1): t2<bd(m)-----------------        
+                for(m=idx; m<idx+n2; m++){
+                    tc = counts[m];
+                    if(tc>0){
+                        if(m!=idx0){
+                            free(gdata);
+                            fseek(fi, mloc[m], SEEK_SET);
+                            gdata = malloc(tc*16);
+                            fread(gdata, 16, tc, fi);
+                            idx0 = m;
+                        }
+                        //update the in-tile db start j0: not really faster 
+                        if(q1>=gdata[tc-1].r_end){  //!!!0204
+                            //printf("Line 560 gdata[tc-1] %u m %u \n", gdata[tc-1].r_end, q1);
+                            //no overlap:do nothing tL>nc;tR<0
+                        } 
+                        else{
+                            tS=0;
+                            while(gdata[tS].r_end<=q1) 
+                                tS++;                                 
+                            for(j=tS;j<tc;j++){
+                                t2 = gdata[j].r_end;
+                                if(t2<bd && q2>gdata[j].r_start){
+                                    hits[gdata[j].i_idx]++;                               
+                                    nols++;
+                                    tHits++;
+                                }
+                            }
+                        }
+                    }                   
+                    bd += nbp;
+                }	
+                //--last tile: normal------------------------------
+                m=idx+n2;
+                tc = counts[m];
+                if(tc>0){
+                    if(m!=idx0){
+                        free(gdata);
+                        fseek(fi, mloc[m], SEEK_SET);
+                        gdata = malloc(tc*16);
+                        fread(gdata, 16, tc, fi);
+                        idx0 = m;
+                    }
+                    //update the in-tile db start j0: not really faster 
+                    //optimize the search: b-search 
+                    //if(q1>=gdata[tc-1].r_end){
+                        //no overlap:do nothing tL>nc;tR<0
+                    //} 
+                    //else 
+                    if(tc<32){
+                        tS=0;
+                        while(gdata[tS].r_end<=q1)
+                            tS++;
+                        for(j=tS;j<tc;j++){
+                            if(q2>gdata[j].r_start){    		          		    
+                                hits[gdata[j].i_idx]++;                               
+                                nols++;
+                                tHits++;
+                            }
+                        }                                          
+                    }
+                    else{//half dual-binary search 
+                        tL=0;   tR=tc-1;  
+                        tS = -1;    //no exclusion; tL<nc-1
+                        while(tL<tR-1){
+                            tM = (tL+tR)/2; 
+                            if(gdata[tM].r_end>q1)
+                                tR = tM;
+                            else
+                                tL = tM+1;
+                        }
+                        if(gdata[tL].r_end>q1)
+                            tS = tL;
+                        else if(gdata[tR].r_end>q1)
+                            tS = tR;
+                        //------------------------------
+                        //if(tS>0){should be
+                        for(j=tS;j<tc;j++){
+                            if(q2>gdata[j].r_start){    		          		    
+                                hits[gdata[j].i_idx]++;                               
+                                nols++;
+                                tHits++;
+                            }
+                        }                                                            
+                    } //else
+                }//if tc>0
+            }   //else n2>0            
+        }   //if n2=0
+        free(splits);
+        if(tHits>0)  
+            printf("%i, %i, %u, %u, %i\n", i, ichr, q1, q2, tHits);
+        i++;  
+    }   //while  
+    free(gdata);
+    *mean_size = delta/nRegions;
+    *nregions = nRegions;
+    fclose(fq);   
+    fclose(fi);
+    free(counts);
+    free(mloc);
+    return nols;
+}
+
+/*
+//using single-file igd_data
+uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double *mean_size, uint32_t *hits)
+{   //no need to store every overlaps, only get the number of hits
+    //assume in-tile igdata is sorted by region end 
+    //.Reuse igddata if current query is in the same tile as the previous  
+    FILE* fq = fopen(qfName, "r");
+    if(!fq)
+        return 0;    
+    FILE* fi = fopen(igdName, "rb");
+    if(!fi)
+        return 0;       
+    int ichr, tc, tL, tR, tM, tS;      
+    uint32_t i, j, t1, t2, q1, q2, m;
     uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 5, bd;  
     struct igd_data *gdata = malloc(1*sizeof(struct igd_data));
     uint32_t len0 = nTiles*sizeof(uint32_t);
@@ -346,14 +568,19 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
                             idx0 = m;
                         }
                         //update the in-tile db start j0: not really faster 
-                        tS=0;
-                        while(gdata[tS].r_end<=q1)
-                            tS++;                                  
-                        for(j=tS;j<tc;j++){
-                            t2 = gdata[j].r_end;
-                            if(t2<=bd && q2>gdata[j].r_start){
-                                hits[gdata[j].i_idx]++;                               
-                                nols++;
+                        if(q1>=gdata[tc-1].r_end){
+                        //no overlap:do nothing tL>nc;tR<0
+                        } 
+                        else{
+                            tS=0;
+                            while(gdata[tS].r_end<=q1)
+                                tS++;                                  
+                            for(j=tS;j<tc;j++){
+                                t2 = gdata[j].r_end;
+                                if(t2<=bd && q2>gdata[j].r_start){
+                                    hits[gdata[j].i_idx]++;                               
+                                    nols++;
+                                }
                             }
                         }
                     }                   
@@ -422,7 +649,7 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
     free(counts);
     free(mloc);
     return nols;
-}
+}*/
 
 //using single-file igd_data
 uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double *mean_size, uint32_t *hits)
@@ -445,8 +672,11 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
     //fseek(fp, 0, SEEK_SET);
     fread(&i, sizeof(uint32_t), 1, fi);
     fread(counts, sizeof(uint32_t), nTiles, fi);   
-    for(i=0; i<nTiles; i++)
+    for(i=0; i<nTiles; i++){
         mloc[i+1] = counts[i]*16;//bytes
+        //if(counts[i]>0)
+        //    printf("i %u, counts %u\n", i, counts[i]);
+    }
     mloc[0]=len0 + 4;
     for(i=1; i<nTiles; i++)
         mloc[i] += mloc[i-1];  
@@ -457,8 +687,12 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
     double delta=0.0;
     uint64_t nols=0;
     idx0 = nTiles+10;
+    
+    int tHits;
+    i=0;
     while(fgets(buf, 1024, fq)!=NULL){	
 	//printf("%u %s",(uint32_t)nols, buf); 
+        tHits = 0;
         splits = str_split(buf,'\t', &nCols); 
         if(strlen(splits[0])>5 || strlen(splits[0])<4)
             ichr = -1;  
@@ -478,6 +712,8 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
             n2 = q2/nbp-n1;   
             idx = n1 + gstart[ichr];
             //find overlaps with this region 
+            //printf("%i, %i, %u, %u,  %u, %u\n", i, ichr, n1, n2, idx, counts[idx]);
+            
             if(n2==0){
                 tc = counts[idx];
                 if(tc>0){
@@ -500,6 +736,7 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
                             if(q2>gdata[j].r_start){    		          		    
                                 hits[gdata[j].i_idx]++;                               
                                 nols++;
+                                tHits++;
                             }
                         }                     
                     }
@@ -523,13 +760,14 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
                             if(q2>gdata[j].r_start){    		          		    
                                 hits[gdata[j].i_idx]++;                               
                                 nols++;
+                                tHits++;
                             }
                         } 
                         //}                                      
                     } 
                 }          
             }
-            else{ 
+            else{ //n2!=0: tile start at lower boundary, end below upper boundary (open region)
                 //deal with duplicates: find the unique list before or after 
                 bd = nbp*(n1+1); 
                 //in tiles (m=0, m=n2-1): t2<bd(m)-----------------        
@@ -544,14 +782,21 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
                             idx0 = m;
                         }
                         //update the in-tile db start j0: not really faster 
-                        tS=0;
-                        while(gdata[tS].r_end<=q1)
-                            tS++;                                  
-                        for(j=tS;j<tc;j++){
-                            t2 = gdata[j].r_end;
-                            if(t2<=bd && q2>gdata[j].r_start){
-                                hits[gdata[j].i_idx]++;                               
-                                nols++;
+                        if(q1>=gdata[tc-1].r_end){  //!!!0204
+                            //printf("Line 560 gdata[tc-1] %u m %u \n", gdata[tc-1].r_end, q1);
+                            //no overlap:do nothing tL>nc;tR<0
+                        } 
+                        else{
+                            tS=0;
+                            while(gdata[tS].r_end<=q1) 
+                                tS++;                                 
+                            for(j=tS;j<tc;j++){
+                                t2 = gdata[j].r_end;
+                                if(t2<bd && q2>gdata[j].r_start){
+                                    hits[gdata[j].i_idx]++;                               
+                                    nols++;
+                                    tHits++;
+                                }
                             }
                         }
                     }                   
@@ -570,10 +815,11 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
                     }
                     //update the in-tile db start j0: not really faster 
                     //optimize the search: b-search 
-                    if(q1>=gdata[tc-1].r_end){
+                    //if(q1>=gdata[tc-1].r_end){
                         //no overlap:do nothing tL>nc;tR<0
-                    } 
-                    else if(tc<32){
+                    //} 
+                    //else 
+                    if(tc<32){
                         tS=0;
                         while(gdata[tS].r_end<=q1)
                             tS++;
@@ -581,6 +827,7 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
                             if(q2>gdata[j].r_start){    		          		    
                                 hits[gdata[j].i_idx]++;                               
                                 nols++;
+                                tHits++;
                             }
                         }                                          
                     }
@@ -604,13 +851,17 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
                             if(q2>gdata[j].r_start){    		          		    
                                 hits[gdata[j].i_idx]++;                               
                                 nols++;
+                                tHits++;
                             }
                         }                                                            
                     } //else
                 }//if tc>0
             }   //else n2>0            
-        }   //if
-        free(splits);     
+        }   //if n2=0
+        free(splits);
+        if(tHits>0)  
+            printf("%i, %i, %u, %u, %i\n", i, ichr, q1, q2, tHits);
+        i++;  
     }   //while  
     free(gdata);
     *mean_size = delta/nRegions;
@@ -635,18 +886,20 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
         return 0;       
     int ichr, tc, tL, tR, tM, tS;      
     uint32_t i, j, t1, t2, q1, q2, m;
-    uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 5, bd;  
+    uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 16, bd;  
     struct igd_data1 *gdata = malloc(1*sizeof(struct igd_data1));
     uint32_t len0 = nTiles*sizeof(uint32_t);
     uint32_t *counts = malloc(len0);//number of struct
     uint64_t *mloc = malloc((nTiles+1)*sizeof(uint64_t));
     //fseek(fp, 0, SEEK_SET);
-    fread(&i, sizeof(uint32_t), 1, fi); //file header: 16646655?
-    //printf("i = %u\n", i);
+    fread(&i, sizeof(uint32_t), 1, fi);
     fread(counts, sizeof(uint32_t), nTiles, fi);   
-    for(i=0; i<nTiles; i++)
-        mloc[i+1] = counts[i]*12;
-    mloc[0]=len0 + 4;//first 4 bytes for type
+    for(i=0; i<nTiles; i++){
+        mloc[i+1] = counts[i]*12;//bytes
+        //if(counts[i]>0)
+        //    printf("i %u, counts %u\n", i, counts[i]);
+    }
+    mloc[0]=len0 + 4;
     for(i=1; i<nTiles; i++)
         mloc[i] += mloc[i-1];  
    
@@ -656,8 +909,12 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
     double delta=0.0;
     uint64_t nols=0;
     idx0 = nTiles+10;
+    
+    int tHits;
+    i=0;
     while(fgets(buf, 1024, fq)!=NULL){	
 	//printf("%u %s",(uint32_t)nols, buf); 
+        tHits = 0;
         splits = str_split(buf,'\t', &nCols); 
         if(strlen(splits[0])>5 || strlen(splits[0])<4)
             ichr = -1;  
@@ -677,6 +934,8 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
             n2 = q2/nbp-n1;   
             idx = n1 + gstart[ichr];
             //find overlaps with this region 
+            //printf("%i, %i, %u, %u,  %u, %u\n", i, ichr, n1, n2, idx, counts[idx]);
+            
             if(n2==0){
                 tc = counts[idx];
                 if(tc>0){
@@ -688,48 +947,49 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
                         idx0 = idx;
                     }
                     //optimize the search: b-search 
-                    if(q1>gdata[tc-1].r_end){
+                    if(q1>=gdata[tc-1].r_end){
                         //no overlap:do nothing tL>nc;tR<0
                     } 
-                    else if(tc<64){
+                    else if(tc<32){
                         tS=0;
-                        while(gdata[tS].r_end<q1)
+                        while(gdata[tS].r_end<=q1)
                             tS++;
                         for(j=tS;j<tc;j++){
-                            t1 = gdata[j].r_start;
-                            if(q2>=t1){    		          		    
+                            if(q2>gdata[j].r_start){    		          		    
                                 hits[gdata[j].i_idx]++;                               
                                 nols++;
+                                tHits++;
                             }
                         }                     
                     }
-                    else{//dual-binary search 
-                        //search tS: the 1st t_end on the left of q_start
+                    else{//search tS: the 1st, from Left, t_end satisfies [tS].end>q1
                         tL=0;   tR=tc-1;  
                         tS = -1;    //no exclusion; tL<nc-1
                         while(tL<tR-1){
                             tM = (tL+tR)/2; 
-                            if(gdata[tM].r_end<q1)
-                                tL = tM;
+                            if(gdata[tM].r_end>q1)
+                                tR = tM;
                             else
-                                tR = tM - 1;
+                                tL = tM+1;
                         }
-                        if(gdata[tR].r_end<q1)
-                            tS = tR;
-                        else if(gdata[tL].r_end<q1)
+                        if(gdata[tL].r_end>q1)
                             tS = tL;
-                        tS++; 
+                        else if(gdata[tR].r_end>q1)
+                            tS = tR;
+                        //------------------------------
+                        //if(tS>0){should be
                         for(j=tS;j<tc;j++){
-                            t1 = gdata[j].r_start;
-                            if(q2>=t1){    		          		    
+                            if(q2>gdata[j].r_start){    		          		    
                                 hits[gdata[j].i_idx]++;                               
                                 nols++;
+                                tHits++;
                             }
-                        }                                       
+                        } 
+                        //}                                      
                     } 
                 }          
             }
-            else{ 
+            else{ //n2!=0: tile start at lower boundary, end below upper boundary (open region)
                 //deal with duplicates: find the unique list before or after 
                 bd = nbp*(n1+1); 
                 //in tiles (m=0, m=n2-1): t2<bd(m)-----------------        
@@ -744,14 +1004,21 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
                             idx0 = m;
                         }
                         //update the in-tile db start j0: not really faster 
-                        tS=0;
-                        while(gdata[tS].r_end<q1)
-                            tS++;                                  
-                        for(j=tS;j<tc;j++){
-                            t2 = gdata[j].r_end;
-                            if(t2<bd && q2>=gdata[j].r_start){
-                                hits[gdata[j].i_idx]++;                               
-                                nols++;
+                        if(q1>=gdata[tc-1].r_end){  //!!!0204
+                            //printf("Line 560 gdata[tc-1] %u m %u \n", gdata[tc-1].r_end, q1);
+                            //no overlap:do nothing tL>nc;tR<0
+                        } 
+                        else{
+                            tS=0;
+                            while(gdata[tS].r_end<=q1) 
+                                tS++;                                 
+                            for(j=tS;j<tc;j++){
+                                t2 = gdata[j].r_end;
+                                if(t2<bd && q2>gdata[j].r_start){
+                                    hits[gdata[j].i_idx]++;                               
+                                    nols++;
+                                    tHits++;
+                                }
                             }
                         }
                     }                   
@@ -770,48 +1037,53 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
                     }
                     //update the in-tile db start j0: not really faster 
                     //optimize the search: b-search 
-                    if(q1>gdata[tc-1].r_end){
+                    //if(q1>=gdata[tc-1].r_end){
                         //no overlap:do nothing tL>nc;tR<0
-                    } 
-                    else if(tc<64){
+                    //} 
+                    //else 
+                    if(tc<32){
                         tS=0;
-                        while(gdata[tS].r_end<q1)
+                        while(gdata[tS].r_end<=q1)
                             tS++;
                         for(j=tS;j<tc;j++){
-                            if(q2>=gdata[j].r_start){    		          		    
+                            if(q2>gdata[j].r_start){    		          		    
                                 hits[gdata[j].i_idx]++;                               
                                 nols++;
+                                tHits++;
                             }
-                        }                     
+                        }                                          
                     }
                     else{//half dual-binary search 
-                        //search tS: the 1st t_end on the left of q_start
                         tL=0;   tR=tc-1;  
                         tS = -1;    //no exclusion; tL<nc-1
                         while(tL<tR-1){
                             tM = (tL+tR)/2; 
-                            if(gdata[tM].r_end<q1)
-                                tL = tM;
+                            if(gdata[tM].r_end>q1)
+                                tR = tM;
                             else
-                                tR = tM - 1;
+                                tL = tM+1;
                         }
-                        if(gdata[tR].r_end<q1)
-                            tS = tR;
-                        else if(gdata[tL].r_end<q1)
+                        if(gdata[tL].r_end>q1)
                             tS = tL;
-                        tS++; 
+                        else if(gdata[tR].r_end>q1)
+                            tS = tR;
+                        //------------------------------
+                        //if(tS>0){should be
                         for(j=tS;j<tc;j++){
-                            t1 = gdata[j].r_start;
-                            if(q2>=t1){    		          		    
-                                hits[gdata[j].i_idx]++;
+                            if(q2>gdata[j].r_start){    		          		    
+                                hits[gdata[j].i_idx]++;                               
                                 nols++;
+                                tHits++;
                             }
-                        }                                       
+                        }                                                            
                     } //else
                 }//if tc>0
             }   //else n2>0            
-        }   //if
-        free(splits);     
+        }   //if n2=0
+        free(splits);
+        if(tHits>0)  
+            printf("%i, %i, %u, %u, %i\n", i, ichr, q1, q2, tHits);
+        i++;  
     }   //while  
     free(gdata);
     *mean_size = delta/nRegions;

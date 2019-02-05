@@ -758,12 +758,17 @@ void constructAIList(struct igd_data2* B, int nB, struct igd_data2* aiL)
     struct igd_data2 tData; 
     int maxC=7, minL = 64, cLen = 30, cLen1=10;  //max number of components, minL>cLen      
         
-    qsort(B, nB, sizeof(struct igd_data2), compare_rstart2);        
-    if(nB<=minL){             
+    for(i=0;i<7;i++){
+        lenC[i]=0;
+        idxC[i]=0;
+    }
+    
+    qsort(B, nB, sizeof(struct igd_data2), compare_rstart2);              
+    if(nB<=minL){                     
         memcpy(&aiL[2], B, nB*sizeof(struct igd_data2)); 
-        numC=1;
-        lenC[0] = nB;
-        idxC[0] = 0;          
+        //printf("nB in %i\n", nB);           
+        numC = 1;
+        lenC[0] = nB;         
     }
     else{ 
         aiT = malloc(nB*sizeof(struct igd_data2));    
@@ -816,6 +821,9 @@ void constructAIList(struct igd_data2* B, int nB, struct igd_data2* aiL)
         }
         free(aiT);     
     }  
+    
+    //for(i=0;i<7;i++)
+    //    printf("lenC 2 %i\n", lenC[i]);
     
     //augment  
     aiL[0].i_idx   = numC;
@@ -1142,7 +1150,7 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
                 nrec = Counts[i];
                 gdata0 = malloc(nrec*sizeof(struct igd_data2));
                 gdata  = malloc((nrec+2)*sizeof(struct igd_data2));                
-                fread(&gdata0, sizeof(struct igd_data2), nrec, fp0);
+                fread(gdata0, sizeof(struct igd_data2), nrec, fp0);
                 //-----construct gdata6
                 constructAIList(gdata0, nrec, gdata);
                 //----------------------------------------------------------
@@ -1189,12 +1197,12 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
     char** file_ids = gResult.gl_pathv;
     uint32_t n_files = gResult.gl_pathc; 
     if(n_files<1){   
-        printf("Too few files (add to path /*): %u\n", n_files); 
+        printf("No data file: %u\n", n_files); 
         return;
     }
      
-    uint32_t *nd = calloc(n_files, sizeof(uint32_t));
-    float *md = calloc(n_files, sizeof(float)); 
+    uint32_t *nd = calloc(n_files, sizeof(uint32_t));   //number of datasets
+    float *md = calloc(n_files, sizeof(float));         //mean 
 
     //2. Read region data
     uint32_t i, ii, j, k, t, df1, df2, df4, ichr, n1, n2, ti, nR;
@@ -1226,7 +1234,7 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
         m = 0;              
         memset(counts, 0, nTiles*sizeof(uint32_t));
         //printf("start: %u\n", i0);
-        while(i<n_files && m==0){   //n>0 defines breaks when reading a big file         
+        while(i<n_files && m==0){   //m>0 defines breaks when reading a big file         
             ftype = file_ids[i] + strlen(file_ids[i]) - 4;
             if(strcmp(".bed", ftype)==0){        
                 //a. Prepare: get the counts               
@@ -1267,7 +1275,7 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
                         df1 = (uint32_t)atoi(splits[1]);               
                         df2 = (uint32_t)atoi(splits[2]); 
                         n1 = df1/nbp;
-                        n2 = df2/nbp-n1;       
+                        n2 = df2/nbp-n1;    //tile start at boundary   
                         for(j=0;j<=n2;j++){
                             if(n1+j<nmax[ichr]){
                                 ti = n1+j+gstart[ichr];
@@ -1306,7 +1314,7 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
             if(strcmp(".bed", ftype)==0){        
                 FILE *fp = fopen (file_ids[ii], "r"); 
                 nL = 0; 
-                if(ii==i0 && L0>0){   //pass n0 lines of a big file
+                if(ii==i0 && L0>0){   //skip n0 lines of a big file
                     while(nL<L0 && fgets(buffer, bgz_buf, fp)!=NULL)
                         nL++;              
                 }                
@@ -1571,7 +1579,7 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
         //1. start from (i0, L0): find (i1, L1)
         cTotal = 0;
         i = i0; 
-        m = 0;              
+        m = 0;        
         memset(counts, 0, nTiles*sizeof(uint32_t));
         //printf("start: %u\n", i0);
         while(i<n_files && m==0){   //n>0 defines breaks when reading a big file         
@@ -1610,7 +1618,8 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
-                    }
+                    }              
+                    
                     if(ichr>=0 && ichr<=23){
                         df1 = (uint32_t)atoi(splits[1]);               
                         df2 = (uint32_t)atoi(splits[2]); 
@@ -1788,6 +1797,8 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
     }  
     //save _index.tsv: 4 columns--index, filename, nd, md
     //Also has a header line: 
+    printf("Line 1803\n");
+    
     char *tchr;   
     sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
     FILE *fpi = fopen(idFile, "w");
@@ -1822,7 +1833,8 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
     fwrite(&i, sizeof(uint32_t), 1, fp1);           
     fwrite(Counts, sizeof(uint32_t), nTiles, fp1);
     char iname[256]; 
-    struct igd_data1 *gdata;            
+    struct igd_data1 *gdata;  
+              
     for(i=0;i<nTiles;i++){
         if(Counts[i]>0){
             k = g2ichr[i];
@@ -1839,7 +1851,8 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
             }      
             fclose(fp0);
         }
-    }
+    }  
+    
     fclose(fp1); 
     end = clock();    
     //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
@@ -1862,7 +1875,7 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
 
 //create ucsc igd from plain text files
 void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
-{   //Process line by line
+{   //Process line by line 
     //1. Get the files  
     glob_t gResult;
     //strcat(iPath, "*");
@@ -1871,14 +1884,12 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
         printf("wrong dir path: %s", iPath);
         return;
     }
-    
     char** file_ids = gResult.gl_pathv;
     uint32_t n_files = gResult.gl_pathc; 
     if(n_files<1){   
         printf("Too few files (add to path /*): %u\n", n_files); 
         return;
     }
-     
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));
     float *md = calloc(n_files, sizeof(float)); 
 
@@ -1906,7 +1917,8 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
     struct igd_data2 **gData; 
     char **splits = malloc((nCols+1)*sizeof(char *)); 
     while(i0<n_files){
-        //1. start from (i0, L0): find (i1, L1)
+        //1. start from (i0, L0): find (i1, L1)               
+        //printf("%s", file_ids[i0]);
         cTotal = 0;
         i = i0; 
         m = 0;              
@@ -1916,7 +1928,7 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
             ftype = file_ids[i] + strlen(file_ids[i]) - 4;
             if(strcmp(".bed", ftype)==0){        
                 //a. Prepare: get the counts               
-                //printf("%s", file_ids[i]);
+
                 FILE *fp;
                 fp = fopen(file_ids[i], "r");
                 if (!fp) {
@@ -1925,10 +1937,9 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                     exit (EXIT_FAILURE);
                 }             
                 
-                //printf("%u %u\t", i, (uint32_t)cTotal);
-                
+                //printf("%u %u\t", i, (uint32_t)cTotal);           
                 nL = 0; 
-                if(i==i0 && L0>0){   //pass n0 lines of a big file
+                if(i==i0 && L0>0){   //skip n0 lines of a big file
                     while(nL<L0 && fgets(buffer, bgz_buf, fp)!=NULL)
                         nL++;              
                 }                 
@@ -1971,6 +1982,9 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                 }   //while getLine 
                 fclose(fp);      
             }   //if bed.gz
+            else{
+                printf("File %s type not .bed\n", file_ids[i]);
+            }
             if(m==0)
                 i++;
         }   //while i<n_files
@@ -1978,8 +1992,9 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
         //2. process files i0--i           
         gData = malloc(nTiles*sizeof(struct igd_data2*));
         for(j=0; j<nTiles; j++){
-            if(counts[j]>0)
-                gData[j] = malloc(counts[j]*sizeof(struct igd_data2));  
+            if(counts[j]>0){
+                gData[j] = malloc(counts[j]*sizeof(struct igd_data2));
+            }  
         }  
         if(gData==NULL){
             printf("Error: memory allocation with igd_data"); 
@@ -2124,6 +2139,7 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
         L0 = L1;
         L1 = 0;
     }  
+    printf("Line 2145\n");
     //save _index.tsv: 4 columns--index, filename, nd, md
     //Also has a header line: 
     char *tchr;   
@@ -2163,14 +2179,16 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
     struct igd_data2 *gdata, *gdata0; 
     for(i=0;i<nTiles;i++){
         if(Counts[i]>0){
+
             k = g2ichr[i];
             sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
             fp0 = fopen(iname, "rb");
+
             if(fp0!=NULL){   
                 nrec = Counts[i];
                 gdata0 = malloc(nrec*sizeof(struct igd_data2));
                 gdata  = malloc((nrec+2)*sizeof(struct igd_data2));                
-                fread(&gdata0, sizeof(struct igd_data2), nrec, fp0);
+                fread(gdata0, sizeof(struct igd_data2), nrec, fp0);
                 //-----construct gdata6
                 constructAIList(gdata0, nrec, gdata);
                 //----------------------------------------------------------
