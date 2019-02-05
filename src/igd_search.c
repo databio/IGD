@@ -1210,8 +1210,7 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                         rs=0;   //q2>all start
                         for(k=0; k<header[0]; k++){
                             re = rs+header[k+1];
-                            t = re; //q2 > bd, bd>all start: no need to binary search
-                            //t = bSearch(gdata, rs, re, q2); //upper limit
+                            t = bSearch(gdata, rs, re, q2); //upper limit
                             while(t >= rs && gdata[t].r_max > q1){
                                 if(gdata[t].r_end < bd && gdata[t].r_end>q1){
                                     hits[gdata[t].i_idx]++;                               
