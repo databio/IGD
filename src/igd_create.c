@@ -1797,7 +1797,7 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
     }  
     //save _index.tsv: 4 columns--index, filename, nd, md
     //Also has a header line: 
-    printf("Line 1803\n");
+    //printf("Line 1803\n");
     
     char *tchr;   
     sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
@@ -2139,7 +2139,6 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
         L0 = L1;
         L1 = 0;
     }  
-    printf("Line 2145\n");
     //save _index.tsv: 4 columns--index, filename, nd, md
     //Also has a header line: 
     char *tchr;   
