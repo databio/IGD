@@ -815,14 +815,15 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
                     }
                     //update the in-tile db start j0: not really faster 
                     //optimize the search: b-search 
+                    //q1 < bd, bd < all end
                     //if(q1>=gdata[tc-1].r_end){
                         //no overlap:do nothing tL>nc;tR<0
                     //} 
                     //else 
                     if(tc<32){
                         tS=0;
-                        while(gdata[tS].r_end<=q1)
-                            tS++;
+                        //while(gdata[tS].r_end<=q1)
+                        //    tS++;
                         for(j=tS;j<tc;j++){
                             if(q2>gdata[j].r_start){    		          		    
                                 hits[gdata[j].i_idx]++;                               
@@ -832,19 +833,20 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
                         }                                          
                     }
                     else{//half dual-binary search 
-                        tL=0;   tR=tc-1;  
-                        tS = -1;    //no exclusion; tL<nc-1
-                        while(tL<tR-1){
-                            tM = (tL+tR)/2; 
-                            if(gdata[tM].r_end>q1)
-                                tR = tM;
-                            else
-                                tL = tM+1;
-                        }
-                        if(gdata[tL].r_end>q1)
-                            tS = tL;
-                        else if(gdata[tR].r_end>q1)
-                            tS = tR;
+                        //tL=0;   tR=tc-1;  
+                        //tS = -1;    //no exclusion; tL<nc-1
+                        //while(tL<tR-1){
+                        //    tM = (tL+tR)/2; 
+                        //    if(gdata[tM].r_end>q1)
+                        //        tR = tM;
+                        //    else
+                        //        tL = tM+1;
+                        //}
+                        //if(gdata[tL].r_end>q1)
+                        //    tS = tL;
+                        //else if(gdata[tR].r_end>q1)
+                        //    tS = tR;
+                        tS = 0;//q1<bd
                         //------------------------------
                         //if(tS>0){should be
                         for(j=tS;j<tc;j++){
@@ -1194,7 +1196,7 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                     } 
                     else{
                         //BSearch takes very little time!!! 2M bSearch(50M)~0.5s!!!  
-                        rs=0;   
+                        rs=0;   //sublist index range in aiList
                         for(k=0; k<header[0]; k++){
                             re = rs+header[k+1];
                             t = bSearch(gdata, rs, re, q2); //inline not better 
@@ -1235,7 +1237,8 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                             rs=0;   
                             for(k=0; k<header[0]; k++){
                                 re = rs+header[k+1];
-                                t = bSearch(gdata, rs, re, q2); //inline not better 
+                                t = re; //q2 > bd, bd>all start: no need to binary search
+                                //t = bSearch(gdata, rs, re, q2); //upper limit
                                 while(t >= rs && gdata[t].r_max > q1){
                                     if(gdata[t].r_end < bd && gdata[t].r_end>q1){
                                         hits[gdata[t].i_idx]++;                               
