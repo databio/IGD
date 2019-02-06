@@ -238,8 +238,8 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
     FILE* fi = fopen(igdName, "rb");
     if(!fi)
         return 0;       
-    int ichr, tc, tL, tR, tM, tS;      
-    uint32_t i, j, t1, t2, q1, q2, m;
+    int ichr, tc, tL, tR, tM, tS, tlen, rtn;      
+    uint32_t i, j, k, t1, t2, q1, q2, m;
     uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 16, bd;  
     struct igd_data *gdata = malloc(1*sizeof(struct igd_data));
     uint32_t len0 = nTiles*sizeof(uint32_t);
@@ -264,16 +264,29 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
     i=0;
     while(fgets(buf, 1024, fq)!=NULL){	
 	//printf("%u %s",(uint32_t)nols, buf); 
+        ichr = -1;
         splits = str_split(buf,'\t', &nCols); 
-        if(strlen(splits[0])>5 || strlen(splits[0])<4)
-            ichr = -1;  
-        else if(strcmp(splits[0], "chrX")==0)
-            ichr = 22;
-        else if(strcmp(splits[0], "chrY")==0)
-            ichr = 23;
+        tlen = strlen(splits[0]);	        
+        if(tlen<6 && tlen>3){
+            if(strcmp(splits[0], "chrX")==0)
+                ichr = 22;
+            else if(strcmp(splits[0], "chrY")==0)
+                ichr = 23;
+            else if(strcmp(splits[0], "chrM")==0)
+                ichr = 24;                           
+            else{
+                rtn = atoi(&splits[0][3]);
+                if(rtn!=0)
+                    ichr = (uint32_t)(rtn-1);
+            }
+        }
         else{
-            ichr = (int)(atoi(&splits[0][3])-1);
-        }           
+            k=25;
+            while(k<94 && strcmp(splits[0], folder[k])!=0)
+                k++;
+            if(k<94)
+                ichr = k;
+        }          
         if(ichr>=0){
             q1  = (uint32_t)atoi(splits[1]);
             q2  = (uint32_t)atoi(splits[2]);
@@ -432,8 +445,8 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
     FILE* fi = fopen(igdName, "rb");
     if(!fi)
         return 0;       
-    int ichr, tc, tL, tR, tM, tS;      
-    uint32_t i, j, t1, t2, q1, q2, m;
+    int ichr, tc, tL, tR, tM, tS, tlen, rtn;      
+    uint32_t i, j, k, t1, t2, q1, q2, m;
     uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 16, bd;  
     struct igd_data *gdata = malloc(1*sizeof(struct igd_data));
     uint32_t len0 = nTiles*sizeof(uint32_t);
@@ -460,16 +473,29 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
     while(fgets(buf, 1024, fq)!=NULL){	
 	//printf("%u %s",(uint32_t)nols, buf); 
         //tHits = 0;
+        ichr = -1;
         splits = str_split(buf,'\t', &nCols); 
-        if(strlen(splits[0])>5 || strlen(splits[0])<4)
-            ichr = -1;  
-        else if(strcmp(splits[0], "chrX")==0)
-            ichr = 22;
-        else if(strcmp(splits[0], "chrY")==0)
-            ichr = 23;
+        tlen = strlen(splits[0]);	        
+        if(tlen<6 && tlen>3){
+            if(strcmp(splits[0], "chrX")==0)
+                ichr = 22;
+            else if(strcmp(splits[0], "chrY")==0)
+                ichr = 23;
+            else if(strcmp(splits[0], "chrM")==0)
+                ichr = 24;                           
+            else{
+                rtn = atoi(&splits[0][3]);
+                if(rtn!=0)
+                    ichr = (uint32_t)(rtn-1);
+            }
+        }
         else{
-            ichr = (int)(atoi(&splits[0][3])-1);
-        }           
+            k=25;
+            while(k<94 && strcmp(splits[0], folder[k])!=0)
+                k++;
+            if(k<94)
+                ichr = k;
+        }                   
         if(ichr>=0){
             q1  = (uint32_t)atoi(splits[1]);
             q2  = (uint32_t)atoi(splits[2]);
@@ -623,8 +649,8 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
     FILE* fi = fopen(igdName, "rb");
     if(!fi)
         return 0;       
-    int ichr, tc, tL, tR, tM, tS;      
-    uint32_t i, j, t1, t2, q1, q2, m;
+    int ichr, tc, tL, tR, tM, tS, tlen, rtn;      
+    uint32_t i, j, k, t1, t2, q1, q2, m;
     uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 16, bd;  
     struct igd_data1 *gdata = malloc(1*sizeof(struct igd_data1));
     uint32_t len0 = nTiles*sizeof(uint32_t);
@@ -649,21 +675,34 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
     uint64_t nols=0;
     idx0 = nTiles+10;
     
-    int tHits;
+    //int tHits;
     i=0;
     while(fgets(buf, 1024, fq)!=NULL){	
 	//printf("%u %s",(uint32_t)nols, buf); 
-        tHits = 0;
+        //tHits = 0;
+        ichr = -1;
         splits = str_split(buf,'\t', &nCols); 
-        if(strlen(splits[0])>5 || strlen(splits[0])<4)
-            ichr = -1;  
-        else if(strcmp(splits[0], "chrX")==0)
-            ichr = 22;
-        else if(strcmp(splits[0], "chrY")==0)
-            ichr = 23;
+        tlen = strlen(splits[0]);	        
+        if(tlen<6 && tlen>3){
+            if(strcmp(splits[0], "chrX")==0)
+                ichr = 22;
+            else if(strcmp(splits[0], "chrY")==0)
+                ichr = 23;
+            else if(strcmp(splits[0], "chrM")==0)
+                ichr = 24;                           
+            else{
+                rtn = atoi(&splits[0][3]);
+                if(rtn!=0)
+                    ichr = (uint32_t)(rtn-1);
+            }
+        }
         else{
-            ichr = (int)(atoi(&splits[0][3])-1);
-        }           
+            k=25;
+            while(k<94 && strcmp(splits[0], folder[k])!=0)
+                k++;
+            if(k<94)
+                ichr = k;
+        }             
         if(ichr>=0){
             q1  = (uint32_t)atoi(splits[1]);
             q2  = (uint32_t)atoi(splits[2]);
@@ -697,7 +736,7 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
                             if(q2>gdata[j].r_start){    		          		    
                                 hits[gdata[j].i_idx]++;                               
                                 nols++;
-                                tHits++;
+                                //tHits++;
                             }
                         }                     
                     }
@@ -855,7 +894,7 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
     FILE* fi = fopen(igdName, "rb");
     if(!fi)
         return 0;       
-    int ichr, t, tc, tL, tR, tM, tS;      
+    int ichr, t, tc, tL, tR, tM, tS, tlen, rtn;      
     uint32_t i, j, k, t1, t2, q1, q2, m;
     uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 5, bd;  
     struct igd_data2 *gdata = malloc(1*sizeof(struct igd_data2));
@@ -885,16 +924,29 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
     idx0 = nTiles+10;
     while(fgets(buf, 1024, fq)!=NULL){	
 	//printf("%u %s",(uint32_t)nols, buf); 
+        ichr = -1;
         splits = str_split(buf,'\t', &nCols); 
-        if(strlen(splits[0])>5 || strlen(splits[0])<4)
-            ichr = -1;  
-        else if(strcmp(splits[0], "chrX")==0)
-            ichr = 22;
-        else if(strcmp(splits[0], "chrY")==0)
-            ichr = 23;
+        tlen = strlen(splits[0]);	        
+        if(tlen<6 && tlen>3){
+            if(strcmp(splits[0], "chrX")==0)
+                ichr = 22;
+            else if(strcmp(splits[0], "chrY")==0)
+                ichr = 23;
+            else if(strcmp(splits[0], "chrM")==0)
+                ichr = 24;                           
+            else{
+                rtn = atoi(&splits[0][3]);
+                if(rtn!=0)
+                    ichr = (uint32_t)(rtn-1);
+            }
+        }
         else{
-            ichr = (int)(atoi(&splits[0][3])-1);
-        }           
+            k=25;
+            while(k<94 && strcmp(splits[0], folder[k])!=0)
+                k++;
+            if(k<94)
+                ichr = k;
+        }          
         if(ichr>=0){
             q1  = (uint32_t)atoi(splits[1]);
             q2  = (uint32_t)atoi(splits[2]);
@@ -1019,8 +1071,8 @@ uint64_t get_overlaps_v(char *qfName, char *igdName, uint32_t v, uint32_t *nregi
     FILE* fi = fopen(igdName, "rb");
     if(!fi)
         return 0;       
-    int ichr, tc, tL, tR, tM, tS;   
-    uint32_t i, j, t1, t2, q1, q2, m;
+    int ichr, tc, tL, tR, tM, tS, tlen, rtn;   
+    uint32_t i, j, k, t1, t2, q1, q2, m;
     uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 5, bd;  
     struct igd_data *gdata = malloc(1*sizeof(struct igd_data));
     uint32_t len0 = nTiles*sizeof(uint32_t);
@@ -1042,16 +1094,29 @@ uint64_t get_overlaps_v(char *qfName, char *igdName, uint32_t v, uint32_t *nregi
     idx0 = nTiles+10;
     while(fgets(buf, 1024, fq)!=NULL){	
 	//printf("%u %s",(uint32_t)nols, buf); 
+        ichr = -1;
         splits = str_split(buf,'\t', &nCols); 
-        if(strlen(splits[0])>5 || strlen(splits[0])<4)
-            ichr = -1;  
-        else if(strcmp(splits[0], "chrX")==0)
-            ichr = 22;
-        else if(strcmp(splits[0], "chrY")==0)
-            ichr = 23;
+        tlen = strlen(splits[0]);	        
+        if(tlen<6 && tlen>3){
+            if(strcmp(splits[0], "chrX")==0)
+                ichr = 22;
+            else if(strcmp(splits[0], "chrY")==0)
+                ichr = 23;
+            else if(strcmp(splits[0], "chrM")==0)
+                ichr = 24;                           
+            else{
+                rtn = atoi(&splits[0][3]);
+                if(rtn!=0)
+                    ichr = (uint32_t)(rtn-1);
+            }
+        }
         else{
-            ichr = (int)(atoi(&splits[0][3])-1);
-        }           
+            k=25;
+            while(k<94 && strcmp(splits[0], folder[k])!=0)
+                k++;
+            if(k<94)
+                ichr = k;
+        }             
         if(ichr>=0){
             q1  = (uint32_t)atoi(splits[1]);
             q2  = (uint32_t)atoi(splits[2]);

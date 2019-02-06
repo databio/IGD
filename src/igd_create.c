@@ -155,15 +155,24 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);               
                         df2 = (uint32_t)atoi(splits[2]); 
                         n1 = df1/nbp;
@@ -216,15 +225,24 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){ 
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
@@ -273,15 +291,24 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
@@ -487,15 +514,24 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);               
                         df2 = (uint32_t)atoi(splits[2]); 
                         n1 = df1/nbp;
@@ -548,15 +584,24 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
@@ -600,15 +645,24 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
@@ -909,15 +963,24 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);               
                         df2 = (uint32_t)atoi(splits[2]); 
                         n1 = df1/nbp;
@@ -970,15 +1033,24 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
@@ -1022,15 +1094,24 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
@@ -1238,15 +1319,24 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);               
                         df2 = (uint32_t)atoi(splits[2]); 
                         n1 = df1/nbp;
@@ -1301,15 +1391,24 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
@@ -1360,15 +1459,24 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
@@ -1578,16 +1686,24 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
-                    }              
-                    
-                    if(ichr>=0 && ichr<=23){
+                    }
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);               
                         df2 = (uint32_t)atoi(splits[2]); 
                         n1 = df1/nbp;
@@ -1642,15 +1758,24 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
@@ -1696,15 +1821,24 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
@@ -1911,15 +2045,24 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);               
                         df2 = (uint32_t)atoi(splits[2]); 
                         n1 = df1/nbp;
@@ -1978,15 +2121,24 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
@@ -2032,15 +2184,24 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
-                        else if(strcmp(splits[0],"chrY")==0)
+                        else if(strcmp(splits[0], "chrY")==0)
                             ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
                         else{
                             rtn = atoi(&splits[0][3]);
                             if(rtn!=0)
                                 ichr = (uint32_t)(rtn-1);
                         }
                     }
-                    if(ichr>=0 && ichr<=23){
+                    else{
+                        k=25;
+                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<94)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
                         df1 = (uint32_t)atoi(splits[1]);
                         df2 = (uint32_t)atoi(splits[2]);
                         nd[ii]++;                        
