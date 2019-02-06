@@ -395,22 +395,13 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                 free(gdata);
             }      
             fclose(fp0);
+            if(mode==0)
+                remove(iname);              
         }
     }
     fclose(fp1); 
     end = clock();    
-    //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
-    //------------------------------------------------------------------------- 
-    if(mode==0){
-        //remove tile files 
-        for(i=0;i<nTiles;i++){
-            if(Counts[i]>0){
-                k = g2ichr[i];
-                sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
-                remove(iname);
-            }
-        }    
-    }       
+    //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);       
     free(splits);  
     free(counts);
     free(Counts);
@@ -726,22 +717,14 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
                 free(gdata);
             }      
             fclose(fp0);
+            if(mode==0)
+                remove(iname);              
         }
     }
     fclose(fp1); 
     end = clock();    
     //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
-    //------------------------------------------------------------------------- 
-    if(mode==0){
-        //remove tile files 
-        for(i=0;i<nTiles;i++){
-            if(Counts[i]>0){
-                k = g2ichr[i];
-                sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
-                remove(iname);
-            }
-        }    
-    }       
+    //-------------------------------------------------------------------------     
     free(splits);  
     free(counts);
     free(Counts);
@@ -1160,22 +1143,14 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
                 free(gdata0);
             }      
             fclose(fp0);
+            if(mode==0)
+                remove(iname);              
         }
     }
     fclose(fp1); 
     //end = clock();    
     //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
-    //------------------------------------------------------------------------- 
-    if(mode==0){
-        //remove tile files 
-        for(i=0;i<nTiles;i++){
-            if(Counts[i]>0){
-                k = g2ichr[i];
-                sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
-                remove(iname);
-            }
-        }    
-    }       
+    //-------------------------------------------------------------------------       
     free(splits);  
     free(counts);
     free(Counts);
@@ -1508,22 +1483,14 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
                 free(gdata);
             }      
             fclose(fp0);
+            if(mode==0)
+                remove(iname);              
         }
     }
     fclose(fp1); 
     end = clock();    
     //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
-    //------------------------------------------------------------------------- 
-    if(mode==0){
-        //remove tile files and folders
-        for(i=0;i<nTiles;i++){
-            if(Counts[i]>0){
-                k = g2ichr[i];
-                sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
-                remove(iname);
-            }
-        }    
-    }     
+    //-------------------------------------------------------------------------    
     free(splits);  
     free(counts);
     free(Counts);
@@ -1850,23 +1817,15 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
                 free(gdata);
             }      
             fclose(fp0);
+            if(mode==0)
+                remove(iname);              
         }
     }  
     
     fclose(fp1); 
     end = clock();    
     //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
-    //------------------------------------------------------------------------- 
-    if(mode==0){
-        //remove tile files and folders
-        for(i=0;i<nTiles;i++){
-            if(Counts[i]>0){
-                k = g2ichr[i];
-                sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
-                remove(iname);
-            }
-        }    
-    }     
+    //-------------------------------------------------------------------------    
     free(splits);  
     free(counts);
     free(Counts);
@@ -2182,7 +2141,6 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
             k = g2ichr[i];
             sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
             fp0 = fopen(iname, "rb");
-
             if(fp0!=NULL){   
                 nrec = Counts[i];
                 gdata0 = malloc(nrec*sizeof(struct igd_data2));
@@ -2195,24 +2153,15 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                 fwrite(gdata, sizeof(struct igd_data2), nrec+2, fp1);
                 free(gdata);
                 free(gdata0);                
-            }      
-            fclose(fp0);
+            } 
+            fclose(fp0);            
+            if(mode==0)
+                remove(iname);     
         }
     }
     fclose(fp1); 
     end = clock();    
-    //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);    
-    //------------------------------------------------------------------------- 
-    if(mode==0){
-        //remove tile files and folders
-        for(i=0;i<nTiles;i++){
-            if(Counts[i]>0){
-                k = g2ichr[i];
-                sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
-                remove(iname);
-            }
-        }    
-    }     
+    //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);        
     free(splits);  
     free(counts);
     free(Counts);
