@@ -282,9 +282,9 @@ uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nregions, double 
         }
         else{
             k=25;
-            while(k<94 && strcmp(splits[0], folder[k])!=0)
+            while(k<93 && strcmp(splits[0], folder[k])!=0)
                 k++;
-            if(k<94)
+            if(k<93)
                 ichr = k;
         }          
         if(ichr>=0){
@@ -491,9 +491,9 @@ uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nregions, double
         }
         else{
             k=25;
-            while(k<94 && strcmp(splits[0], folder[k])!=0)
+            while(k<93 && strcmp(splits[0], folder[k])!=0)
                 k++;
-            if(k<94)
+            if(k<93)
                 ichr = k;
         }                   
         if(ichr>=0){
@@ -698,9 +698,9 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nregions, double
         }
         else{
             k=25;
-            while(k<94 && strcmp(splits[0], folder[k])!=0)
+            while(k<93 && strcmp(splits[0], folder[k])!=0)
                 k++;
-            if(k<94)
+            if(k<93)
                 ichr = k;
         }             
         if(ichr>=0){
@@ -942,9 +942,9 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
         }
         else{
             k=25;
-            while(k<94 && strcmp(splits[0], folder[k])!=0)
+            while(k<93 && strcmp(splits[0], folder[k])!=0)
                 k++;
-            if(k<94)
+            if(k<93)
                 ichr = k;
         }          
         if(ichr>=0){
@@ -1112,9 +1112,9 @@ uint64_t get_overlaps_v(char *qfName, char *igdName, uint32_t v, uint32_t *nregi
         }
         else{
             k=25;
-            while(k<94 && strcmp(splits[0], folder[k])!=0)
+            while(k<93 && strcmp(splits[0], folder[k])!=0)
                 k++;
-            if(k<94)
+            if(k<93)
                 ichr = k;
         }             
         if(ichr>=0){

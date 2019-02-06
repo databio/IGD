@@ -167,9 +167,9 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -237,9 +237,9 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){ 
@@ -303,9 +303,9 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -526,9 +526,9 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -596,9 +596,9 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -657,9 +657,9 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -975,9 +975,9 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -1045,9 +1045,9 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -1106,9 +1106,9 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -1331,9 +1331,9 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -1403,9 +1403,9 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -1471,9 +1471,9 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -1698,9 +1698,9 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -1770,9 +1770,9 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -1833,9 +1833,9 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -2057,9 +2057,9 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -2133,9 +2133,9 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -2196,9 +2196,9 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                     }
                     else{
                         k=25;
-                        while(k<94 && strcmp(splits[0], folder[k])!=0)
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
                             k++;
-                        if(k<94)
+                        if(k<93)
                             ichr = k;
                     }
                     if(ichr>=0){
@@ -2337,7 +2337,7 @@ int igd_create(int argc, char **argv)
     //convert block index to chr index for convenience
     g2ichr = malloc(nTiles*sizeof(uint32_t));
     uint32_t i, j;
-    for(i=0; i<24; i++){  
+    for(i=0; i<93; i++){  
         for(j=gstart[i]; j<gstart[i+1]; j++)      
 	    g2ichr[j] = i;
     }
@@ -2383,7 +2383,7 @@ int igd_create(int argc, char **argv)
         sprintf(ftmp, "%s%s", opath, "data0");
         if (stat(ftmp, &st) == -1)
             mkdir(ftmp, 0777);
-        for (i=0;i<24;i++){	    
+        for (i=0;i<93;i++){	    
             sprintf(ftmp, "%s%s%s", opath, "data0/", folder[i]);
             if (stat(ftmp, &st) == -1)   
                 mkdir(ftmp, 0777);
