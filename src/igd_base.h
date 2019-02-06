@@ -21,7 +21,7 @@
 extern char *fileBase;         	//14 bits block
 extern uint32_t nmax[];
 extern char *folder[];
-extern uint32_t gstart[25];
+extern uint32_t gstart[];
 extern uint32_t nTiles;
 extern uint32_t nbp;
 extern uint32_t bgz_buf;
