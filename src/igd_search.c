@@ -87,15 +87,12 @@ struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles)
         return NULL;
     }
     char buf[1024], ch;
-    uint32_t i, nfiles = -1;
+    int i, nfiles = -1;//first row is title
     while((ch=fgetc(fp))!=EOF){
         if(ch=='\n')
         	    nfiles++;
-    }
+    }  
     struct igd_info *fi = (struct igd_info*)malloc(nfiles*sizeof(struct igd_info));
-    //char** fNames = malloc(nfiles*sizeof(char*));
-    //uint32_t *nd = malloc(nfiles*sizeof(uint32_t));
-    //double *md = malloc(nfiles*sizeof(double));
     //------------
     char **splits;
     int ncols = 4;  
@@ -112,7 +109,7 @@ struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles)
     }        
     //printf("%s %i %f \n", fNames[6], nd[6], md[6]);  
     //printf("Total file: %i\n", i);
-    *nFiles = nfiles;
+    *nFiles = (uint32_t)nfiles;
     fclose(fp);
     return fi;
 }
@@ -946,6 +943,7 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                 k++;
             if(k<93)
                 ichr = k;
+
         }          
         if(ichr>=0){
             q1  = (uint32_t)atoi(splits[1]);
@@ -954,7 +952,9 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
             nRegions++;
             n1 = q1/nbp;
             n2 = q2/nbp-n1;   
-            idx = n1 + gstart[ichr];
+            idx = n1 + gstart[ichr];            
+            //if(idx > 200660)
+            //    printf("str %s, ichr %i, idx %i, cnt %u\n", splits[0], ichr, idx, counts[idx]);
             //find overlaps with this region
             if(n2==0){
                 tc = counts[idx];
@@ -979,7 +979,8 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                             t = bSearch(gdata, rs, re, q2); //inline not better 
                             while(t >= rs && gdata[t].r_max > q1){
                                 if(gdata[t].r_end>q1){
-                                    hits[gdata[t].i_idx]++;                               
+                                    hits[gdata[t].i_idx]++;  
+                                    //printf("%s %s %s %u %u %u\n", splits[0], splits[1], splits[2], gdata[t].r_start, gdata[t].r_end, gdata[t].i_idx);                             
                                     nols++;              
                                 } 
                                 t--;
@@ -1010,6 +1011,7 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                             t = bSearch(gdata, rs, re, q2); //upper limit
                             while(t >= rs && gdata[t].r_max > q1){
                                 if(gdata[t].r_end < bd && gdata[t].r_end>q1){
+                                    //printf("%s %s %s %u %u %u\n", splits[0], splits[1], splits[2], gdata[t].r_start, gdata[t].r_end, gdata[t].i_idx);                                    
                                     hits[gdata[t].i_idx]++;                               
                                     nols++;              
                                 } 
@@ -1038,6 +1040,7 @@ uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nregions, double
                         t = bSearch(gdata, rs, re, q2); //Ie 
                         while(t >= rs && gdata[t].r_max > q1){
                             if(gdata[t].r_end>q1){
+                                //printf("%s %s %s %u %u %u\n", splits[0], splits[1], splits[2], gdata[t].r_start, gdata[t].r_end, gdata[t].i_idx);                                
                                 hits[gdata[t].i_idx]++;                               
                                 nols++;              
                             } 
@@ -1299,7 +1302,7 @@ void search(char* qfName, char* igdName, uint32_t v, char *out)
             type = -1;//old style without type
         fclose(fp);
     }        
-    printf("igdData type %i, %u\n", type, i);      
+    //printf("igdData type %i, %u\n", type, i);      
     clock_t start, end;
     start = clock();
     uint32_t *hits = calloc(nFiles, sizeof(uint32_t));
@@ -1355,7 +1358,7 @@ int igd_search(int argc, char **argv)
     //convert block index to chr index for convenience
     g2ichr = malloc(nTiles*sizeof(uint32_t));
     uint32_t i, j;
-    for(i=0; i<24; i++){  
+    for(i=0; i<93; i++){  
     	for(j=gstart[i]; j<gstart[i+1]; j++)      
     	    g2ichr[j] = i;
     }

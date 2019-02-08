@@ -97,7 +97,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
     float *md = calloc(n_files, sizeof(float)); 
 
     //2. Read region data
-    uint32_t i, ii, j, k, t, df1, df2, df4, ichr, n1, n2, ti, nR;
+    int ichr;
+    uint32_t i, ii, j, k, t, df1, df2, df4, n1, n2, ti, nR;
     uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
     uint32_t *Counts = calloc(nTiles, sizeof(uint32_t));    //total
     double delta;    
@@ -456,7 +457,8 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
     float *md = calloc(n_files, sizeof(float)); 
 
     //2. Read region data
-    uint32_t i, ii, j, k, t, df1, df2, df4, ichr, n1, n2, ti, nR;
+    int ichr;
+    uint32_t i, ii, j, k, t, df1, df2, df4, n1, n2, ti, nR;
     uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
     uint32_t *Counts = calloc(nTiles, sizeof(uint32_t));    //total
     double delta;    
@@ -905,7 +907,8 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
     float *md = calloc(n_files, sizeof(float)); 
 
     //2. Read region data
-    uint32_t i, ii, j, k, t, df1, df2, df4, ichr, n1, n2, ti, nR;
+    int ichr;
+    uint32_t i, ii, j, k, t, df1, df2, df4, n1, n2, ti, nR;
     uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
     uint32_t *Counts = calloc(nTiles, sizeof(uint32_t));    //total
     double delta;    
@@ -1261,7 +1264,8 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
     float *md = calloc(n_files, sizeof(float));         //mean 
 
     //2. Read region data
-    uint32_t i, ii, j, k, t, df1, df2, df4, ichr, n1, n2, ti, nR;
+    int ichr;
+    uint32_t i, ii, j, k, t, df1, df2, df4, n1, n2, ti, nR;
     uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
     uint32_t *Counts = calloc(nTiles, sizeof(uint32_t));    //total
     double delta;    
@@ -1628,7 +1632,8 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
     float *md = calloc(n_files, sizeof(float)); 
 
     //2. Read region data
-    uint32_t i, ii, j, k, t, df1, df2, df4, ichr, n1, n2, ti, nR;
+    int ichr;
+    uint32_t i, ii, j, k, t, df1, df2, df4, n1, n2, ti, nR;
     uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
     uint32_t *Counts = calloc(nTiles, sizeof(uint32_t));    //total
     double delta;    
@@ -1987,7 +1992,8 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
     float *md = calloc(n_files, sizeof(float)); 
 
     //2. Read region data
-    uint32_t i, ii, j, k, t, df1, df2, df4, ichr, n1, n2, ti, nR;
+    int ichr;
+    uint32_t i, ii, j, k, t, df1, df2, df4, n1, n2, ti, nR;
     uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
     uint32_t *Counts = calloc(nTiles, sizeof(uint32_t));    //total
     double delta;    
@@ -2020,8 +2026,7 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
         while(i<n_files && m==0){   //n>0 defines breaks when reading a big file         
             ftype = file_ids[i] + strlen(file_ids[i]) - 4;
             if(strcmp(".bed", ftype)==0){        
-                //a. Prepare: get the counts               
-
+                //a. Prepare: get the counts      
                 FILE *fp;
                 fp = fopen(file_ids[i], "r");
                 if (!fp) {
@@ -2029,7 +2034,6 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                              strerror (errno));
                     exit (EXIT_FAILURE);
                 }             
-                
                 //printf("%u %u\t", i, (uint32_t)cTotal);           
                 nL = 0; 
                 if(i==i0 && L0>0){   //skip n0 lines of a big file
@@ -2075,7 +2079,7 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                             }       
                         }
                         if(cTotal>maxCount){
-                            m = 1;
+                            m = 1;  //256M*16B = 4GB
                             i1 = i;
                             L1 = nL;    //number of total lines or next line
                         }
@@ -2106,7 +2110,9 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
         //printf("(%u, %u) (%u, %u) \n", i0, L0, i, L1);           
         for(ii=i0; ii<i; ii++){   //n>0 defines breaks when reading a big file
             ftype = file_ids[ii] + strlen(file_ids[ii]) - 4;
-            if(strcmp(".bed", ftype)==0){        
+            //if(ii==n_files-1)
+            //    printf("%s  \n", file_ids[ii]);
+            if(strcmp(".bed", ftype)==0){    
                 FILE *fp = fopen (file_ids[ii], "r"); 
                 nL = 0; 
                 if(ii==i0 && L0>0){   //pass n0 lines of a big file
@@ -2117,7 +2123,9 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
                     //splits = str_split(buffer,'\t', &nCols);  
                     str_splits(buffer, &nCols, splits);
                     ichr = -1;
-                    tlen = strlen(splits[0]);
+                    tlen = strlen(splits[0]);                
+                    //if(ii==n_files-1)
+                    //    printf("%u %s %s %s \n", nd[ii], splits[0], splits[1], splits[2]);
                     if(tlen<6 && tlen>3){
                         if(strcmp(splits[0], "chrX")==0)
                             ichr = 22;
