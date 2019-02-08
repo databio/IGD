@@ -6,16 +6,9 @@
 //	Implement AIList for in-bin search: an option
 //	Test with new data
 //-------------------------------------------------------------------------------------
-
 #include "igd_base.h"
 #include "igd_create.h"
 #include "igd_search.h"
-#define PROGRAM_NAME  "igd"
-#define MAJOR_VERSION "0"
-#define MINOR_VERSION "1"
-#define REVISION_VERSION "1"
-#define BUILD_VERSION "0"
-#define VERSION MAJOR_VERSION "." MINOR_VERSION "." REVISION_VERSION
 
 char *fileBase = "_b14_";         
 uint32_t nmax[] = {16040, 15680, 12860, 12340, 11770, 11090, 10360, 9470, 

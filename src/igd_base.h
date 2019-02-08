@@ -16,6 +16,13 @@
 #include <glob.h>
 #include <errno.h>
 #include <sysexits.h>
+
+#define PROGRAM_NAME  "igd"
+#define MAJOR_VERSION "0"
+#define MINOR_VERSION "1"
+#define REVISION_VERSION "1"
+#define BUILD_VERSION "0"
+#define VERSION MAJOR_VERSION "." MINOR_VERSION "." REVISION_VERSION
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
 extern char *fileBase;         	//14 bits block

@@ -7,6 +7,22 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+int create_help(int exit_code)
+{
+    fprintf(stderr,
+"%s, v%s\n"
+"usage:   %s create <input files> <output dir> <output igd name> [options] \n"
+"         options:\n"
+"             -s  <Type of data structure> \n"
+"                   0 for [index, start, end, value], default\n"
+"                   1 for [index, start, end]  \n"
+"                   2 for [index, start, end, maxE]  \n"
+"             -t  Input data files in .bed format\n"
+"             -m  Mode--save all tile data\n",
+            PROGRAM_NAME, VERSION, PROGRAM_NAME);
+    return exit_code;
+}
+
 //-------------------------------------------------------------------------------------
 void append_igd(struct igd_mix *mdata, uint32_t *counts, struct igd_info *fInfo, int nFiles, char* igdName)
 {   //binary: single folder (path without\)
@@ -2341,7 +2357,7 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
 int igd_create(int argc, char **argv)
 {
     if (argc < 5) 
-        errx(1, "usage:\t%s <input path><ouput path><dbName><option>\n", argv[0]);       
+        return create_help(EX_OK);       
     //convert block index to chr index for convenience
     g2ichr = malloc(nTiles*sizeof(uint32_t));
     uint32_t i, j;

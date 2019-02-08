@@ -25,11 +25,25 @@ uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nq, double *mq, 
 
 uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
 
+uint64_t get_overlaps_n0_c(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
+
+uint64_t get_overlaps_n1_c(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
+
+uint64_t get_overlaps_n2_c(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
+
+uint64_t get_overlaps_n0_r(char *igdName, int ichr, uint32_t qs, uint32_t qe);
+
+uint64_t get_overlaps_n1_r(char *igdName, int ichr, uint32_t qs, uint32_t qe);
+
+uint64_t get_overlaps_n2_r(char *igdName, int ichr, uint32_t qs, uint32_t qe);
+
 int bSearch(struct igd_data2* As, int idxS, int idxE, uint32_t qe);
 
 uint64_t get_overlaps_v(char *qfName, char *igdName, uint32_t v, uint32_t *nq, double *mq, uint32_t *hits);
 
-void search(char* qfName, char* igdName, uint32_t v, char* out);
+void search(char* igdName, char* qfName, uint32_t v, char* out, int checking);
+
+void search_r(char* igdName, int ichr, uint32_t qs, uint32_t qe);
 
 int igd_search(int argc, char **argv);
 
