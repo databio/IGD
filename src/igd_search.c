@@ -863,7 +863,15 @@ uint64_t get_overlaps_n0_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
 {   //no need to store every overlaps, only get the number of hits   
     FILE* fi = fopen(igdName, "rb");
     if(!fi)
-        return 0;       
+        return 0;     
+    uint32_t nFiles;    
+    char tmp[128];
+    strcpy(tmp, igdName);
+    tmp[strrchr(tmp, '.')-tmp] = '\0';
+    char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
+    strcat(idFile, "_index.tsv");            
+    struct igd_info *finfo = get_igdinfo(idFile, &nFiles);         
+          
     int tc, tL, tR, tM, tS, tlen, rtn;      
     uint32_t i, j, k, t1, t2, q1, q2, m;
     uint32_t n1, n2, idx, idx0, bd;  
@@ -908,7 +916,7 @@ uint64_t get_overlaps_n0_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                 for(j=tS;j<tc;j++){
                     if(q2>gdata[j].r_start){                                  
                         nols++;
-                        printf("%u %u %u\n", gdata[j].r_start, gdata[j].r_end, gdata[j].i_idx);                                                           		          		                                    
+                        printf("%u %u %s\n", gdata[j].r_start, gdata[j].r_end, finfo[gdata[j].i_idx].fileName);                                                           		          		                                    
                     }
                 }                     
             }
@@ -930,7 +938,7 @@ uint64_t get_overlaps_n0_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                 //if(tS>0){should be
                 for(j=tS;j<tc;j++){
                     if(q2>gdata[j].r_start){    
-                        printf("%u %u %u\n", gdata[j].r_start, gdata[j].r_end, gdata[j].i_idx);                                                            		          		                                                                  
+                        printf("%u %u %s\n", gdata[j].r_start, gdata[j].r_end, finfo[gdata[j].i_idx].fileName);                                                            		          		                                                                  
                         nols++;
                     }
                 } 
@@ -965,7 +973,7 @@ uint64_t get_overlaps_n0_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                         t2 = gdata[j].r_end;
                         if(t2<bd && q2>gdata[j].r_start){                             
                             nols++;
-                            printf("%u %u %u\n", gdata[j].r_start, gdata[j].r_end, gdata[j].i_idx);                                                            		          		                                       
+                            printf("%u %u %s\n", gdata[j].r_start, gdata[j].r_end, finfo[gdata[j].i_idx].fileName);                                                            		          		                                       
                         }
                     }
                 }
@@ -990,7 +998,7 @@ uint64_t get_overlaps_n0_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                 for(j=tS;j<tc;j++){
                     if(q2>gdata[j].r_start){                                  
                         nols++;
-                        printf("%u %u %u\n", gdata[j].r_start, gdata[j].r_end, gdata[j].i_idx);                                                           		          		                                    
+                        printf("%u %u %s\n", gdata[j].r_start, gdata[j].r_end, finfo[gdata[j].i_idx].fileName);                                                           		          		                                    
                         //tHits++;
                     }
                 }                                          
@@ -1000,7 +1008,7 @@ uint64_t get_overlaps_n0_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                 for(j=tS;j<tc;j++){
                     if(q2>gdata[j].r_start){    	                             
                         nols++;
-                        printf("%u %u %u\n", gdata[j].r_start, gdata[j].r_end, gdata[j].i_idx);                                
+                        printf("%u %u %s\n", gdata[j].r_start, gdata[j].r_end, finfo[gdata[j].i_idx].fileName);                                
                     }
                 }                                                            
             } //else
@@ -1011,6 +1019,7 @@ uint64_t get_overlaps_n0_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
     fclose(fi);
     free(counts);
     free(mloc);
+    free(finfo);
     return nols;
 }
 
@@ -1472,7 +1481,15 @@ uint64_t get_overlaps_n1_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
     //.Reuse igddata if current query is in the same tile as the previous    
     FILE* fi = fopen(igdName, "rb");
     if(!fi)
-        return 0;       
+        return 0;   
+    uint32_t nFiles;    
+    char tmp[128];
+    strcpy(tmp, igdName);
+    tmp[strrchr(tmp, '.')-tmp] = '\0';
+    char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
+    strcat(idFile, "_index.tsv");            
+    struct igd_info *finfo = get_igdinfo(idFile, &nFiles);         
+            
     int tc, tL, tR, tM, tS, tlen, rtn;      
     uint32_t i, j, k, t1, t2, q1, q2, m;
     uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 16, bd;  
@@ -1522,7 +1539,7 @@ uint64_t get_overlaps_n1_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                     tS++;
                 for(j=tS;j<tc;j++){
                     if(q2>gdata[j].r_start){ 
-                        printf("%u %u %u\n", gdata[j].r_start, gdata[j].r_end, gdata[j].i_idx);                                                          		          		                                 
+                        printf("%u %u %s\n", gdata[j].r_start, gdata[j].r_end, finfo[gdata[j].i_idx].fileName);                                                          		          		                                 
                         nols++;
                         //tHits++;
                     }
@@ -1547,7 +1564,7 @@ uint64_t get_overlaps_n1_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                 for(j=tS;j<tc;j++){
                     if(q2>gdata[j].r_start){                                  
                         nols++;
-                        printf("%u %u %u\n", gdata[j].r_start, gdata[j].r_end, gdata[j].i_idx);                                                           		          		                                    
+                        printf("%u %u %s\n", gdata[j].r_start, gdata[j].r_end, finfo[gdata[j].i_idx].fileName);                                                           		          		                                    
                         //tHits++;
                     }
                 } 
@@ -1582,7 +1599,7 @@ uint64_t get_overlaps_n1_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                         t2 = gdata[j].r_end;
                         if(t2<bd && q2>gdata[j].r_start){                            
                             nols++;
-                            printf("%u %u %u\n", gdata[j].r_start, gdata[j].r_end, gdata[j].i_idx);                                                           		          		                                       
+                            printf("%u %u %s\n", gdata[j].r_start, gdata[j].r_end, finfo[gdata[j].i_idx].fileName);                                                           		          		                                       
                             //tHits++;
                         }
                     }
@@ -1614,7 +1631,7 @@ uint64_t get_overlaps_n1_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                 for(j=tS;j<tc;j++){
                     if(q2>gdata[j].r_start){                                
                         nols++;
-                        printf("%u %u %u\n", gdata[j].r_start, gdata[j].r_end, gdata[j].i_idx);                                                          		          		                                    
+                        printf("%u %u %s\n", gdata[j].r_start, gdata[j].r_end, finfo[gdata[j].i_idx].fileName);                                                          		          		                                    
                         //tHits++;
                     }
                 }                                          
@@ -1626,7 +1643,7 @@ uint64_t get_overlaps_n1_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                 for(j=tS;j<tc;j++){
                     if(q2>gdata[j].r_start){                                 
                         nols++;
-                        printf("%u %u %u\n", gdata[j].r_start, gdata[j].r_end, gdata[j].i_idx);                                                           		          		                                  
+                        printf("%u %u %s\n", gdata[j].r_start, gdata[j].r_end, finfo[gdata[j].i_idx].fileName);                                                           		          		                                  
                         //tHits++;
                     }
                 }                                                            
@@ -1637,6 +1654,7 @@ uint64_t get_overlaps_n1_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
     fclose(fi);
     free(counts);
     free(mloc);
+    free(finfo);
     return nols;
 }
 
@@ -2030,7 +2048,16 @@ uint64_t get_overlaps_n2_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
 {     
     FILE* fi = fopen(igdName, "rb");
     if(!fi)
-        return 0;       
+        return 0;  
+            
+    uint32_t nFiles;    
+    char tmp[128];
+    strcpy(tmp, igdName);
+    tmp[strrchr(tmp, '.')-tmp] = '\0';
+    char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
+    strcat(idFile, "_index.tsv");            
+    struct igd_info *finfo = get_igdinfo(idFile, &nFiles); 
+             
     int t, tc, tL, tR, tM, tS, tlen, rtn;      
     uint32_t i, j, k, t1, t2, q1, q2, m;
     uint32_t n1, n2, idx, idx0, nRegions=0, nCols = 5, bd;  
@@ -2081,7 +2108,7 @@ uint64_t get_overlaps_n2_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                     t = bSearch(gdata, rs, re, q2); //inline not better 
                     while(t >= rs && gdata[t].r_max > q1){
                         if(gdata[t].r_end>q1){
-                            printf("%u %u %u\n", gdata[t].r_start, gdata[t].r_end, gdata[t].i_idx);                             
+                            printf("%u %u %s\n", gdata[t].r_start, gdata[t].r_end, finfo[gdata[t].i_idx].fileName);                             
                             nols++;              
                         } 
                         t--;
@@ -2112,7 +2139,7 @@ uint64_t get_overlaps_n2_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                     t = bSearch(gdata, rs, re, q2); //upper limit
                     while(t >= rs && gdata[t].r_max > q1){
                         if(gdata[t].r_end < bd && gdata[t].r_end>q1){
-                            printf("%u %u %u\n", gdata[t].r_start, gdata[t].r_end, gdata[t].i_idx);                               
+                            printf("%u %u %s\n", gdata[t].r_start, gdata[t].r_end, finfo[gdata[t].i_idx].fileName);                                  
                             nols++;              
                         } 
                         t--;
@@ -2140,7 +2167,7 @@ uint64_t get_overlaps_n2_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
                 t = bSearch(gdata, rs, re, q2); //Ie 
                 while(t >= rs && gdata[t].r_max > q1){
                     if(gdata[t].r_end>q1){
-                        printf("%u %u %u\n", gdata[t].r_start, gdata[t].r_end, gdata[t].i_idx);                                                                
+                        printf("%u %u %s\n", gdata[t].r_start, gdata[t].r_end, finfo[gdata[t].i_idx].fileName);                                                                   
                         nols++;              
                     } 
                     t--;
@@ -2154,6 +2181,7 @@ uint64_t get_overlaps_n2_r(char *igdName, int ichr, uint32_t qs, uint32_t qe)
     fclose(fi);
     free(counts);
     free(mloc);
+    free(finfo);
     return nols;
 }
 
@@ -2366,7 +2394,7 @@ uint64_t get_overlaps_v(char *qfName, char *igdName, uint32_t v, uint32_t *nregi
     return nols;
 }
 
-void search(char* qfName, char* igdName, uint32_t v, char *out, int checking)
+void search(char* igdName, char* qfName, uint32_t v, char *out, int checking)
 {   //name standard: igd_file(dbname.igd), index_file(dbname_index.tsv)
     uint32_t i, nq=1, nFiles, nCols=2, genome_size=3095677412;
     double mq = 1.0;
@@ -2374,8 +2402,7 @@ void search(char* qfName, char* igdName, uint32_t v, char *out, int checking)
     strcpy(tmp, igdName);
     tmp[strrchr(tmp, '.')-tmp] = '\0';
     char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
-    strcat(idFile, "_index.tsv");     
- 
+    strcat(idFile, "_index.tsv");      
     struct igd_info *fi = get_igdinfo(idFile, &nFiles); 
     //printf("nfiles: %u\n", nFiles);  
     //determine igd_data type: data structure length
@@ -2461,7 +2488,6 @@ void search_r(char* igdName, int ichr, uint32_t qs, uint32_t qe)
     char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
     strcat(idFile, "_index.tsv");  
     uint32_t i, nFiles;   
-    struct igd_info *fi = get_igdinfo(idFile, &nFiles); 
     int type = 0;
     FILE* fp = fopen(igdName, "rb");
     if(!fp)
@@ -2486,8 +2512,7 @@ void search_r(char* igdName, int ichr, uint32_t qs, uint32_t qe)
     else if(type==2)
         nOL = get_overlaps_n2_r(igdName, ichr, qs, qe);                    
     //---------------------------------------------------------------------------------
-    free(fi->fileName);
-    free(fi);
+    printf("Total overlaps %lld \n", (long long)nOL);
 }
 
 //-------------------------------------------------------------------------------------
@@ -2572,8 +2597,11 @@ int igd_search(int argc, char **argv)
         while(k<93 && strcmp(chr, folder[k])!=0)
             k++;
         if(k<93)
-            ichr = k;   
-        search_r(igdName, ichr, qs, qe);    
+            ichr = k;  
+        if(ichr>=0) 
+            search_r(igdName, ichr, qs, qe); 
+        else
+            return search_help(EX_OK);                
     }
     else{
         return search_help(EX_OK);      
