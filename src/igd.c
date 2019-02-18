@@ -64,20 +64,20 @@ uint32_t nTiles = 198160;
 */
 
 uint32_t nbp = 16384, bgz_buf = 1024;
-uint64_t maxCount = 268435456;//*16 Bytes;//536870912;		
+uint64_t maxCount = 268435456;//134217728;//*16 Bytes;//536870912;		
 uint32_t *g2ichr;
 
 int igd_help(int argc, char **argv, int exit_code);
 
 int main(int argc, char **argv)
 {
-    if (argc < 4 || argc > 9) return igd_help(argc, argv, 0);
+    if (argc < 2) return igd_help(argc, argv, 0);
     char *cmd = argv[1];
 
-    if (strcmp(cmd,"create") == 0 && argc >= 5){
+    if (strcmp(cmd,"create") == 0){
         return igd_create(argc, argv);
     }
-    else if (strcmp(cmd,"search") == 0 && argc >= 4){
+    else if (strcmp(cmd,"search") == 0){
         return igd_search(argc, argv);
     }
     else {

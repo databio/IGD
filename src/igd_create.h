@@ -19,7 +19,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode);
 void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode);
 //create ucsc igd from gz: ailist data structure for in-bin search
 void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode);
-
+//create igd from a single .bed.gz file with the name/index at 4th column 
+void create_igd_gz3(char *iPath, char *oPath, char *igdName, int mode);
 //create ucsc igd plain bed files
 void create_igd(char *iPath, char *oPath, char *igdName, int mode);
 //create ucsc igd plain bed files

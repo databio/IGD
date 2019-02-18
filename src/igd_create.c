@@ -11,7 +11,7 @@ int create_help(int exit_code)
 {
     fprintf(stderr,
 "%s, v%s\n"
-"usage:   %s create <input files> <output dir> <output igd name> [options] \n"
+"usage:   %s create <input dir> <output dir> <output igd name> [options] \n"
 "         options:\n"
 "             -s  <Type of data structure> \n"
 "                   0 for [index, start, end, value], default\n"
@@ -452,6 +452,262 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
     globfree(&gResult); 
 }
 
+//create ucsc igd from a single .bed.gz file with dataset index at 4th column
+void create_igd_gz3(char *iPath, char *oPath, char *igdName, int mode)
+{   //Process line by line: ipath is the file name
+    //1. Get file_ids, n_files  
+    char** file_ids;
+    uint32_t n_files; 
+    char *ftype;
+    int nCols=16, err, rtn;                    
+    int tlen, bytes_read;
+    unsigned char buffer[bgz_buf]; 
+    uint64_t cTotal, nL;    
+    int ichr;
+    uint32_t i, ii, j, k, t, df1, df2, df4, n1, n2, ti, nR;
+    double delta;    
+    char idFile[256];  
+    clock_t start, end;
+    start = clock();  
+    end = clock();  
+    char *s1, *s2, *s3, *s4;     
+    char **splits = malloc((nCols+1)*sizeof(char *));     
+    //-------------------------------------------------------------------------
+    int maxF = 100000;
+    file_ids = malloc(maxF*sizeof(char *));
+    gzFile zfile;
+    zfile = gzopen (iPath, "r");    
+    if (!zfile) {
+        fprintf (stderr, "gzopen of '%s' failed: %s.\n", iPath,
+                 strerror (errno));
+        exit (EXIT_FAILURE);
+    } 
+    n_files = 0;
+    nL = 0;
+    while(gzgets(zfile, buffer, bgz_buf)!=NULL){                   
+        str_splits(buffer, &nCols, splits);      
+        i=0;
+        while(i<n_files && strcmp(splits[3], file_ids[i])!=0)
+            i++;
+        if(i==n_files){
+            file_ids[i] = malloc(strlen(splits[3])+1);
+            strcpy(file_ids[i], splits[3]);//splits tmp pointers  
+            printf("%s %u %lld\n", file_ids[i], n_files, (long long)nL);
+            n_files++;            
+        }       
+        nL++;
+        if(nL%1000000==0)
+            printf("\t%u %lld\n", n_files, (long long)nL);                
+    }
+    gzclose(zfile);    
+    printf("%u %lld\n", n_files, (long long)nL);    
+    //-------------------------------------------------------------------------
+    //2. Read region data
+    uint32_t *nd = calloc(n_files, sizeof(uint32_t));
+    float *md = calloc(n_files, sizeof(float)); 
+    uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
+    uint32_t *Counts = calloc(nTiles, sizeof(uint32_t));    //total  
+    uint32_t i0=0, i1=0, L0=0, L1=1, m;  
+    struct igd_data **gData = malloc(nTiles*sizeof(struct igd_data*));
+    struct igd_data *gTmp = malloc(maxCount*sizeof(struct igd_data));
+    uint32_t *iTmp = malloc(maxCount*sizeof(uint32_t));
+    
+    nL = 0;      
+    cTotal = 0;  
+    memset(counts, 0, nTiles*sizeof(uint32_t));                               
+    zfile = gzopen (iPath, "r");              
+    while(gzgets(zfile, buffer, bgz_buf)!=NULL){ 
+        str_splits(buffer, &nCols, splits);  
+        ichr = -1;
+        tlen = strlen(splits[0]);
+        if(tlen<6 && tlen>3){
+            if(strcmp(splits[0], "chrX")==0)
+                ichr = 22;
+            else if(strcmp(splits[0], "chrY")==0)
+                ichr = 23;
+            else if(strcmp(splits[0], "chrM")==0)
+                ichr = 24;                           
+            else{
+                rtn = atoi(&splits[0][3]);
+                if(rtn!=0)
+                    ichr = (uint32_t)(rtn-1);
+            }
+        }
+        else{
+            k=25;
+            while(k<93 && strcmp(splits[0], folder[k])!=0)
+                k++;
+            if(k<93)
+                ichr = k;
+        }
+        if(ichr>=0){
+            df1 = (uint32_t)atoi(splits[1]);               
+            df2 = (uint32_t)atoi(splits[2]); 
+            if(nCols>4)
+                df4 = (uint32_t)atoi(splits[4]);
+            else
+                df4 = 100;
+            n1 = df1/nbp;
+            n2 = df2/nbp-n1; 
+            //file id
+            ii=0;
+            while(ii<n_files && strcmp(splits[3], file_ids[ii])!=0)
+                ii++;
+            nd[ii]++;                        
+            md[ii] += df2-df1;                     
+            //-----------------------------------------------------
+            for(j=0;j<=n2;j++){
+                t = n1+j;
+                if(t<nmax[ichr]){
+                    ti = t+gstart[ichr];    //tile index
+                    gTmp[cTotal].i_idx = ii;
+                    gTmp[cTotal].r_start = df1;
+                    gTmp[cTotal].r_end = df2;
+                    gTmp[cTotal].g_val = df4;
+                    iTmp[cTotal] = ti;                   
+                    counts[ti]++; 
+                    cTotal++; 
+                }
+            }            
+               
+            if(cTotal==maxCount){          
+                //move gTmp to gData, then save to tile-files
+                for(j=0; j<nTiles; j++){
+                    if(counts[j]>0)
+                        gData[j] = malloc(counts[j]*sizeof(struct igd_data));  
+                }        
+                memset(counts, 0, nTiles*sizeof(uint32_t));     
+                for(j=0;j<cTotal;j++){
+                    ti = iTmp[j];
+                    memcpy(&gData[ti][counts[ti]], &gTmp[j], sizeof(struct igd_data));
+                    counts[ti]++;
+                }                
+                for(j=0;j<nTiles;j++){
+                    if(counts[j]>0){    
+                        Counts[j] += counts[j];
+                        k = g2ichr[j];                      
+                        sprintf(idFile, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, j-gstart[k], ".igd");
+                        FILE *fp = fopen(idFile, "ab");
+                        if(fp==NULL)
+                            printf("Can't open file %s", idFile);
+                        fwrite(gData[j], sizeof(struct igd_data), counts[j], fp);
+                        fclose(fp); 
+                        //free(gData[j]); 
+                    }
+                }   
+                for(j=0;j<nTiles;j++){;
+                    if(counts[j]>0)
+                        free(gData[j]);   
+                }
+                //--restart------
+                memset(counts, 0, nTiles*sizeof(uint32_t));                 
+                cTotal = 0;
+            }
+        } 
+        nL++;
+        //free(splits);               
+    }   //while getLine 
+    gzclose(zfile);   
+    if(cTotal>0){
+        //move gTmp to gData, then save to tile-files
+        for(j=0; j<nTiles; j++){
+            if(counts[j]>0)
+                gData[j] = malloc(counts[j]*sizeof(struct igd_data));  
+        }        
+        memset(counts, 0, nTiles*sizeof(uint32_t));     
+        for(j=0;j<cTotal;j++){
+            ti = iTmp[j];
+            memcpy(&gData[ti][counts[ti]], &gTmp[j], sizeof(struct igd_data));
+            counts[ti]++;
+        }                
+        for(j=0;j<nTiles;j++){
+            if(counts[j]>0){    
+                Counts[j] += counts[j];
+                k = g2ichr[j];                      
+                sprintf(idFile, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, j-gstart[k], ".igd");
+                FILE *fp = fopen(idFile, "ab");
+                if(fp==NULL)
+                    printf("Can't open file %s", idFile);
+                fwrite(gData[j], sizeof(struct igd_data), counts[j], fp);
+                fclose(fp); 
+                //free(gData[j]); 
+            }
+        }   
+        for(j=0;j<nTiles;j++){;
+            if(counts[j]>0)
+                free(gData[j]);   
+        }
+    }   
+    free(gTmp);
+    free(iTmp);
+    free(gData);
+    gData = NULL;                                      
+    //---------------------------------------------------------------------
+    i0 = i; 
+    L0 = L1;
+    L1 = 0;
+    //save _index.tsv: 4 columns--index, filename, nd, md
+    //Also has a header line: 
+    char *tchr;   
+    sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
+    FILE *fpi = fopen(idFile, "w");
+    if(fpi==NULL)
+        printf("Can't open file %s", idFile);
+        
+    fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
+    for(i=0; i<n_files; i++){
+        tchr = strrchr(file_ids[i], '/');
+        if(tchr!=NULL)
+            tchr+=1;
+        else
+            tchr = file_ids[i];
+        fprintf(fpi, "%u\t%s\t%u\t%f\n", i, tchr, nd[i], md[i]/nd[i]);     
+    }
+    fclose(fpi);   
+    free(nd);
+    free(md);    
+    end = clock();    
+    //printf("TSV saved: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC); 
+    //-------------------------------------------------------------------------
+    //Reload tile data, sort and save them into a single file
+    sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");    
+    FILE *fp1 = fopen(idFile, "wb"); 
+    if(fp1==NULL)
+        printf("Can't open file %s", idFile);     
+    uint32_t nrec;  
+    FILE *fp0;       
+    i=1122330000;   //type 0 data
+    fwrite(&i, sizeof(uint32_t), 1, fp1);      
+    fwrite(Counts, sizeof(uint32_t), nTiles, fp1);
+    char iname[256]; 
+    struct igd_data *gdata;            
+    for(i=0;i<nTiles;i++){
+        if(Counts[i]>0){
+            k = g2ichr[i];
+            sprintf(iname, "%s%s%s/%s_%u%s", oPath, "data0/", folder[k], igdName, i-gstart[k], ".igd");
+            fp0 = fopen(iname, "rb");
+            if(fp0!=NULL){   
+                nrec = Counts[i];
+                gdata = malloc(nrec*sizeof(struct igd_data));
+                fread(gdata, sizeof(struct igd_data), nrec, fp0);
+                qsort(gdata, nrec, sizeof(struct igd_data), compare_rend);
+                //append the data to fp1
+                fwrite(gdata, sizeof(struct igd_data), nrec, fp1);
+                free(gdata);
+            }      
+            fclose(fp0);
+            if(mode==0)
+                remove(iname);              
+        }
+    }
+    fclose(fp1); 
+    end = clock();    
+    //printf("igd_w finished: time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);       
+    free(splits);  
+    free(counts);
+    free(Counts);
+}
+
 //create ucsc igd from gz
 void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
 {   //Process line by line
@@ -584,7 +840,8 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
         if(gData==NULL)
             printf("Error: memory allocation with igd_data");        
         memset(counts, 0, nTiles*sizeof(uint32_t));
-        //printf("(%u, %u) (%u, %u) \n", i0, L0, i, L1);           
+        //printf("(%u, %u) (%u, %u) \n", i0, L0, i, L1);  
+        //process files i0-->(i-1)th files        
         for(ii=i0; ii<i; ii++){   //n>0 defines breaks when reading a big file
             ftype = file_ids[ii] + strlen(file_ids[ii]) - 7;
             if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
@@ -645,7 +902,7 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
             }   //gz file
         }   //ii
         //--------------------------------------------------------------------- 
-        if(m>0){
+        if(m>0){//process the i-th PARTIAL file 
             ii=i;  //m>0 defines breaks when reading a big file
             ftype = file_ids[ii] + strlen(file_ids[ii]) - 7;
             if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
@@ -2382,15 +2639,17 @@ int igd_create(int argc, char **argv)
         else if(strcmp(argv[i], "-s")==0 && i+1<argc)//data structure type
             dtype = atoi(argv[i+1]);              
     }
-                                   
     if(opath[strlen(opath)-1]!='/'){
         strcat(opath, "/");
-    }
-    if(ipath[strlen(ipath)-1]=='/'){
-        strcat(ipath, "*");
-    }
-    else if(ipath[strlen(ipath)-1]!='*'){
-        strcat(ipath, "/*");
+    }          
+      
+    if(dtype!=3){                            
+        if(ipath[strlen(ipath)-1]=='/'){
+            strcat(ipath, "*");
+        }
+        else if(ipath[strlen(ipath)-1]!='*'){
+            strcat(ipath, "/*");
+        }
     }
     
     //check if the subfolders exist:    
@@ -2429,7 +2688,9 @@ int igd_create(int argc, char **argv)
                 create_igd2(ipath, opath, dbname, mode); //test file
             else
                 create_igd_gz2(ipath, opath, dbname, mode); 
-        }               
+        } 
+        if(dtype==3)
+            create_igd_gz3(ipath, opath, dbname, mode);       
     } 
 
     free(g2ichr);
