@@ -2,7 +2,7 @@
 //Common igd struct, parameters, functions
 //by Jianglin Feng  05/12/2018
 //
-//01/24/2019: Change definition of a region/interval to be half-open
+//01/24/2019: Change definition of a region/interval to be half-open, 0-based
 //	Implement AIList for in-bin search: an option
 //	Test with new data
 //-------------------------------------------------------------------------------------

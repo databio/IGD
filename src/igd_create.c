@@ -267,7 +267,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                         if(nCols>4)
                             df4 = (uint32_t)atoi(splits[4]);
                         else
-                            df4 = 100;
+                            df4 = 10;
                         n1 = df1/nbp;
                         n2 = df2/nbp-n1;  
                         //-----------------------------------------------------
@@ -333,7 +333,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                         if(nCols>4)
                             df4 = (uint32_t)atoi(splits[4]);
                         else
-                            df4 = 100;
+                            df4 = 10;
                         n1 = df1/nbp;
                         n2 = df2/nbp-n1;  
                         //-----------------------------------------------------
@@ -546,7 +546,7 @@ void create_igd_gz3(char *iPath, char *oPath, char *igdName, int mode)
             if(nCols>4)
                 df4 = (uint32_t)atoi(splits[4]);
             else
-                df4 = 100;
+                df4 = 10;
             n1 = df1/nbp;
             n2 = df2/nbp-n1; 
             //file id
@@ -1693,7 +1693,7 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
                         if(nCols>4)
                             df4 = (uint32_t)atoi(splits[4]);
                         else
-                            df4 = 100;
+                            df4 = 10;
                         n1 = df1/nbp;
                         n2 = df2/nbp-n1;  
                         //-----------------------------------------------------
@@ -1761,7 +1761,7 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
                         if(nCols>4)
                             df4 = (uint32_t)atoi(splits[4]);
                         else
-                            df4 = 100;
+                            df4 = 10;
                         n1 = df1/nbp;
                         n2 = df2/nbp-n1;  
                         //-----------------------------------------------------
