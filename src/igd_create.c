@@ -17,7 +17,7 @@ int create_help(int exit_code)
 "                   0 for [index, start, end, value], default\n"
 "                   1 for [index, start, end]  \n"
 "                   2 for [index, start, end, maxE]  \n"
-"             -t  Input data files in .bed format\n"
+"             -t  Input data files in .bed txt format\n"
 "             -m  Mode--save all tile data\n",
             PROGRAM_NAME, VERSION, PROGRAM_NAME);
     return exit_code;
@@ -143,9 +143,11 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
         m = 0;              
         memset(counts, 0, nTiles*sizeof(uint32_t));
         //printf("start: %u\n", i0);
-        while(i<n_files && m==0){   //n>0 defines breaks when reading a big file         
+        while(i<n_files && m==0){   //n>0 defines breaks when reading a big file   
+            //add treatment over .tsv.gz: 1-based first line -header :2/28/2019 
+            //          p-value at 5-th column    
             ftype = file_ids[i] + strlen(file_ids[i]) - 7;
-            if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
+            if(strcmp(".bed.gz", ftype)==0){        
                 //a. Prepare: get the counts               
                 //printf("%s", file_ids[i]);
                 gzFile zfile;
@@ -211,6 +213,73 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                 }   //while getLine 
                 gzclose(zfile);      
             }   //if bed.gz
+            else if(strcmp(".tsv.gz", ftype)==0){        
+                //a. Prepare: get the counts               
+                //printf("%s", file_ids[i]);
+                gzFile zfile;
+                zfile = gzopen (file_ids[i], "r");
+                if (!zfile) {
+                    fprintf (stderr, "gzopen of '%s' failed: %s.\n", file_ids[i],
+                             strerror (errno));
+                    exit (EXIT_FAILURE);
+                }             
+                
+                //printf("%u %u\t", i, (uint32_t)cTotal);
+                gzgets(zfile, buffer, bgz_buf); //skip header line
+                
+                nL = 0; 
+                if(i==i0 && L0>0){   //pass n0 lines of a big file
+                    while(nL<L0 && gzgets(zfile, buffer, bgz_buf)!=NULL)
+                        nL++;              
+                }                 
+                while(m==0 && gzgets(zfile, buffer, bgz_buf)!=NULL){
+                    nL++;
+                    //splits = str_split_t(buffer, nCols); 
+                    str_splits(buffer, &nCols, splits);  
+                    ichr = -1;
+                    tlen = strlen(splits[0]);
+                    if(tlen<6 && tlen>3){
+                        if(strcmp(splits[0], "chrX")==0)
+                            ichr = 22;
+                        else if(strcmp(splits[0], "chrY")==0)
+                            ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
+                        else{
+                            rtn = atoi(&splits[0][3]);
+                            if(rtn!=0)
+                                ichr = (uint32_t)(rtn-1);
+                        }
+                    }
+                    else{
+                        k=25;
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<93)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
+                        df1 = (uint32_t)atoi(splits[1])-1;               
+                        df2 = (uint32_t)atoi(splits[2]); 
+                        n1 = df1/nbp;
+                        n2 = df2/nbp-n1;       
+                        for(j=0;j<=n2;j++){
+                            if(n1+j<nmax[ichr]){
+                                ti = n1+j+gstart[ichr];
+                                counts[ti]++; 
+                                cTotal++;                          
+                            }       
+                        }
+                        if(cTotal>maxCount){
+                            m = 1;
+                            i1 = i;
+                            L1 = nL;    //number of total lines or next line
+                        }
+                    } 
+                    //free(splits);               
+                }   //while getLine 
+                gzclose(zfile);      
+            }   //if bed.gz
             if(m==0)
                 i++;
         }   //while i<n_files
@@ -227,7 +296,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
         //printf("(%u, %u) (%u, %u) \n", i0, L0, i, L1);           
         for(ii=i0; ii<i; ii++){   //n>0 defines breaks when reading a big file
             ftype = file_ids[ii] + strlen(file_ids[ii]) - 7;
-            if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
+            if(strcmp(".bed.gz", ftype)==0){        
                 gzFile zfile = gzopen (file_ids[ii], "r"); 
                 nL = 0; 
                 if(ii==i0 && L0>0){   //pass n0 lines of a big file
@@ -288,12 +357,75 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                 }   //while gzgets           
                 gzclose (zfile);               
             }   //gz file
+            else if(strcmp(".tsv.gz", ftype)==0){        
+                gzFile zfile = gzopen (file_ids[ii], "r"); 
+                gzgets(zfile, buffer, bgz_buf);
+                
+                nL = 0; 
+                if(ii==i0 && L0>0){   //pass n0 lines of a big file
+                    while(nL<L0 && gzgets(zfile, buffer, bgz_buf)!=NULL)
+                        nL++;              
+                }                
+                while(gzgets(zfile, buffer, bgz_buf)!=NULL){//tbd: read 1Mb each time
+                    //splits = str_split(buffer,'\t', &nCols);  
+                    str_splits(buffer, &nCols, splits);
+                    ichr = -1;
+                    tlen = strlen(splits[0]);
+                    if(tlen<6 && tlen>3){
+                        if(strcmp(splits[0], "chrX")==0)
+                            ichr = 22;
+                        else if(strcmp(splits[0], "chrY")==0)
+                            ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
+                        else{
+                            rtn = atoi(&splits[0][3]);
+                            if(rtn!=0)
+                                ichr = (uint32_t)(rtn-1);
+                        }
+                    }
+                    else{
+                        k=25;
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<93)
+                            ichr = k;
+                    }
+                    if(ichr>=0){ 
+                        df1 = (uint32_t)atoi(splits[1])-1;
+                        df2 = (uint32_t)atoi(splits[2]);
+                        nd[ii]++;                        
+                        md[ii] += df2-df1;
+                        if(nCols>5)
+                            df4 = (uint32_t)atoi(splits[5]);//p-value
+                        else
+                            df4 = 10;
+                        n1 = df1/nbp;
+                        n2 = df2/nbp-n1;  
+                        //-----------------------------------------------------
+                        for(j=0;j<=n2;j++){
+                            t = n1+j;
+                            if(t<nmax[ichr]){
+                                ti = t+gstart[ichr];
+                                k = counts[ti]; 
+                                gData[ti][k].i_idx = ii;
+                                gData[ti][k].r_start = df1;
+                                gData[ti][k].r_end = df2;
+                                gData[ti][k].g_val = df4;
+                                counts[ti]++;  
+                            }
+                        }
+                    }  
+                    //free(splits);
+                }   //while gzgets           
+                gzclose (zfile);               
+            }   //gz file            
         }   //ii
         //--------------------------------------------------------------------- 
         if(m>0){
             ii=i;  //m>0 defines breaks when reading a big file
             ftype = file_ids[ii] + strlen(file_ids[ii]) - 7;
-            if(strcmp(".bed.gz", ftype)==0 || strcmp(".txt.gz", ftype)==0){        
+            if(strcmp(".bed.gz", ftype)==0){        
                 gzFile zfile = gzopen (file_ids[ii], "r"); 
                 nL = 0;
                 if(ii==i0 && L0>0){
@@ -355,6 +487,69 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
                 }            
                 gzclose (zfile);               
             }   //gz file  
+            else if(strcmp(".tsv.gz", ftype)==0){        
+                gzFile zfile = gzopen (file_ids[ii], "r"); 
+                gzgets(zfile, buffer, bgz_buf);
+                nL = 0;
+                if(ii==i0 && L0>0){
+                    while(nL<L0 && gzgets(zfile, buffer, bgz_buf)!=NULL)
+                        nL++; 
+                }                            
+                while(nL<L1 && gzgets(zfile, buffer, bgz_buf)!=NULL){//tbd: read 1Mb each time
+                    //splits = str_split(buffer,'\t', &nCols);  
+                    str_splits(buffer, &nCols, splits);
+                    ichr = -1;
+                    tlen = strlen(splits[0]);
+                    if(tlen<6 && tlen>3){
+                        if(strcmp(splits[0], "chrX")==0)
+                            ichr = 22;
+                        else if(strcmp(splits[0], "chrY")==0)
+                            ichr = 23;
+                        else if(strcmp(splits[0], "chrM")==0)
+                            ichr = 24;                           
+                        else{
+                            rtn = atoi(&splits[0][3]);
+                            if(rtn!=0)
+                                ichr = (uint32_t)(rtn-1);
+                        }
+                    }
+                    else{
+                        k=25;
+                        while(k<93 && strcmp(splits[0], folder[k])!=0)
+                            k++;
+                        if(k<93)
+                            ichr = k;
+                    }
+                    if(ichr>=0){
+                        df1 = (uint32_t)atoi(splits[1])-1;
+                        df2 = (uint32_t)atoi(splits[2]);
+                        nd[ii]++;                        
+                        md[ii] += df2-df1;
+                        if(nCols>5)
+                            df4 = (uint32_t)atoi(splits[5]);
+                        else
+                            df4 = 10;
+                        n1 = df1/nbp;
+                        n2 = df2/nbp-n1;  
+                        //-----------------------------------------------------
+                        for(j=0;j<=n2;j++){
+                            t = n1+j;
+                            if(t<nmax[ichr]){
+                                ti = t+gstart[ichr];
+                                k = counts[ti]; 
+                                gData[ti][k].i_idx = ii;
+                                gData[ti][k].r_start = df1;
+                                gData[ti][k].r_end = df2;
+                                gData[ti][k].g_val = df4;
+                                counts[ti]++;  
+                            }
+                        }
+                    }  
+                    //free(splits);
+                    nL++;
+                }            
+                gzclose (zfile);               
+            }   //gz file              
         }    
         //---------------------------------------------------------------------           
         end = clock();    
