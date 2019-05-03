@@ -110,7 +110,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
         printf("Too few files (add to path /*): %u\n", n_files); 
      
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));
-    float *md = calloc(n_files, sizeof(float)); 
+    double *md = calloc(n_files, sizeof(double)); 
 
     //2. Read region data
     int ichr;
@@ -647,7 +647,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
     globfree(&gResult); 
 }
 
-//create ucsc igd from a single .bed.gz file with dataset index at 4th column
+//create igd from a single .bed.gz file with dataset index at 4th column
 void create_igd_gz3(char *iPath, char *oPath, char *igdName, int mode)
 {   //Process line by line: ipath is the file name
     //1. Get file_ids, n_files  
@@ -699,7 +699,7 @@ void create_igd_gz3(char *iPath, char *oPath, char *igdName, int mode)
     //-------------------------------------------------------------------------
     //2. Read region data
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));
-    float *md = calloc(n_files, sizeof(float)); 
+    double *md = calloc(n_files, sizeof(double)); 
     uint32_t *counts = calloc(nTiles, sizeof(uint32_t));    //134217728*16=2G
     uint32_t *Counts = calloc(nTiles, sizeof(uint32_t));    //total  
     uint32_t i0=0, i1=0, L0=0, L1=1, m;  
@@ -921,7 +921,7 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
         printf("Too few files (add to path /*): %u\n", n_files); 
      
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));
-    float *md = calloc(n_files, sizeof(float)); 
+    double *md = calloc(n_files, sizeof(double)); 
 
     //2. Read region data
     int ichr;
@@ -1372,7 +1372,7 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
         printf("No file (add to path /*): %u\n", n_files); 
      
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));
-    float *md = calloc(n_files, sizeof(float)); 
+    double *md = calloc(n_files, sizeof(double)); 
 
     //2. Read region data
     int ichr;
@@ -1729,7 +1729,7 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
     }
      
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));   //number of datasets
-    float *md = calloc(n_files, sizeof(float));         //mean 
+    double *md = calloc(n_files, sizeof(double));         //mean 
 
     //2. Read region data
     int ichr;
@@ -2097,7 +2097,7 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
     }
      
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));
-    float *md = calloc(n_files, sizeof(float)); 
+    double *md = calloc(n_files, sizeof(double)); 
 
     //2. Read region data
     int ichr;
@@ -2457,7 +2457,7 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
         return;
     }
     uint32_t *nd = calloc(n_files, sizeof(uint32_t));
-    float *md = calloc(n_files, sizeof(float)); 
+    double *md = calloc(n_files, sizeof(double)); 
 
     //2. Read region data
     int ichr;
@@ -2868,19 +2868,19 @@ int igd_create(int argc, char **argv)
         }
         if(dtype==0){
             if(gztxt==1)
-                create_igd(ipath, opath, dbname, mode); //test file
+                create_igd(ipath, opath, dbname, mode); 
             else
                 create_igd_gz(ipath, opath, dbname, mode); 
         }
         else if(dtype==1){
             if(gztxt==1)
-                create_igd1(ipath, opath, dbname, mode); //test file
+                create_igd1(ipath, opath, dbname, mode); 
             else
                 create_igd_gz1(ipath, opath, dbname, mode); 
         } 
         else if(dtype==2){
             if(gztxt==1)
-                create_igd2(ipath, opath, dbname, mode); //test file
+                create_igd2(ipath, opath, dbname, mode); 
             else
                 create_igd_gz2(ipath, opath, dbname, mode); 
         } 

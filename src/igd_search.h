@@ -44,6 +44,9 @@ int bSearch(struct igd_data2* As, int idxS, int idxE, uint32_t qe);
 uint64_t get_overlaps_v(char *qfName, char *igdName, uint32_t v, uint32_t *nq, double *mq, uint32_t *hits);
 uint64_t get_overlaps_self_v(char *igdName, uint32_t nFiles, uint32_t v, uint32_t **hitmap);
 
+uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int xlen, uint32_t **hitmap);
+uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t **hitmap);
+
 void search(char* igdName, char* qfName, uint32_t v, char* out, int checking);
 
 void search_r(char* igdName, int ichr, uint32_t qs, uint32_t qe);
