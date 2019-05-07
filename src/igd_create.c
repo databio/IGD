@@ -17,6 +17,7 @@ int create_help(int exit_code)
 "                   0 for [index, start, end, value], default\n"
 "                   1 for [index, start, end]  \n"
 "                   2 for [index, start, end, maxE]  \n"
+"                   3 from a single file with 4th column value  \n"
 "             -t  Input data files in .bed txt format\n"
 "             -m  Mode--save all tile data\n",
             PROGRAM_NAME, VERSION, PROGRAM_NAME);

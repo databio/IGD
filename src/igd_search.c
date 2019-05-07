@@ -705,7 +705,7 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
                     q2 = qdata[iq].r_start;
                     q1 = q2-xlen;                             
                     n1 = q1/nbp;
-                    mq = qdata[iq].i_idx;                               
+                    mq = qdata[iq].i_idx;                       
                     n2 = q2/nbp-n1; 
                     idx = n1 + gstart[ichr];        
                     if(n2==0){
@@ -736,7 +736,7 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
                                     tS++;
                                 for(j=tS;j<tc;j++){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start){    		          		    
+                                    if(ij!=mq && q2>gdata[j].r_end){    		          		    
                                         hitmap[mq][ij]++; 
                                         nols++;                              
                                     }
@@ -760,7 +760,7 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
                                 //if(tS>0){should be
                                 for(j=tS;j<tc;j++){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start){    		          		    
+                                    if(ij!=mq && q2>gdata[j].r_end){    		          		    
                                         hitmap[mq][ij]++; 
                                         nols++;
                                     }
@@ -803,7 +803,7 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
                                     for(j=tS;j<tc;j++){
                                         t2 = gdata[j].r_end;
                                         ij = gdata[j].i_idx;
-                                        if(ij!=mq && t2<bd && q2>gdata[j].r_start){
+                                        if(ij!=mq && t2<bd && q2>gdata[j].r_end){
                                             hitmap[mq][ij]++; 
                                             nols++; 
                                         }
@@ -836,7 +836,7 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
                                 tS=0;
                                 for(j=tS;j<tc;j++){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start){    		          		    
+                                    if(ij!=mq && q2>gdata[j].r_end){    		          		    
                                         hitmap[mq][ij]++;                               
                                         nols++;
                                     }
@@ -846,7 +846,7 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
                                 tS = 0;//q1<bd  
                                 for(j=tS;j<tc;j++){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start){    		          		    
+                                    if(ij!=mq && q2>gdata[j].r_end){    		          		    
                                         hitmap[mq][ij]++;                               
                                         nols++;
                                     }
@@ -894,7 +894,7 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
                                     tS++;
                                 for(j=tS;j<tc;j++){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start){    		          		    
+                                    if(ij!=mq && q2>gdata[j].r_start && q1 < gdata[j].r_start){    		          		    
                                         hitmap[mq][ij]++; 
                                         nols++;                              
                                     }
@@ -918,7 +918,7 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
                                 //if(tS>0){should be
                                 for(j=tS;j<tc;j++){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start){    		          		    
+                                    if(ij!=mq && q2>gdata[j].r_start && q1 <gdata[j].r_start){    		          		    
                                         hitmap[mq][ij]++; 
                                         nols++;
                                     }
@@ -961,7 +961,7 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
                                     for(j=tS;j<tc;j++){
                                         t2 = gdata[j].r_end;
                                         ij = gdata[j].i_idx;
-                                        if(ij!=mq && t2<bd && q2>gdata[j].r_start){
+                                        if(ij!=mq && t2<bd && q2>gdata[j].r_start && q1 <gdata[j].r_start){
                                             hitmap[mq][ij]++; 
                                             nols++; 
                                         }
@@ -994,7 +994,7 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
                                 tS=0;
                                 for(j=tS;j<tc;j++){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start){    		          		    
+                                    if(ij!=mq && q2>gdata[j].r_start && q1 <gdata[j].r_start){    		          		    
                                         hitmap[mq][ij]++;                               
                                         nols++;
                                     }
@@ -1004,7 +1004,7 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
                                 tS = 0;//q1<bd  
                                 for(j=tS;j<tc;j++){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start){    		          		    
+                                    if(ij!=mq && q2>gdata[j].r_start && q1 <gdata[j].r_start){    		          		    
                                         hitmap[mq][ij]++;                               
                                         nols++;
                                     }
@@ -1418,7 +1418,7 @@ uint64_t get_overlaps_self_v(char *igdName, uint32_t nFiles, uint32_t v, uint32_
 }
 
 //using single-file igd_data: data type 0---sorted by end
-uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int xlen, uint32_t **hitmap)
+uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int xlen, uint32_t *countf, uint32_t **hitmap)
 {   //no need to store every overlaps, only get the number of hits
     //assume in-tile igdata is sorted by region end 
     //.Reuse igddata if current query is in the same tile as the previous   
@@ -1468,14 +1468,16 @@ uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int x
             //----search for ni regions-----------  
             for(iq=0;iq<ni;iq++){
                 mv = qdata[iq].g_val;
-                //not consider r.end>bd1                 
-                if(mv>=v && qdata[iq].r_end<=bd1){      
+                //not consider r.end>bd1        
+                //Left ext         
+                if(mv>=v && qdata[iq].r_end<=bd1){   
                     q2 = qdata[iq].r_start;
                     q1 = q2-xlen;                  
                     //q2 += xlen;         
                     //q1 = qdata[iq].r_start-xlen; 
                     n1 = q1/nbp;
-                    mq = qdata[iq].i_idx;                             
+                    mq = qdata[iq].i_idx;  
+                    countf[mq]++;                           
                     n2 = q2/nbp-n1; 
                     idx = n1 + gstart[ichr];
                     if(n2==0){
@@ -1507,7 +1509,8 @@ uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int x
                                 j = tS;
                                 while(j<tc && q2>minS[j]){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start && gdata[j].g_val>=v){     		          		    
+                                    if(ij!=mq && q2>gdata[j].r_end && gdata[j].g_val>=v){
+                                        //Lqe>de: q2>de: exclude intersect by non-extended overlaps    		          		    
                                         hitmap[mq][ij]++; 
                                         nols++;                              
                                     }
@@ -1532,7 +1535,7 @@ uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int x
                                 j = tS;
                                 while(j<tc && q2>minS[j]){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start && gdata[j].g_val>=v){     		          		    
+                                    if(ij!=mq && q2>gdata[j].r_end && gdata[j].g_val>=v){     		          		    
                                         hitmap[mq][ij]++; 
                                         nols++;                              
                                     }
@@ -1576,7 +1579,7 @@ uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int x
                                     while(j<tc && q2>minS[j]){
                                         t2 = gdata[j].r_end;
                                         ij = gdata[j].i_idx;
-                                        if(ij!=mq && q2>gdata[j].r_start && gdata[j].g_val>=v && t2<bd){     		          		    
+                                        if(ij!=mq && q2>gdata[j].r_end && gdata[j].g_val>=v && t2<bd){     		          		    
                                             hitmap[mq][ij]++; 
                                             nols++;                              
                                         }
@@ -1608,7 +1611,7 @@ uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int x
                             j = 0;//q1<bd all ends > q1 
                             while(j<tc && q2>minS[j]){
                                 ij = gdata[j].i_idx;
-                                if(ij!=mq && q2>gdata[j].r_start && gdata[j].g_val>=v){     		          		    
+                                if(ij!=mq && q2>gdata[j].r_end && gdata[j].g_val>=v){     		          		    
                                     hitmap[mq][ij]++; 
                                     nols++;                              
                                 }
@@ -1657,7 +1660,7 @@ uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int x
                                 j = tS;
                                 while(j<tc && q2>minS[j]){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start && gdata[j].g_val>=v){     		          		    
+                                    if(ij!=mq && q2>gdata[j].r_start && q1 <gdata[j].r_start && gdata[j].g_val>=v){     		          		    
                                         hitmap[mq][ij]++; 
                                         nols++;                              
                                     }
@@ -1682,7 +1685,7 @@ uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int x
                                 j = tS;
                                 while(j<tc && q2>minS[j]){
                                     ij = gdata[j].i_idx;
-                                    if(ij!=mq && q2>gdata[j].r_start && gdata[j].g_val>=v){     		          		    
+                                    if(ij!=mq && q2>gdata[j].r_start && q1 <gdata[j].r_start&& gdata[j].g_val>=v){     		          		    
                                         hitmap[mq][ij]++; 
                                         nols++;                              
                                     }
@@ -1726,7 +1729,7 @@ uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int x
                                     while(j<tc && q2>minS[j]){
                                         t2 = gdata[j].r_end;
                                         ij = gdata[j].i_idx;
-                                        if(ij!=mq && q2>gdata[j].r_start && gdata[j].g_val>=v && t2<bd){     		          		    
+                                        if(ij!=mq && q2>gdata[j].r_start && q1 <gdata[j].r_start && gdata[j].g_val>=v && t2<bd){     		          		    
                                             hitmap[mq][ij]++; 
                                             nols++;                              
                                         }
@@ -1758,7 +1761,7 @@ uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int x
                             j = 0;//q1<bd all ends > q1 
                             while(j<tc && q2>minS[j]){
                                 ij = gdata[j].i_idx;
-                                if(ij!=mq && q2>gdata[j].r_start && gdata[j].g_val>=v){     		          		    
+                                if(ij!=mq && q2>gdata[j].r_start && q1 <gdata[j].r_start && gdata[j].g_val>=v){     		          		    
                                     hitmap[mq][ij]++; 
                                     nols++;                              
                                 }
@@ -1769,7 +1772,7 @@ uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int x
                 }//mv > v                
             }//for iq          
         }   //if ni>0
-    }   //for i      
+    }   //for i   
     free(gdata);
     free(minS);
     free(qdata);
@@ -3899,9 +3902,11 @@ void search_self_ext(char* igdName, uint32_t v, char *out, int xlen)
     for(i=0;i<nFiles;i++){
         hitmap[i] = calloc((nFiles), sizeof(uint32_t));
     }    
+    
+    uint32_t *countf = calloc(nFiles, sizeof(uint32_t)); //num of intervals involved
     uint64_t nOL;
     if(v>0)
-        nOL = get_overlaps_self_v_x(igdName, nFiles, v, xlen, hitmap);      
+        nOL = get_overlaps_self_v_x(igdName, nFiles, v, xlen, countf, hitmap);      
     else
         nOL = get_overlaps_self_x(igdName, nFiles, xlen, hitmap); 
     if(strlen(out)>1){
@@ -3910,6 +3915,9 @@ void search_self_ext(char* igdName, uint32_t v, char *out, int xlen)
             printf("Can't open file %s\n", idFile);
         else{
             fprintf(fp, "%u\t%u\t%u\n", nFiles, nFiles, v);
+            for(j=0;j<nFiles;j++)
+                fprintf(fp, "%u\t", countf[j]); 
+            fprintf(fp, "\n");            
             for(i=0;i<nFiles;i++){
                 for(j=0;j<nFiles;j++)
                     fprintf(fp, "%u\t", hitmap[i][j]); 
@@ -3931,6 +3939,7 @@ void search_self_ext(char* igdName, uint32_t v, char *out, int xlen)
     //---------------------------------------------------------------------------------
     free(fi->fileName);
     free(fi);
+    free(countf);
     for(i=0;i<nFiles;i++)
         free(hitmap[i]);
     free(hitmap);
@@ -3972,6 +3981,52 @@ void search_r(char* igdName, int ichr, uint32_t qs, uint32_t qe)
     //---------------------------------------------------------------------------------
     printf("Total overlaps %lld \n", (long long)nOL);
 }
+
+/*
+void testMain(char* qfName, char* igdName)
+{
+    uint32_t nq=1, nFiles, nCols=2, genome_size=3095677412;
+    double mq = 1.0;
+    char tmp[256];
+    strcpy(tmp, igdName);
+    char *idFile = str_split(tmp, '_', &nCols)[0];
+    strcat(idFile, "_index.tsv");  
+    struct igd_info *fi = get_igdinfo(idFile, &nFiles);   
+    
+    clock_t start, end;
+    start = clock();
+    uint32_t *hits = calloc(sizeof(uint32_t), nFiles);
+    uint64_t nOL = get_overlaps_n(qfName, igdName, &nq, &mq, hits);   
+    end = clock();   
+    
+    printf("time: %f \n", ((double)(end-start))/CLOCKS_PER_SEC);
+    printf("%u %u %u %f \n", nFiles, (int)nOL, nq, mq);
+    long long n11, n12, n21, n22, n22_full, n3;
+    double comp_mean, ratio;
+    long double left, right, two, r;
+    for(int i=0;i<nFiles;i++){
+        //printf("%i %s %i %i %i\n", i, fi[i].fileName, fi[i].nd, (int)fi[i].md, hits[i]);
+        n11 = (long long)(hits[i]);
+        n12 = (long long)(MAX(0,nq-hits[i]));
+        n21 = (long long)(MAX(0,fi[i].nd-hits[i]));
+        comp_mean = fi[i].md + mq;
+        n3 = n11 + n12 + n21;
+        n22_full = (long long)MAX(n3, genome_size/comp_mean);
+        n22 = MAX(1, n22_full - n3);
+        left, right, two;
+        //printf("%i %u %f %lli %lli %lli %lli\n", i, hits[i], comp_mean, n11, n12, n21, n22);
+        r = _kt_fisher_exact(n11,n12,n21,n22,&left,&right,&two);
+        ratio = (((double)(n11 + 1)/(double)MAX(1,n12))/((double)(n21 + 1)/(double)(n22 + 1)));
+        printf("%s\t %u\t %u\t %.17g\t %.17Lg\t %.17Lg\t %.17Lg\t %.17Lg\t \n",
+            fi[i].fileName, fi[i].nd, hits[i], ratio, two, left, right, 
+            log2fc(ratio) * neglog10p(two));
+    }
+    //---------------------------------------------------------------------------------
+    free(fi->fileName);
+    free(fi);
+    free(hits);
+}
+*/
 
 //-------------------------------------------------------------------------------------
 int igd_search(int argc, char **argv)
