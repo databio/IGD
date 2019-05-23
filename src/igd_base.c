@@ -140,49 +140,51 @@ long double _lbinom(long long n, long long k)
     return lgammal(n+1) - lgammal(k+1) - lgammal(n-k+1);
 }
 
-// n11  n12  | n1_
-// n21  n22  | n2_
+// nA   nC   | nAC
+// nB   nD   | nBD
 //-----------+----
-// n_1  n_2  | n
+// nAB  nCD  | n
 
 // hypergeometric distribution
-long double _hypergeo(long long n11, long long n1_, long long n_1, long long n)
-{
-    //***DEBUG***
-    return expl(_lbinom(n1_, n11) + _lbinom(n-n1_, n_1-n11) - _lbinom(n, n_1));
+long double _hypergeo(long long nA, long long nAC, long long nAB, long long n)
+{   //n:   population size 
+    //nAB: number of draws
+    //nA:  observed success 
+    //nAC: success states in n
+    return expl(_lbinom(nAC, nA) + _lbinom(n-nAC, nAB-nA) - _lbinom(n, nAB));
 }
 
 // incremental version of hypergenometric distribution
-long double _hypergeo_acc(long long n11, long long n1_, long long n_1, long long n, _hgacc_t *aux)
+long double _hypergeo_acc(long long nA, long long nAC, long long nAB, long long n, _hgacc_t *aux)
 {
-    if (n1_ || n_1 || n) {
-        aux->n11 = n11; aux->n1_ = n1_; aux->n_1 = n_1; aux->n = n;
-    } else { // then only n11 changed; the rest fixed
-        if (n11%11 && n11 + aux->n - aux->n1_ - aux->n_1) {
-            if (n11 == aux->n11 + 1) { // incremental
-                aux->p *= (long double)(aux->n1_ - aux->n11) / n11
-                    * (aux->n_1 - aux->n11) / (n11 + aux->n - aux->n1_ - aux->n_1);
-                aux->n11 = n11;
+    if (nAC || nAB || n) {
+        aux->nA = nA; aux->nAC = nAC; aux->nAB = nAB; aux->n = n;
+    } else { // then only nA changed; the rest fixed
+        if (nA%11 && nA + aux->n - aux->nAC - aux->nAB) {
+            if (nA == aux->nA + 1) { // incremental
+                aux->p *= (long double)(aux->nAC - aux->nA) / nA
+                    * (aux->nAB - aux->nA) / (nA + aux->n - aux->nAC - aux->nAB);
+                aux->nA = nA;
                 return aux->p;
             }
-            if (n11 == aux->n11 - 1) { // incremental
-                aux->p *= (long double)aux->n11 / (aux->n1_ - n11)
-                    * (aux->n11 + aux->n - aux->n1_ - aux->n_1) / (aux->n_1 - n11);
-                aux->n11 = n11;
+            if (nA == aux->nA - 1) { // incremental
+                aux->p *= (long double)aux->nA / (aux->nAC - nA)
+                    * (aux->nA + aux->n - aux->nAC - aux->nAB) / (aux->nAB - nA);
+                aux->nA = nA;
                 return aux->p;
             }
         }
-        aux->n11 = n11;
+        aux->nA = nA;
     }
-    aux->p = _hypergeo(aux->n11, aux->n1_, aux->n_1, aux->n);
+    aux->p = _hypergeo(aux->nA, aux->nAC, aux->nAB, aux->n);
 
     return aux->p;
 }
 
-long double _kt_fisher_exact(long long n11,
-                             long long n12,
-                             long long n21,
-                             long long n22,
+long double _kt_fisher_exact(long long nA,
+                             long long nC,
+                             long long nB,
+                             long long nD,
                              long double *_left,
                              long double *_right,
                              long double *two)
@@ -190,19 +192,19 @@ long double _kt_fisher_exact(long long n11,
     long long i, j, max, min;
     long double p, q, left, right;
     _hgacc_t aux;
-    long long n1_, n_1, n;
+    long long nAC, nAB, n;
 
-    n1_ = n11 + n12; n_1 = n11 + n21; n = n11 + n12 + n21 + n22; // calculate n1_, n_1 and n
+    nAC = nA + nC; nAB = nA + nB; n = nA + nC + nB + nD; // calculate nAC, nAB and n
 
-    max = (n_1 < n1_) ? n_1 : n1_; // max n11, for right tail
-    min = n1_ + n_1 - n;    // not sure why n11-n22 is used instead of min(n_1,n1_)
-    if (min < 0) min = 0; // min n11, for left tail
+    max = (nAB < nAC) ? nAB : nAC; // max nA, for right tail
+    min = nAC + nAB - n;    // not sure why nA-nD is used instead of min(nAB,nAC)
+    if (min < 0) min = 0; // min nA, for left tail
     *two = *_left = *_right = 1.;
 
     if (min == max) return 1.; // no need to do test
 
 
-    q = _hypergeo_acc(n11, n1_, n_1, n, &aux); // the probability of the current table
+    q = _hypergeo_acc(nA, nAC, nAB, n, &aux); // the probability of the current table
     if (q < 1e-200) q = 1e-200;
 
     // left tail
@@ -223,7 +225,7 @@ long double _kt_fisher_exact(long long n11,
     *two = left + right;
     if (*two > 1.) *two = 1.;
     // adjust left and right
-    if (labs((long) (i - n11)) < labs((long) (j - n11)) && q != 0.0) right = 1. - left + q;
+    if (labs((long) (i - nA)) < labs((long) (j - nA)) && q != 0.0) right = 1. - left + q;
     else left = 1.0 - right + q;
     *_left = left; *_right = right;
     return q;

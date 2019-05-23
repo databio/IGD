@@ -4,6 +4,7 @@
 //
 //time ./igd_search Test110000.bed /media/john/Extra/ucsc_igd/ucsc.igd
 //-------------------------------------------------------------------------------------
+//import scipy.stats as stats
 #include "igd_search.h"
 //-------------------------------------------------------------------------------------
 int search_help(int exit_code)
@@ -485,6 +486,8 @@ uint64_t get_overlaps_self(char *igdName, uint32_t nFiles, uint32_t **hitmap)
     for(i=0;i<nTiles;i++){
         ni = counts[i];
         ichr = g2ichr[i];  
+        if(i%20==0)
+            printf("%u, %i, %u, %lld\n", i, ichr, ni, (long long)nols);         
         if(ni>0){         
             free(qdata);
             fseek(fq, mloc[i], SEEK_SET);
@@ -692,7 +695,9 @@ uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t 
       
     for(i=0;i<nTiles;i++){
         ni = counts[i];
-        ichr = g2ichr[i];  
+        ichr = g2ichr[i];
+        if(i%2000==0)
+            printf("%u, %i, %u, %lld\n", i, ichr, ni, (long long)nols);           
         if(ni>0){         
             free(qdata);
             fseek(fq, mloc[i], SEEK_SET);
@@ -1212,7 +1217,7 @@ uint64_t get_overlaps_self_v0(char *igdName, uint32_t nFiles, uint32_t v, uint32
 }
 
 //using single-file igd_data: data type 0---sorted by end
-uint64_t get_overlaps_self_v(char *igdName, uint32_t nFiles, uint32_t v, uint32_t **hitmap)
+uint64_t get_overlaps_self_v(char *igdName, uint32_t nFiles, uint32_t v, uint32_t *countf, uint32_t **hitmap)
 {   //no need to store every overlaps, only get the number of hits
     //assume in-tile igdata is sorted by region end 
     //.Reuse igddata if current query is in the same tile as the previous   
@@ -1262,11 +1267,12 @@ uint64_t get_overlaps_self_v(char *igdName, uint32_t nFiles, uint32_t v, uint32_
             //----search for ni regions-----------  
             for(iq=0;iq<ni;iq++){
                 mv = qdata[iq].g_val;
-                q2 = qdata[iq].r_end;                    
+                q2 = qdata[iq].r_end;                                    
                 if(mv>=v && q2<bd1){                
                     q1 = qdata[iq].r_start; 
                     n1 = q1/nbp;
-                    mq = qdata[iq].i_idx;                             
+                    mq = qdata[iq].i_idx;  
+                    countf[mq]++;                           
                     n2 = q2/nbp-n1; 
                     idx = n1 + gstart[ichr];
                     if(n2==0){
@@ -1445,6 +1451,7 @@ uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int x
     fread(counts, sizeof(uint32_t), nTiles, fq);     
     for(i=0; i<nTiles; i++){
         mloc[i+1] = counts[i]*16;
+        //countf[i] = 0;
     }
     mloc[0]=len0 + 4;
     for(i=1; i<nTiles; i++)
@@ -3841,61 +3848,7 @@ void search_self(char* igdName, uint32_t v, char *out)
     char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
     strcat(idFile, "_index.tsv");      
     struct igd_info *fi = get_igdinfo(idFile, &nFiles); 
-    printf("Line 2847 nfiles: %u\n", nFiles);    
-    //clock_t start, end;
-    //hitmap
-    uint32_t **hitmap = malloc((nFiles)*sizeof(uint32_t*));
-    for(i=0;i<nFiles;i++){
-        hitmap[i] = calloc((nFiles), sizeof(uint32_t));
-    }    
-    uint64_t nOL;
-    if(v>0)
-        nOL = get_overlaps_self_v(igdName, nFiles, v, hitmap);      
-    else
-        nOL = get_overlaps_self(igdName, nFiles, hitmap); 
-    if(strlen(out)>1){
-        FILE *fp = fopen(out, "w");
-        if(fp==NULL)
-            printf("Can't open file %s\n", idFile);
-        else{
-            fprintf(fp, "%u\t%u\t%u\n", nFiles, nFiles, v);
-            for(i=0;i<nFiles;i++){
-                for(j=0;j<nFiles;j++)
-                    fprintf(fp, "%u\t", hitmap[i][j]); 
-                fprintf(fp, "\n");
-            } 
-            fclose(fp);
-        }     
-    }
-    else{
-        printf("%u\t%u\t%u\n", nFiles, nFiles, v);
-        for(i=0;i<nFiles;i++){
-            for(j=0;j<nFiles;j++){
-                if(hitmap[i][j]>0)
-                    printf("%u %u %u\t", i, j, hitmap[i][j]); 
-            }
-            printf("\n");
-        }         
-    }  
-    //---------------------------------------------------------------------------------
-    free(fi->fileName);
-    free(fi);
-    for(i=0;i<nFiles;i++)
-        free(hitmap[i]);
-    free(hitmap);
-}
-
-void search_self_ext(char* igdName, uint32_t v, char *out, int xlen)
-{   //name standard: igd_file(dbname.igd), index_file(dbname_index.tsv)
-    uint32_t i, j, nq=1, nFiles, nCols=2, genome_size=3095677412;
-    double mq = 1.0;
-    char tmp[128];
-    strcpy(tmp, igdName);
-    tmp[strrchr(tmp, '.')-tmp] = '\0';
-    char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
-    strcat(idFile, "_index.tsv");      
-    struct igd_info *fi = get_igdinfo(idFile, &nFiles); 
-    printf("Line 2847 nfiles: %u\n", nFiles);    
+    printf("Line 3845 nfiles: %u\n", nFiles);    
     //clock_t start, end;
     //hitmap
     uint32_t **hitmap = malloc((nFiles)*sizeof(uint32_t*));
@@ -3904,11 +3857,33 @@ void search_self_ext(char* igdName, uint32_t v, char *out, int xlen)
     }    
     
     uint32_t *countf = calloc(nFiles, sizeof(uint32_t)); //num of intervals involved
+     
     uint64_t nOL;
     if(v>0)
-        nOL = get_overlaps_self_v_x(igdName, nFiles, v, xlen, countf, hitmap);      
-    else
-        nOL = get_overlaps_self_x(igdName, nFiles, xlen, hitmap); 
+        nOL = get_overlaps_self_v(igdName, nFiles, v, countf, hitmap);      
+    else{    
+        for(i=0;i<nFiles;i++)   
+            countf[i] = fi[i].nd;
+        nOL = get_overlaps_self(igdName, nFiles, hitmap); 
+    }    
+        
+    printf("Line 3858 nfiles: %lld\n", (long long)nOL);  
+       
+    double **r_map = malloc((nFiles)*sizeof(double*));        
+    for(i=0;i<nFiles;i++)
+        r_map[i] = calloc((nFiles), sizeof(double));               
+      
+    long double n11, n1221;
+    for(j=0; j<nFiles; j++){
+        //printf("%i %s %i %i %i\n", i, fi[i].fileName, fi[i].nd, (int)fi[i].md, hits[i]);
+        for(i=j; i<nFiles; i++){        
+            n11 = (long double)hitmap[j][i];
+            n1221 = (long double)(countf[i]+countf[j]);
+            if(n1221>0)
+                r_map[j][i] = n11/(n1221-n11);
+        }      
+    }       
+        
     if(strlen(out)>1){
         FILE *fp = fopen(out, "w");
         if(fp==NULL)
@@ -3923,6 +3898,98 @@ void search_self_ext(char* igdName, uint32_t v, char *out, int xlen)
                     fprintf(fp, "%u\t", hitmap[i][j]); 
                 fprintf(fp, "\n");
             } 
+            for(i=0;i<nFiles;i++){
+                for(j=0;j<nFiles;j++)
+                    fprintf(fp, "%10.6f\t", r_map[i][j]); 
+                fprintf(fp, "\n");
+            }             
+            fclose(fp);
+        }     
+    }  
+    else{
+        printf("%u\t%u\t%u\n", nFiles, nFiles, v);
+        for(i=0;i<nFiles;i++){
+            for(j=0;j<nFiles;j++){
+                if(hitmap[i][j]>0)
+                    printf("%u %u %u\t", i, j, hitmap[i][j]); 
+            }
+            printf("\n");
+        }         
+    }  
+    //---------------------------------------------------------------------------------
+    free(fi->fileName);
+    free(fi);
+    for(i=0;i<nFiles;i++){
+        free(hitmap[i]);
+        free(r_map[i]);
+    }
+}
+
+void search_self_ext(char* igdName, uint32_t v, char *out, int xlen)
+{   //name standard: igd_file(dbname.igd), index_file(dbname_index.tsv)
+    uint32_t i, j, nq=1, nFiles, nCols=2, genome_size=3095677412;
+    double mq = 1.0;
+    char tmp[128];
+    strcpy(tmp, igdName);
+    tmp[strrchr(tmp, '.')-tmp] = '\0';
+    char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
+    strcat(idFile, "_index.tsv");      
+    struct igd_info *fi = get_igdinfo(idFile, &nFiles); 
+    printf("Line 3938 nfiles: %u\n", nFiles);    
+    //clock_t start, end;
+    //hitmap
+    uint32_t **hitmap = malloc((nFiles)*sizeof(uint32_t*));
+    for(i=0;i<nFiles;i++){
+        hitmap[i] = calloc((nFiles), sizeof(uint32_t));
+    }    
+    
+    uint32_t *countf = calloc(nFiles, sizeof(uint32_t)); //num of intervals involved
+     
+    uint64_t nOL;
+    if(v>0)
+        nOL = get_overlaps_self_v_x(igdName, nFiles, v, xlen, countf, hitmap);      
+    else{    
+        for(i=0;i<nFiles;i++)   
+            countf[i] = fi[i].nd;
+        nOL = get_overlaps_self_x(igdName, nFiles, xlen, hitmap); 
+    }
+        
+    printf("Line 3954 nfiles: %lld\n", (long long)nOL);     
+    double **r_map = malloc((nFiles)*sizeof(double*));        
+    for(i=0;i<nFiles;i++)
+        r_map[i] = calloc((nFiles), sizeof(double));    
+  
+      
+    long double n11, n1221;
+    for(j=0; j<nFiles; j++){
+        //printf("%i %s %i %i %i\n", i, fi[i].fileName, fi[i].nd, (int)fi[i].md, hits[i]);
+        for(i=j; i<nFiles; i++){        
+            n11 = (long double)hitmap[j][i];
+            n1221 = (long double)(countf[j]+countf[i]);
+            if(n1221>0)
+                r_map[j][i] = n11/(n1221-n11);
+        }      
+    }       
+        
+    if(strlen(out)>1){
+        FILE *fp = fopen(out, "w");
+        if(fp==NULL)
+            printf("Can't open file %s\n", idFile);
+        else{
+            fprintf(fp, "%u\t%u\t%u\n", nFiles, nFiles, v);
+            for(j=0;j<nFiles;j++)
+                fprintf(fp, "%u\t", countf[j]); 
+            fprintf(fp, "\n");            
+            for(i=0;i<nFiles;i++){
+                for(j=0;j<nFiles;j++)
+                    fprintf(fp, "%u\t", hitmap[i][j]); 
+                fprintf(fp, "\n");
+            } 
+            for(i=0;i<nFiles;i++){
+                for(j=0;j<nFiles;j++)
+                    fprintf(fp, "%10.6f\t", r_map[i][j]); 
+                fprintf(fp, "\n");
+            }             
             fclose(fp);
         }     
     }
@@ -3940,10 +4007,116 @@ void search_self_ext(char* igdName, uint32_t v, char *out, int xlen)
     free(fi->fileName);
     free(fi);
     free(countf);
-    for(i=0;i<nFiles;i++)
+    for(i=0;i<nFiles;i++){
         free(hitmap[i]);
-    free(hitmap);
+        free(r_map[i]);
+    }
 }
+
+/*
+void search_self_ext(char* igdName, uint32_t v, char *out, int xlen)
+{   //name standard: igd_file(dbname.igd), index_file(dbname_index.tsv)
+    uint32_t i, j, nq=1, nFiles, nCols=2, genome_size=3095677412;
+    double mq = 1.0;
+    char tmp[128];
+    strcpy(tmp, igdName);
+    tmp[strrchr(tmp, '.')-tmp] = '\0';
+    char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
+    strcat(idFile, "_index.tsv");      
+    struct igd_info *fi = get_igdinfo(idFile, &nFiles); 
+    printf("Line 3938 nfiles: %u\n", nFiles);    
+    //clock_t start, end;
+    //hitmap
+    uint32_t **hitmap = malloc((nFiles)*sizeof(uint32_t*));
+    for(i=0;i<nFiles;i++){
+        hitmap[i] = calloc((nFiles), sizeof(uint32_t));
+    }    
+    
+    uint32_t *countf = calloc(nFiles, sizeof(uint32_t)); //num of intervals involved
+    uint64_t nOL;
+    if(v>0)
+        nOL = get_overlaps_self_v_x(igdName, nFiles, v, xlen, countf, hitmap);      
+    else
+        nOL = get_overlaps_self_x(igdName, nFiles, xlen, hitmap); 
+        
+    printf("Line 3913 nfiles: %lld\n", (long long)nOL);     
+    double **p_map = malloc((nFiles)*sizeof(double*)); 
+    double **o_map = malloc((nFiles)*sizeof(double*));        
+    for(i=0;i<nFiles;i++){
+        p_map[i] = calloc((nFiles), sizeof(double));
+        o_map[i] = calloc((nFiles), sizeof(double));                
+    }       
+    long long n11, n12, n21, n22, n22_full, n3, xlen2=xlen+xlen;
+    double comp_mean, ratio;
+    long double left, right, two, r;
+    for(j=0; j<nFiles; j++){
+        //printf("%i %s %i %i %i\n", i, fi[i].fileName, fi[i].nd, (int)fi[i].md, hits[i]);
+        for(i=j; i<nFiles; i++){        
+            n11 = (long long)(hitmap[j][i]);
+            n12 = (long long)(MAX(0, countf[j]-n11));
+            n21 = (long long)(MAX(0, countf[i]-n11));
+            comp_mean = fi[i].md + xlen2;
+            n3 = n11 + n12 + n21;
+            n22_full = (long long)MAX(n3, genome_size/comp_mean);
+            n22 = MAX(1, n22_full - n3);
+            left, right, two;
+            //printf("%i %u %f %lli %lli %lli %lli\n", i, hits[i], comp_mean, n11, n12, n21, n22);
+            r = _kt_fisher_exact(n11,n12,n21,n22,&left,&right,&two);
+            if(n11>1 && n12>10 && n21>10)
+                o_map[j][i] = ((double)n11/(double)n12)/((double)n21/(double)n22);//odds ratio
+            p_map[j][i] = neglog10p(two);//p-value
+        }
+        printf(".....%i\n", j);       
+    }       
+        
+    if(strlen(out)>1){
+        FILE *fp = fopen(out, "w");
+        if(fp==NULL)
+            printf("Can't open file %s\n", idFile);
+        else{
+            fprintf(fp, "%u\t%u\t%u\n", nFiles, nFiles, v);
+            for(j=0;j<nFiles;j++)
+                fprintf(fp, "%u\t", countf[j]); 
+            fprintf(fp, "\n");            
+            for(i=0;i<nFiles;i++){
+                for(j=0;j<nFiles;j++)
+                    fprintf(fp, "%u\t", hitmap[i][j]); 
+                fprintf(fp, "\n");
+            } 
+            for(i=0;i<nFiles;i++){
+                for(j=0;j<nFiles;j++)
+                    fprintf(fp, "%10.3f\t", p_map[i][j]); 
+                fprintf(fp, "\n");
+            } 
+            for(i=0;i<nFiles;i++){
+                for(j=0;j<nFiles;j++)
+                    fprintf(fp, "%10.3f\t", o_map[i][j]); 
+                fprintf(fp, "\n");
+            }             
+            fclose(fp);
+        }     
+    }
+    else{
+        printf("%u\t%u\t%u\n", nFiles, nFiles, v);
+        for(i=0;i<nFiles;i++){
+            for(j=0;j<nFiles;j++){
+                if(hitmap[i][j]>0)
+                    printf("%u %u %u\t", i, j, hitmap[i][j]); 
+            }
+            printf("\n");
+        }         
+    }  
+    //---------------------------------------------------------------------------------
+    free(fi->fileName);
+    free(fi);
+    free(countf);
+    for(i=0;i<nFiles;i++){
+        free(hitmap[i]);
+        free(p_map[i]);
+        free(o_map[i]);
+    }
+    free(hitmap);
+} */
 
 void search_r(char* igdName, int ichr, uint32_t qs, uint32_t qe)
 {   //name standard: igd_file(dbname.igd), index_file(dbname_index.tsv)

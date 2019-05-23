@@ -111,16 +111,16 @@ int compare_midx(const void *a, const void *b);
  *      Author: nek3d
  */
 long double _lbinom(long long n, long long k);
-long double _hypergeo(long long n11, long long n1_, long long n_1, long long n);
+long double _hypergeo(long long nA, long long nAC, long long nAB, long long n);
 
 typedef struct {
-    long long n11, n1_, n_1, n;
+    long long nA, nAC, nAB, n;
     long double p;
 } _hgacc_t;
 
 // incremental version of hypergenometric distribution
-long double _hypergeo_acc(long long n11, long long n1_, long long n_1, long long n, _hgacc_t *aux);
-long double _kt_fisher_exact(long long n11, long long n12, long long n21, long long n22, long double *_left, long double *_right, long double *two);
+long double _hypergeo_acc(long long nA, long long nAC, long long nAB, long long n, _hgacc_t *aux);
+long double _kt_fisher_exact(long long nA, long long nC, long long nB, long long nD, long double *_left, long double *_right, long double *two);
 double log2fc(double ratio);
 long double neglog10p(long double sig);
 

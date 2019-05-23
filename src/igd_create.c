@@ -2476,7 +2476,7 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
     char *ftype;
     int nCols=16, err;                    
     int tlen, bytes_read;
-    unsigned char buffer[bgz_buf]; 
+    unsigned char buffer[bgz_buf];
     uint64_t cTotal, nL;
     //1. find record lines (from one part of big file or many samll files) of size ~maxCount
     //2. procese and save (n0: starting file index, n1 ending file' n0 start line, n2 ending line)
