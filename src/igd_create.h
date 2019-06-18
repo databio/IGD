@@ -13,19 +13,23 @@ void append_igd(struct igd_mix *mdata, uint32_t *counts, struct igd_info *fInfo,
 //reload tile igd files, sort them and save them into a single file
 void store_igd(char *igdName);
 
-//create ucsc igd from gz
+//create igd from .bed.gz files
 void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode);
-//create ucsc igd from gz
+
+//create igd from .bed.gz
 void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode);
-//create ucsc igd from gz: ailist data structure for in-bin search
+
+//create igd from .bed.gz: ailist data structure for in-bin search
 void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode);
-//create igd from a single .bed.gz file with the name/index at 4th column 
+
+//create igd from a single .bed.gz file with the name/index at 4th column: Jaspar2018
 void create_igd_gz3(char *iPath, char *oPath, char *igdName, int mode);
-//create ucsc igd plain bed files
+
+//create igd from .bed text files
 void create_igd(char *iPath, char *oPath, char *igdName, int mode);
-//create ucsc igd plain bed files
+
 void create_igd1(char *iPath, char *oPath, char *igdName, int mode);
-//create ucsc igd plain bed files
+
 void create_igd2(char *iPath, char *oPath, char *igdName, int mode);
 
 void constructAIList(struct igd_data2* B, int nB, struct igd_data2* aiL);

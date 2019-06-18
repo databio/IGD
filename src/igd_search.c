@@ -103,18 +103,27 @@ struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles)
         printf("file not found:%s\n", ifName);
         return NULL;
     }
-    char buf[1024], ch;
-    int i, nfiles = -1;//first row is title
-    while((ch=fgetc(fp))!=EOF){
+    char buf[1024], sub[10], ch;
+    int i, nfiles=0; 
+    fgets(buf, 1024, fp);
+    strncpy(sub, buf, 6);
+    if(strcmp(sub,"genome")==0)
+    	nfiles=-1;	//first row is title or genomefile
+    while(fgets(buf, 1024, fp)!=NULL){
+		nfiles++;
+    }
+    /*while((ch=fgetc(fp))!=EOF){
         if(ch=='\n')
         	    nfiles++;
-    }  
+    } */ 
     struct igd_info *fi = (struct igd_info*)malloc(nfiles*sizeof(struct igd_info));
     //------------
     char **splits;
     int ncols = 4;  
     fseek(fp, 0, SEEK_SET);
-    i=0;
+    i=0;    
+    if(strcmp(sub,"genome")==0)
+    	fgets(buf, 1024, fp);
     fgets(buf, 1024, fp);   //header
     while(fgets(buf, 1024, fp)!=NULL){	
         splits = str_split(buf,'\t', &ncols);        
@@ -4211,6 +4220,7 @@ int igd_search(int argc, char **argv)
     int checking=0, mode=-1, ext=0, xlen=0,  ichr, k;
     char out[64]="";  
     char *chr; 
+    
     //convert block index to chr index for convenience
     g2ichr = malloc(nTiles*sizeof(uint32_t));
     uint32_t i, j;
@@ -4268,7 +4278,29 @@ int igd_search(int argc, char **argv)
         printf("%s does not exist", igdName);
         return EX_OK;
     }
-    fclose(fi);     
+    fclose(fi); 
+      
+    //-----------------------------------------------------------
+    char tmp[128], buf[128];
+    char *s1, *s2;
+    strcpy(tmp, igdName);
+    tmp[strrchr(tmp, '.')-tmp] = '\0';
+    char *idFile = tmp;//str_split(tmp, '.', &nCols)[0];
+    strcat(idFile, "_index.tsv");       
+    fi = fopen(idFile, "r");
+    if(fi==NULL){
+        printf("file not found:%s\n", idFile);
+        return NULL;
+    }  
+    fgets(buf, 1024, fi);
+    s1 = strtok(buf, "\t");
+    if(strcmp(s1, "genome_file")==0){//old igd does not have this
+    	s2 = strtok(NULL, "\t");
+    	strcpy(gfile, s2);
+    	setup_igd(s2);    
+    }
+    fclose(fi);
+    //----------------------------------------------------------
 
     if(mode==0){
         if(ext==0)

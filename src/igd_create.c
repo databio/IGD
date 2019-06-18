@@ -19,6 +19,7 @@ int create_help(int exit_code)
 "                   2 for [index, start, end, maxE]  \n"
 "                   3 from a single file with 4th column value  \n"
 "             -t  Input data files in .bed txt format\n"
+"             -f  Genome-sizes file\n"
 "             -m  Mode--save all tile data\n",
             PROGRAM_NAME, VERSION, PROGRAM_NAME);
     return exit_code;
@@ -592,7 +593,8 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
     FILE *fpi = fopen(idFile, "w");
     if(fpi==NULL)
         printf("Can't open file %s", idFile);
-        
+    if(strlen(gfile)>5)
+    	fprintf(fpi, "genome_file\t%s\n", gfile);      
     fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
     for(i=0; i<n_files; i++){
         tchr = strrchr(file_ids[i], '/');
@@ -616,7 +618,7 @@ void create_igd_gz(char *iPath, char *oPath, char *igdName, int mode)
     uint32_t nrec;  
     FILE *fp0;       
     i=1122330000;   //type 0 data
-    fwrite(&i, sizeof(uint32_t), 1, fp1);      
+    fwrite(&i, sizeof(uint32_t), 1, fp1);     
     fwrite(Counts, sizeof(uint32_t), nTiles, fp1);
     char iname[256]; 
     struct igd_data *gdata;            
@@ -849,7 +851,8 @@ void create_igd_gz3(char *iPath, char *oPath, char *igdName, int mode)
     FILE *fpi = fopen(idFile, "w");
     if(fpi==NULL)
         printf("Can't open file %s", idFile);
-        
+    if(strlen(gfile)>5)
+    	fprintf(fpi, "genome_file\t%s\n", gfile);         
     fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
     for(i=0; i<n_files; i++){
         tchr = strrchr(file_ids[i], '/');
@@ -873,7 +876,7 @@ void create_igd_gz3(char *iPath, char *oPath, char *igdName, int mode)
     uint32_t nrec;  
     FILE *fp0;       
     i=1122330000;   //type 0 data
-    fwrite(&i, sizeof(uint32_t), 1, fp1);      
+    fwrite(&i, sizeof(uint32_t), 1, fp1);          
     fwrite(Counts, sizeof(uint32_t), nTiles, fp1);
     char iname[256]; 
     struct igd_data *gdata;            
@@ -1199,7 +1202,8 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
     FILE *fpi = fopen(idFile, "w");
     if(fpi==NULL)
         printf("Can't open file %s", idFile);
-        
+    if(strlen(gfile)>5)
+    	fprintf(fpi, "genome_file\t%s\n", gfile);          
     fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
     for(i=0; i<n_files; i++){
         tchr = strrchr(file_ids[i], '/');
@@ -1223,7 +1227,7 @@ void create_igd_gz1(char *iPath, char *oPath, char *igdName, int mode)
     uint32_t nrec;  
     FILE *fp0;            
     i=1122331111;   //type 3 data
-    fwrite(&i, sizeof(uint32_t), 1, fp1);        
+    fwrite(&i, sizeof(uint32_t), 1, fp1);            
     fwrite(Counts, sizeof(uint32_t), nTiles, fp1);
     char iname[256]; 
     struct igd_data1 *gdata;        
@@ -1649,7 +1653,8 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
     FILE *fpi = fopen(idFile, "w");
     if(fpi==NULL)
         printf("Can't open file %s", idFile);
-        
+    if(strlen(gfile)>5)
+    	fprintf(fpi, "genome_file\t%s\n", gfile);          
     fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
     for(i=0; i<n_files; i++){
         tchr = strrchr(file_ids[i], '/');
@@ -1673,7 +1678,7 @@ void create_igd_gz2(char *iPath, char *oPath, char *igdName, int mode)
     uint32_t nrec;  
     FILE *fp0;        
     i=1122332222;   //type 6 data
-    fwrite(&i, sizeof(uint32_t), 1, fp1);   
+    fwrite(&i, sizeof(uint32_t), 1, fp1);      
     fwrite(Counts, sizeof(uint32_t), nTiles, fp1);  //
     char iname[256]; 
     struct igd_data2 *gdata, *gdata0;      
@@ -2021,7 +2026,8 @@ void create_igd(char *iPath, char *oPath, char *igdName, int mode)
         printf("Can't open file %s", idFile);
         return;
     }
-        
+    if(strlen(gfile)>5)
+    	fprintf(fpi, "genome_file\t%s\n", gfile);          
     fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
     for(i=0; i<n_files; i++){
         tchr = strrchr(file_ids[i], '/');
@@ -2381,7 +2387,8 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
         printf("Can't open file %s", idFile);
         return;
     }
-        
+    if(strlen(gfile)>5)
+    	fprintf(fpi, "genome_file\t%s\n", gfile);          
     fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
     for(i=0; i<n_files; i++){
         tchr = strrchr(file_ids[i], '/');
@@ -2405,7 +2412,20 @@ void create_igd1(char *iPath, char *oPath, char *igdName, int mode)
     uint32_t nrec;  
     FILE *fp0;  
     i=1122331111;   //type 3 data
-    fwrite(&i, sizeof(uint32_t), 1, fp1);           
+    fwrite(&i, sizeof(uint32_t), 1, fp1);  
+    //-------------------------------------------------------------
+    //Write genome-sizes info: nTiles, nChr, folders, gstart
+    /*fwrite(&nChr, sizeof(uint32_t), 1, fp1);     
+    fwrite(&nTiles, sizeof(uint32_t), 1, fp1);     
+    fwrite(nmax, sizeof(uint32_t), nChr, fp1);     
+    fwrite(gstart, sizeof(uint32_t), nChr+1, fp1);  
+	for(i=0;i<nChr;i++){
+		j = strlen(folder[i]);
+		j+=j%4;
+    	fwrite(&j, sizeof(uint32_t), 1, fp1); 
+    	fwrite(folder[i], sizeof(char), j, fp1); 	   
+    }*/
+    //-------------------------------------------------------------          
     fwrite(Counts, sizeof(uint32_t), nTiles, fp1);
     char iname[256]; 
     struct igd_data1 *gdata;  
@@ -2745,7 +2765,8 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
         printf("Can't open file %s", idFile);
         return;
     }
-        
+    if(strlen(gfile)>5)
+    	fprintf(fpi, "genome_file\t%s\n", gfile);          
     fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
     for(i=0; i<n_files; i++){
         tchr = strrchr(file_ids[i], '/');
@@ -2753,8 +2774,22 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
             tchr+=1;
         else
             tchr = file_ids[i];
-        fprintf(fpi, "%u\t%s\t%u\t%f\n", i, tchr, nd[i], md[i]/nd[i]);     
+        fprintf(fpi, "%u\t%s\t%u\t%f\n", i, tchr, nd[i], md[i]/nd[i]);  
+		//-------------------------------------------------------------
+		//Write genome-sizes info: nTiles, nChr, folders, gstart
+		/*fwrite(&nChr, sizeof(uint32_t), 1, fp1);     
+		fwrite(&nTiles, sizeof(uint32_t), 1, fp1);     
+		fwrite(nmax, sizeof(uint32_t), nChr, fp1);     
+		fwrite(gstart, sizeof(uint32_t), nChr+1, fp1);  
+		for(i=0;i<nChr;i++){
+			j = strlen(folder[i]);
+			j+=j%4;
+			fwrite(&j, sizeof(uint32_t), 1, fp1); 
+			fwrite(folder[i], sizeof(char), j, fp1); 	   
+		}*/
+		//-------------------------------------------------------------            
     }
+    
     fclose(fpi);   
     free(nd);
     free(md);    
@@ -2769,7 +2804,7 @@ void create_igd2(char *iPath, char *oPath, char *igdName, int mode)
     uint32_t nrec;  
     FILE *fp0;   
     i=1122332222;   //type 6 data
-    fwrite(&i, sizeof(uint32_t), 1, fp1);          
+    fwrite(&i, sizeof(uint32_t), 1, fp1);              
     fwrite(Counts, sizeof(uint32_t), nTiles, fp1);
     char iname[256]; 
     struct igd_data2 *gdata, *gdata0; 
@@ -2811,18 +2846,16 @@ int igd_create(int argc, char **argv)
 {
     if (argc < 5) 
         return create_help(EX_OK);       
-    //convert block index to chr index for convenience
-    g2ichr = malloc(nTiles*sizeof(uint32_t));
-    uint32_t i, j;
-    for(i=0; i<93; i++){  
-        for(j=gstart[i]; j<gstart[i+1]; j++)      
-	    g2ichr[j] = i;
-    }
+
+    uint32_t i, j, n;
     char ipath[128];
     char opath[128];
+    char buf[128], sub[128];
+    char *s1, *s2;
     strcpy(ipath, argv[2]);
     strcpy(opath, argv[3]);
     char *dbname = argv[4]; 
+    char *g_file = NULL;
     int mode = 0;//mode 1: save tile data
     int dtype = 0;//default:g_data 4 items, -1 old, 0 [default], 1 [3 items], 2[ailist]
     int gztxt = 0;//input type .gz or .bed /txt
@@ -2833,7 +2866,10 @@ int igd_create(int argc, char **argv)
         else if(strcmp(argv[i], "-m")==0)
             mode = 1; 
         else if(strcmp(argv[i], "-s")==0 && i+1<argc)//data structure type
-            dtype = atoi(argv[i+1]);              
+            dtype = atoi(argv[i+1]); 
+        else if(strcmp(argv[i], "-f")==0 && i+1<argc){//genome-size file
+            g_file = argv[i+1]; 
+        }                        
     }
     if(opath[strlen(opath)-1]!='/'){
         strcat(opath, "/");
@@ -2847,6 +2883,25 @@ int igd_create(int argc, char **argv)
             strcat(ipath, "/*");
         }
     }
+    
+    //if gfile: determine nChr, nTiles, folder[], nmax, gstart[]
+    if(strlen(g_file)>5){
+		if(setup_igd(g_file)==0)
+			return 0; 
+		strcpy(gfile, g_file);
+    }
+    else{
+    	folder = folder0;
+    	gstart = gstart0;
+		nmax   = nmax0;
+    }
+    
+    //convert block index to chr index for convenience    
+    g2ichr = malloc(nTiles*sizeof(uint32_t));
+    for(i=0; i<nChr; i++){  
+        for(j=gstart[i]; j<gstart[i+1]; j++)      
+	    g2ichr[j] = i;
+    }    
     
     //check if the subfolders exist:    
     char ftmp[128];      
@@ -2890,6 +2945,13 @@ int igd_create(int argc, char **argv)
     } 
 
     free(g2ichr);
+    if(gfile!=NULL){
+    	free(nmax);
+    	free(gstart);
+    	for(i=0;i<nChr;i++)
+    		free(folder[i]);
+    	free(folder);
+    }
     return EX_OK;
 }
 

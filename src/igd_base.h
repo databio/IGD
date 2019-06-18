@@ -25,12 +25,13 @@
 #define VERSION MAJOR_VERSION "." MINOR_VERSION "." REVISION_VERSION
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
-extern char *fileBase;         	//14 bits block
-extern uint32_t nmax[];
-extern char *folder[];
-extern uint32_t gstart[];
+extern char *fileBase;   			//14 bits block
+extern char gfile[];   			//gfile:genome-sizes file
+extern uint32_t nmax0[], *nmax;
+extern char *folder0[], **folder;	//genome-chr name
+extern uint32_t gstart0[], *gstart;
 extern uint32_t nTiles;
-extern uint32_t nbp;
+extern uint32_t nbp, nChr;			//number of chr groups
 extern uint32_t bgz_buf;
 extern uint64_t maxCount;
 extern uint32_t *g2ichr;
@@ -83,7 +84,7 @@ struct igd_info
 char** str_split( char* str, char delim, int *nmax);
 char** str_split_t( char* str, int nItems);
 void str_splits( char* str, int *nmax, char **splits);
-
+int setup_igd(char* g_file);			//setup basic parameters
 //-------------------------------------------------------------------------------------
 int compare_iidx(const void *a, const void *b);
 

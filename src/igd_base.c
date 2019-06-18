@@ -123,6 +123,52 @@ char** str_split( char* str, char delim, int *nmax)
     return splits;
 }
 
+int setup_igd(char *g_file){
+	FILE* fg = fopen(g_file, "r");
+	if(!fg){
+		printf("Can't open genome-sizes file: %s\n", g_file);
+	    return 0;  
+	}         
+	int j = 0, i = 0, n;
+	char buf[128], sub[128];
+	char *s1, *s2;
+	while(fgets(buf, 128, fg)!=NULL){	
+		strncpy(sub, buf, 3);
+	    if(strcmp(sub, "chr")==0)
+	    	j++;
+	    else
+	    	i=-1;
+	}	    	
+	if(j<1 || i<0){
+		printf("Wrong genome-sizes file: %s\n", g_file); 			
+		fclose(fg);
+		return 0;
+	}
+	nChr = j;
+	nmax = malloc(nChr*sizeof(uint32_t));
+	gstart = malloc((nChr+1)*sizeof(uint32_t));
+	folder = malloc(nChr*sizeof(char*));
+	j=0;	n=0;
+	fseek(fg, 0, SEEK_SET);		
+	while(fgets(buf, 128, fg)!=NULL){	
+	    s1 = strtok(buf, "\t");
+	    s2 = strtok(NULL, "\t");
+	    i = strlen(s1)+1;
+	    i += i%4;
+	    folder[j] = malloc(i*sizeof(char));	
+	    strcpy(folder[j], s1);
+	    nmax[j] = atoi(s2)/nbp + 1;
+	    n += nmax[j];
+	    j++;		    
+	}
+	nTiles = n;
+	gstart[0] = 0;
+	for(i=0;i<nChr;i++)
+		gstart[i+1]+=nmax[i];		
+	fclose(fg);	
+	return 1;
+}
+
 //-------------------------------------------------------------------------------------
 //This section is taken from giggle package
 /* Log gamma function
