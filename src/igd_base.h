@@ -1,7 +1,8 @@
-//=====================================================================================
+//=================================================================================
 //Common structs, parameters, functions
 //by Jianglin Feng  05/12/2018
-//-------------------------------------------------------------------------------------
+//re-designed 7/1/2019
+//---------------------------------------------------------------------------------
 #ifndef __IGD_BASE_H__
 #define __IGD_BASE_H__
 
@@ -14,8 +15,14 @@
 #include <math.h>
 #include <float.h>
 #include <glob.h>
+#include <zlib.h>
 #include <errno.h>
 #include <sysexits.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <assert.h>
+#include "khash.h"
+#include "kseq.h"
 
 #define PROGRAM_NAME  "igd"
 #define MAJOR_VERSION "0"
@@ -24,106 +31,178 @@
 #define BUILD_VERSION "0"
 #define VERSION MAJOR_VERSION "." MINOR_VERSION "." REVISION_VERSION
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define maxCount 268435456	//16* = 4GB memory
 
-extern char *fileBase;   			//14 bits block
-extern char gfile[];   			//gfile:genome-sizes file
-extern uint32_t nmax0[], *nmax;
-extern char *folder0[], **folder;	//genome-chr name
-extern uint32_t gstart0[], *gstart;
-extern uint32_t nTiles;
-extern uint32_t nbp, nChr;			//number of chr groups
-extern uint32_t bgz_buf;
-extern uint64_t maxCount;
-extern uint32_t *g2ichr;
+//---------------------------------------------------------------------------------
+typedef struct{							//default 
+    int32_t idx;        				//genomic object--data set index
+    int32_t start;      				//region start
+    int32_t end;        				//region end
+} gdata_t;
 
-//-------------------------------------------------------------------------------------
-struct igd_data
-{   //default data
-    uint32_t i_idx;        			//genomic object--data set index
-    uint32_t r_start;      			//region start
-    uint32_t r_end;        			//region end
-    uint32_t g_val;        			//signal level
-};
+typedef struct{							//default 
+    int32_t idx;        				//genomic object--data set index
+    int32_t start;      				//region start
+    int32_t end;        				//region end
+    int32_t value;
+} gdata1_t;
 
-struct igd_data1
-{   //region only data
-    uint32_t i_idx;        			//genomic object--data set index
-    uint32_t r_start;      			//region start
-    uint32_t r_end;        			//region end
-};
+typedef struct{
+    char* fileName;						//dataset file
+    int32_t nr;							//number regions/dataset
+    double md;    						//average width of the regions
+} info_t;
 
-struct igd_data2                   //ailist data structure
-{   //region only data
-    uint32_t i_idx;        			//genomic object--data set index
-    uint32_t r_start;      			//region start
-    uint32_t r_end;        			//region end
-    uint32_t r_max;               //augment  
-};
+typedef struct{
+	int32_t ncnts, nCnts, mcnts;		//batch counts, total, max
+	gdata_t *gList;						//gdata list
+	gdata1_t *gList1;
+} tile_t;
 
-struct query_data
-{
-    uint32_t q_idx;        			//tile index--locus position
-    uint32_t r_start;      			//region start
-    uint32_t r_end;        			//region end
-    uint32_t g_val;        			//signal level
-};
+typedef struct{
+	char *name;    						//name of the contig
+	int32_t mTiles;						//determined by the interal start and end 
+	tile_t *gTile;                  	//tile data
+} ctg_t;
 
-struct igd_mix
-{    
-    uint32_t m_idx;                 //tile index--chr 
-    struct igd_data igd;
-};
+typedef struct{		
+	int32_t nbp, gType, nctg, mctg;		// number of base pairs, data type: 0, 1, 2 etc; size differs	
+	int64_t total;						//total region in each ctg
+	ctg_t *ctg;        					//list of contigs (of size _n_ctg_) 
+} igd_t;
 
-struct igd_info
-{
-    char* fileName;
-    uint32_t nd;
-    double md;
-};
+typedef struct{							//for retrieving from disk file
+	int32_t nFiles;
+	info_t *finfo;
+	char fname[64];
+	int32_t nbp, gType, nCtg;			//data type: 0, 1, 2 etc; size differs	
+	char **cName;						//name of ctgs
+	int32_t *nTile;						//num of tiles in each ctg
+	int32_t **nCnt;						//num of counts in each tile
+	int64_t **tIdx;  					//tile index *sizeof -> location in .igd file
+} iGD_t;
 
-char** str_split( char* str, char delim, int *nmax);
-char** str_split_t( char* str, int nItems);
+//---------Globals-----------------------------------------------------------------
+extern void *hc;						//dict for converting contig names to int
+extern iGD_t *IGD;
+extern gdata_t *gData;
+extern gdata1_t *gData1;
+extern int32_t preIdx, preChr;
+extern FILE *fP;
+//---------------------------------------------------------------------------------
+//Parse a line of BED file
 void str_splits( char* str, int *nmax, char **splits);
-int setup_igd(char* g_file);			//setup basic parameters
-//-------------------------------------------------------------------------------------
-int compare_iidx(const void *a, const void *b);
+char *parse_bed(char *s, int32_t *st_, int32_t *en_);
 
-int compare_rend(const void *a, const void *b);
+//Binary search
+int32_t bSearch(gdata_t *gdata, int32_t tc, int32_t qs);
+int32_t bSearch1(gdata1_t *gdata, int32_t tc, int32_t qs);
 
-int compare_iidx1(const void *a, const void *b);
+//Add an interval
+void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t idx);
+void igd_add1(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t v, int32_t idx);
 
-int compare_rend1(const void *a, const void *b);
+//Get id from igd dict
+int32_t get_id(const char *chrm);
 
-int compare_qidx(const void *a, const void *b);
+//Get file info from .tsv
+info_t *get_fileinfo(char *ifName, int32_t *nFiles);
 
-int compare_rstart(const void *a, const void *b);
+//Get igd info from .igd
+iGD_t *get_igdinfo(char *igdFile);
 
-int compare_rstart2(const void *a, const void *b);
+//Initialize igd_t
+igd_t *igd_init(void);
 
-int compare_midx(const void *a, const void *b);
+//Save tile data
+void igd_saveT(igd_t *igd, char *oPath);
+void igd_saveT1(igd_t *igd, char *oPath);
 
-//-------------------------------------------------------------------------------------
-//This section is taken from giggle package
-/* Log gamma function
- * \log{\Gamma(z)}
- * AS245, 2nd algorithm, http://lib.stat.cmu.edu/apstat/245
- * kfunc.h
- *  Created on: May 1, 2015
- *      Author: nek3d
- */
-long double _lbinom(long long n, long long k);
-long double _hypergeo(long long nA, long long nAC, long long nAB, long long n);
+//Sort and save igd
+void igd_save(igd_t *igd, char *oPath, char *igdName);
 
-typedef struct {
-    long long nA, nAC, nAB, n;
-    long double p;
-} _hgacc_t;
+//Free ailist data
+void igd_destroy(igd_t *igd);
 
-// incremental version of hypergenometric distribution
-long double _hypergeo_acc(long long nA, long long nAC, long long nAB, long long n, _hgacc_t *aux);
-long double _kt_fisher_exact(long long nA, long long nC, long long nB, long long nD, long double *_left, long double *_right, long double *two);
-double log2fc(double ratio);
-long double neglog10p(long double sig);
+//---------------------------------------------------------------------------------
+//The following section taken from Dr Heng Li's cgranges
+// (https://github.com/lh3/cgranges)
+
+KSTREAM_INIT(gzFile, gzread, 0x10000)
+/**************
+ * Radix sort *
+ **************/
+#define RS_MIN_SIZE 64
+#define RS_MAX_BITS 8
+
+#define KRADIX_SORT_INIT(name, rstype_t, rskey, sizeof_key) \
+	typedef struct { \
+		rstype_t *b, *e; \
+	} rsbucket_##name##_t; \
+	void rs_insertsort_##name(rstype_t *beg, rstype_t *end) \
+	{ \
+		rstype_t *i; \
+		for (i = beg + 1; i < end; ++i) \
+			if (rskey(*i) < rskey(*(i - 1))) { \
+				rstype_t *j, tmp = *i; \
+				for (j = i; j > beg && rskey(tmp) < rskey(*(j-1)); --j) \
+					*j = *(j - 1); \
+				*j = tmp; \
+			} \
+	} \
+	void rs_sort_##name(rstype_t *beg, rstype_t *end, int n_bits, int s) \
+	{ \
+		rstype_t *i; \
+		int size = 1<<n_bits, m = size - 1; \
+		rsbucket_##name##_t *k, b[1<<RS_MAX_BITS], *be = b + size; \
+		assert(n_bits <= RS_MAX_BITS); \
+		for (k = b; k != be; ++k) k->b = k->e = beg; \
+		for (i = beg; i != end; ++i) ++b[rskey(*i)>>s&m].e; \
+		for (k = b + 1; k != be; ++k) \
+			k->e += (k-1)->e - beg, k->b = (k-1)->e; \
+		for (k = b; k != be;) { \
+			if (k->b != k->e) { \
+				rsbucket_##name##_t *l; \
+				if ((l = b + (rskey(*k->b)>>s&m)) != k) { \
+					rstype_t tmp = *k->b, swap; \
+					do { \
+						swap = tmp; tmp = *l->b; *l->b++ = swap; \
+						l = b + (rskey(tmp)>>s&m); \
+					} while (l != k); \
+					*k->b++ = tmp; \
+				} else ++k->b; \
+			} else ++k; \
+		} \
+		for (b->b = beg, k = b + 1; k != be; ++k) k->b = (k-1)->e; \
+		if (s) { \
+			s = s > n_bits? s - n_bits : 0; \
+			for (k = b; k != be; ++k) \
+				if (k->e - k->b > RS_MIN_SIZE) rs_sort_##name(k->b, k->e, n_bits, s); \
+				else if (k->e - k->b > 1) rs_insertsort_##name(k->b, k->e); \
+		} \
+	} \
+	void radix_sort_##name(rstype_t *beg, rstype_t *end) \
+	{ \
+		if (end - beg <= RS_MIN_SIZE) rs_insertsort_##name(beg, end); \
+		else rs_sort_##name(beg, end, RS_MAX_BITS, (sizeof_key - 1) * RS_MAX_BITS); \
+	}
+
+/*********************
+ * Convenient macros *
+ *********************/
+
+#ifndef kroundup32
+#define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
+#endif
+
+#define CALLOC(type, len) ((type*)calloc((len), sizeof(type)))
+#define REALLOC(ptr, len) ((ptr) = (__typeof__(ptr))realloc((ptr), (len) * sizeof(*(ptr))))
+
+#define EXPAND(a, m) do { \
+		(m) = (m)? (m) + ((m)>>1) : 16; \
+		REALLOC((a), (m)); \
+	}while (0) 
 
 #endif
 

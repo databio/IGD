@@ -1,3 +1,4 @@
+CFLAGS = -g -O2 -lz -lm
 BIN = bin
 OBJ = obj
 VPATH = src
@@ -7,9 +8,8 @@ OBJS = $(addprefix $(OBJ)/, $(LIB))
 $(OBJ)/%.o: %.c
 	cc -c $(CFLAGS) $< -o $@ 
 
-igd: $(OBJS)
-	cc -o $(BIN)/igd $(OBJS) -lm -lz
-
+igd_dev1: $(OBJS)
+	cc -o $(BIN)/igd_dev1 $(OBJS) $(CFLAGS)
 all: $(OBJS)
 
 $(OBJS): | $(OBJ) $(BIN)

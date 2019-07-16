@@ -1,85 +1,14 @@
-//=====================================================================================
+//===================================================================================
 //Common igd struct, parameters, functions
 //by Jianglin Feng  05/12/2018
-//-------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
 #include "igd_base.h"
-
-int compare_iidx(const void *a, const void *b)
-{
-    struct igd_data *pa = (struct igd_data *) a;
-    struct igd_data *pb = (struct igd_data *) b;
-    return pa->i_idx - pb->i_idx;
-}
-
-int compare_rend(const void *a, const void *b)
-{
-    struct igd_data *pa = (struct igd_data *) a;
-    struct igd_data *pb = (struct igd_data *) b;
-    return pa->r_end - pb->r_end;
-}
-
-int compare_iidx1(const void *a, const void *b)
-{
-    struct igd_data1 *pa = (struct igd_data1 *) a;
-    struct igd_data1 *pb = (struct igd_data1 *) b;
-    return pa->i_idx - pb->i_idx;
-}
-
-int compare_rend1(const void *a, const void *b)
-{
-    struct igd_data1 *pa = (struct igd_data1 *) a;
-    struct igd_data1 *pb = (struct igd_data1 *) b;
-    return pa->r_end - pb->r_end;
-}
-
-int compare_qidx(const void *a, const void *b)
-{
-    struct query_data *pa = (struct query_data *) a;
-    struct query_data *pb = (struct query_data *) b;
-    return pa->q_idx - pb->q_idx;
-}
-
-int compare_rstart(const void *a, const void *b)
-{
-    struct query_data *pa = (struct query_data *) a;
-    struct query_data *pb = (struct query_data *) b;
-    return pa->r_start - pb->r_start;
-}
-
-int compare_rstart2(const void *a, const void *b)
-{
-    struct igd_data2 *pa = (struct igd_data2 *) a;
-    struct igd_data2 *pb = (struct igd_data2 *) b;
-    return pa->r_start - pb->r_start;
-}
-
-int compare_midx(const void *a, const void *b)
-{
-    struct igd_mix *pa = (struct igd_mix *) a;
-    struct igd_mix *pb = (struct igd_mix *) b;
-    return pa->m_idx - pb->m_idx;
-}
-
-char** str_split_t( char* str, int nItems)
-{
-    char **splits;
-    char *tmp;
-    int i;
-    if (str == NULL)
-        return NULL;
-    else {    
-        splits = malloc((nItems+1)*sizeof(*splits)); 
-        i=0;
-        tmp = strtok(str, "\t");
-        while(tmp!=NULL && i<nItems){
-            splits[i] = tmp;
-            tmp = strtok(NULL, "\t");
-            i++;
-        }
-    }
-    //printf("%s %s %s \n", splits[0], splits[1], splits[2]);
-    return splits;
-}
+#define gdata_t_key(r) ((r).end)
+#define gdata1_t_key(r) ((r).end)
+KRADIX_SORT_INIT(intv, gdata_t, gdata_t_key, 4)
+KRADIX_SORT_INIT(intv1, gdata1_t, gdata1_t_key, 4)
+KHASH_MAP_INIT_STR(str, int32_t)
+typedef khash_t(str) strhash_t;
 
 void str_splits( char* str, int *nmax, char **splits)
 {   //tsv 
@@ -97,203 +26,415 @@ void str_splits( char* str, int *nmax, char **splits)
     *nmax = ns;
 }
 
-char** str_split( char* str, char delim, int *nmax)
-{   //slightly faster than _t
-    char** splits;
-    char* ch;    
-    int ns;
-    if (str == NULL || delim=='\0')
+char *parse_bed(char *s, int32_t *st_, int32_t *en_)
+{
+	char *p, *q, *ctg = 0;
+	int32_t i, st = -1, en = -1;
+	for (i = 0, p = q = s;; ++q) {
+		if (*q == '\t' || *q == '\0') {
+			int c = *q;
+			*q = 0;
+			if (i == 0) ctg = p;
+			else if (i == 1) st = atol(p);
+			else if (i == 2) en = atol(p);
+			++i, p = q + 1;
+			if (c == '\0') break;
+		}
+	}
+	*st_ = st, *en_ = en;
+	return i >= 3? ctg : 0;
+}
+
+int32_t bSearch(gdata_t *gdata, int32_t tc, int32_t qs)
+{   //find tS: index of the first item satisfying .end>qs from left
+    int32_t tL=0, tR=tc-1;  
+    int32_t tM, tS = -1; 
+	gdata_t *gdatat = (gdata_t *)gdata;
+    while(tL<tR-1){
+        tM = (tL+tR)/2; 
+        if(gdatat[tM].end>qs)
+            tR = tM;
+        else
+            tL = tM+1;
+    }
+    if(gdatat[tL].end>qs)
+        tS = tL;
+    else if(gdatat[tR].end>qs)
+        tS = tR;
+  	return tS;
+}
+
+int32_t bSearch1(gdata1_t *gdata, int32_t tc, int32_t qs)
+{   //find tS: index of the first item satisfying .end>qs from left
+    int32_t tL=0, tR=tc-1;  
+    int32_t tM, tS = -1; 
+	gdata_t *gdatat = (gdata_t *)gdata;
+    while(tL<tR-1){
+        tM = (tL+tR)/2; 
+        if(gdatat[tM].end>qs)
+            tR = tM;
+        else
+            tL = tM+1;
+    }
+    if(gdatat[tL].end>qs)
+        tS = tL;
+    else if(gdatat[tR].end>qs)
+        tS = tR;
+  	return tS;
+}
+
+void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t idx)
+{	//layers: igd->ctg->gTile->gdata(list)
+	if(s >= e)return;
+	int absent;
+	khint_t k;
+	strhash_t *h = (strhash_t*)hc;
+	k = kh_put(str, h, chrm, &absent);
+	int32_t n1 = s/igd->nbp;
+	int32_t n2 = (e-1)/igd->nbp;	
+	if (absent) {
+		//printf("%s %i %i %i\n", chrm, n1, n2, k);
+		//igd
+		if (igd->nctg == igd->mctg)
+			EXPAND(igd->ctg, igd->mctg);							
+		kh_val(h, k) = igd->nctg;
+		//ctg: initialize	
+		ctg_t *p = &igd->ctg[igd->nctg++];		
+		p->name = strdup(chrm);
+		p->mTiles= 1 + n2;
+		p->gTile = malloc(p->mTiles*sizeof(tile_t));		
+		kh_key(h, k) = p->name;
+		//tile: initialize
+		for(int i=0;i<p->mTiles;i++){
+			tile_t *tile = &p->gTile[i];
+			tile->ncnts = 0;	//each batch 
+			tile->nCnts = 0;	//total
+			tile->mcnts = 4;	
+			tile->gList = malloc(tile->mcnts*sizeof(gdata_t));
+		}	
+	}
+	int32_t kk = kh_val(h, k);
+	ctg_t *p = &igd->ctg[kk];
+	if (n2+1>=p->mTiles){
+		int32_t tt = p->mTiles;
+		p->mTiles = n2+1;
+	    p->gTile = realloc(p->gTile, p->mTiles*sizeof(tile_t));
+	    //initialize new tiles
+		for(int i=tt;i<p->mTiles;i++){
+			tile_t *tile = &p->gTile[i];
+			tile->ncnts = 0;	//each batch 
+			tile->nCnts = 0;	//total
+			tile->mcnts = 16;	
+			tile->gList = malloc(tile->mcnts*sizeof(gdata_t));
+		}
+	}
+	//add data elements
+	for(int i=n1;i<=n2;i++){
+		tile_t *tile = &p->gTile[i];
+		if(tile->ncnts == tile->mcnts)
+			EXPAND(tile->gList, tile->mcnts);		
+		gdata_t *gdata = &tile->gList[tile->ncnts++];	
+		gdata->start = s;
+		gdata->end   = e;
+		gdata->idx   = idx;	
+		igd->total++;		
+	}	
+	return;
+}
+
+void igd_add1(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t v, int32_t idx)
+{	//layers: igd->ctg->gTile->gdata(list)
+	if(s >= e)return;
+	int absent;
+	khint_t k;
+	strhash_t *h = (strhash_t*)hc;
+	k = kh_put(str, h, chrm, &absent);
+	int32_t n1 = s/igd->nbp;
+	int32_t n2 = (e-1)/igd->nbp;	
+	if (absent) {
+		//printf("%s %i %i %i\n", chrm, n1, n2, k);
+		//igd
+		if (igd->nctg == igd->mctg)
+			EXPAND(igd->ctg, igd->mctg);							
+		kh_val(h, k) = igd->nctg;
+		//ctg: initialize	
+		ctg_t *p = &igd->ctg[igd->nctg++];		
+		p->name = strdup(chrm);
+		p->mTiles= 1 + n2;
+		p->gTile = malloc(p->mTiles*sizeof(tile_t));		
+		kh_key(h, k) = p->name;
+		//tile: initialize
+		for(int i=0;i<p->mTiles;i++){
+			tile_t *tile = &p->gTile[i];
+			tile->ncnts = 0;	//each batch 
+			tile->nCnts = 0;	//total
+			tile->mcnts = 4;	
+			tile->gList1 = malloc(tile->mcnts*sizeof(gdata1_t));
+		}	
+	}
+	int32_t kk = kh_val(h, k);
+	ctg_t *p = &igd->ctg[kk];
+	if (n2+1>=p->mTiles){
+		int32_t tt = p->mTiles;
+		p->mTiles = n2+1;
+	    p->gTile = realloc(p->gTile, p->mTiles*sizeof(tile_t));
+	    //initialize new tiles
+		for(int i=tt;i<p->mTiles;i++){
+			tile_t *tile = &p->gTile[i];
+			tile->ncnts = 0;	//each batch 
+			tile->nCnts = 0;	//total
+			tile->mcnts = 16;	
+			tile->gList1 = malloc(tile->mcnts*sizeof(gdata1_t));
+		}
+	}
+	//add data elements
+	for(int i=n1;i<=n2;i++){
+		tile_t *tile = &p->gTile[i];
+		if(tile->ncnts == tile->mcnts)
+			EXPAND(tile->gList1, tile->mcnts);		
+		gdata1_t *gdata = &tile->gList1[tile->ncnts++];	
+		gdata->start = s;
+		gdata->end   = e;
+		gdata->value = v;
+		gdata->idx   = idx;	
+		igd->total++;		
+	}	
+	return;
+}
+
+info_t* get_fileinfo(char *ifName, int32_t *nFiles)
+{   //read head file __index.tsv to get info 
+    FILE *fp = fopen(ifName, "r");
+    if(fp==NULL){
+        printf("file not found:%s\n", ifName);
         return NULL;
-    else {
-        splits = malloc((*nmax+1) * sizeof(*splits));
-        splits[*nmax] = NULL;
-        ch = str;
-        ns = 1;
-        splits[0] = str;
-        do {
-            if (*ch == delim)
-            {
-                splits[ns++] = &ch[1];
-                *ch = '\0';
-            }
-            ch++;
-        } while (*ch != '\0' && ns < *nmax+1);
     }
-    *nmax = ns;
-    return splits;
+    char buf[1024], *s0, *s1, *s2, *s3;
+    int nfiles=0; 
+    fgets(buf, 1024, fp);
+    while(fgets(buf, 1024, fp)!=NULL)
+		nfiles++;
+
+    info_t *fi = (info_t*)malloc(nfiles*sizeof(info_t));
+    fseek(fp, 0, SEEK_SET);
+    int i=0;    
+    fgets(buf, 1024, fp);   //header
+    while(fgets(buf, 1024, fp)!=NULL){	 
+        s0 = strtok(buf, "\t");
+        s1 = strtok(NULL, "\t");       
+        fi[i].fileName = strdup(s1); 
+        s2 = strtok(NULL, "\t");
+        fi[i].nr = atol(s2);
+        //s3 = strtok(NULL, "\t"); 
+        //fi[i].md = (double)atol(s3); 
+        i++;
+    }        
+    *nFiles = (int32_t)nfiles;
+    fclose(fp);
+    return fi;
 }
 
-int setup_igd(char *g_file){
-	FILE* fg = fopen(g_file, "r");
-	if(!fg){
-		printf("Can't open genome-sizes file: %s\n", g_file);
-	    return 0;  
-	}         
-	int j = 0, i = 0, n;
-	char buf[128], sub[128];
-	char *s1, *s2;
-	while(fgets(buf, 128, fg)!=NULL){	
-		strncpy(sub, buf, 3);
-	    if(strcmp(sub, "chr")==0)
-	    	j++;
-	    else
-	    	i=-1;
-	}	    	
-	if(j<1 || i<0){
-		printf("Wrong genome-sizes file: %s\n", g_file); 			
-		fclose(fg);
-		return 0;
-	}
-	nChr = j;
-	nmax = malloc(nChr*sizeof(uint32_t));
-	gstart = malloc((nChr+1)*sizeof(uint32_t));
-	folder = malloc(nChr*sizeof(char*));
-	j=0;	n=0;
-	fseek(fg, 0, SEEK_SET);		
-	while(fgets(buf, 128, fg)!=NULL){	
-	    s1 = strtok(buf, "\t");
-	    s2 = strtok(NULL, "\t");
-	    i = strlen(s1)+1;
-	    i += i%4;
-	    folder[j] = malloc(i*sizeof(char));	
-	    strcpy(folder[j], s1);
-	    nmax[j] = atoi(s2)/nbp + 1;
-	    n += nmax[j];
-	    j++;		    
-	}
-	nTiles = n;
-	gstart[0] = 0;
-	for(i=0;i<nChr;i++)
-		gstart[i+1]+=nmax[i];		
-	fclose(fg);	
-	return 1;
-}
-
-//-------------------------------------------------------------------------------------
-//This section is taken from giggle package
-/* Log gamma function
- * \log{\Gamma(z)}
- * AS245, 2nd algorithm, http://lib.stat.cmu.edu/apstat/245
- * kfunc.h
- *  Created on: May 1, 2015
- *      Author: nek3d
- */
-
-// log\binom{n}{k}
-long double _lbinom(long long n, long long k)
+iGD_t *get_igdinfo(char *igdFile)
 {
-    if (k == 0 || n == k) return 0;
-    return lgammal(n+1) - lgammal(k+1) - lgammal(n-k+1);
-}
-
-// nA   nC   | nAC
-// nB   nD   | nBD
-//-----------+----
-// nAB  nCD  | n
-
-// hypergeometric distribution
-long double _hypergeo(long long nA, long long nAC, long long nAB, long long n)
-{   //n:   population size 
-    //nAB: number of draws
-    //nA:  observed success 
-    //nAC: success states in n
-    return expl(_lbinom(nAC, nA) + _lbinom(n-nAC, nAB-nA) - _lbinom(n, nAB));
-}
-
-// incremental version of hypergenometric distribution
-long double _hypergeo_acc(long long nA, long long nAC, long long nAB, long long n, _hgacc_t *aux)
-{
-    if (nAC || nAB || n) {
-        aux->nA = nA; aux->nAC = nAC; aux->nAB = nAB; aux->n = n;
-    } else { // then only nA changed; the rest fixed
-        if (nA%11 && nA + aux->n - aux->nAC - aux->nAB) {
-            if (nA == aux->nA + 1) { // incremental
-                aux->p *= (long double)(aux->nAC - aux->nA) / nA
-                    * (aux->nAB - aux->nA) / (nA + aux->n - aux->nAC - aux->nAB);
-                aux->nA = nA;
-                return aux->p;
-            }
-            if (nA == aux->nA - 1) { // incremental
-                aux->p *= (long double)aux->nA / (aux->nAC - nA)
-                    * (aux->nA + aux->n - aux->nAC - aux->nAB) / (aux->nAB - nA);
-                aux->nA = nA;
-                return aux->p;
-            }
-        }
-        aux->nA = nA;
-    }
-    aux->p = _hypergeo(aux->nA, aux->nAC, aux->nAB, aux->n);
-
-    return aux->p;
-}
-
-long double _kt_fisher_exact(long long nA,
-                             long long nC,
-                             long long nB,
-                             long long nD,
-                             long double *_left,
-                             long double *_right,
-                             long double *two)
-{
-    long long i, j, max, min;
-    long double p, q, left, right;
-    _hgacc_t aux;
-    long long nAC, nAB, n;
-
-    nAC = nA + nC; nAB = nA + nB; n = nA + nC + nB + nD; // calculate nAC, nAB and n
-
-    max = (nAB < nAC) ? nAB : nAC; // max nA, for right tail
-    min = nAC + nAB - n;    // not sure why nA-nD is used instead of min(nAB,nAC)
-    if (min < 0) min = 0; // min nA, for left tail
-    *two = *_left = *_right = 1.;
-
-    if (min == max) return 1.; // no need to do test
-
-
-    q = _hypergeo_acc(nA, nAC, nAB, n, &aux); // the probability of the current table
-    if (q < 1e-200) q = 1e-200;
-
-    // left tail
-    p = _hypergeo_acc(min, 0, 0, 0, &aux);
-    for (left = 0., i = min + 1; p < 0.99999999 * q && i<=max; ++i) // loop until underflow
-        left += p, p = _hypergeo_acc(i, 0, 0, 0, &aux);
-    --i;
-    if (p < 1.00000001 * q) left += p;
-    else --i;
-    // right tail
-    p = _hypergeo_acc(max, 0, 0, 0, &aux);
-    for (right = 0., j = max - 1; p < 0.99999999 * q && j>=0; --j) // loop until underflow
-        right += p, p = _hypergeo_acc(j, 0, 0, 0, &aux);
-    ++j;
-    if (p < 1.00000001 * q) right += p;
-    else ++j;
-    // two-tail
-    *two = left + right;
-    if (*two > 1.) *two = 1.;
-    // adjust left and right
-    if (labs((long) (i - nA)) < labs((long) (j - nA)) && q != 0.0) right = 1. - left + q;
-    else left = 1.0 - right + q;
-    *_left = left; *_right = right;
-    return q;
-}
-
-double log2fc(double ratio)
-{
-    if (fabs(ratio) < 0.0001)
-        return 0.0;
-
-    if (ratio < 1) {
-        ratio = 1.0/ratio;
-        return -1.0 * log2(ratio);
+    FILE *fp = fopen(igdFile, "rb");
+    if(fp == NULL)
+        printf("Can't open file %s", igdFile);
+    iGD_t *iGD = malloc(1*sizeof(iGD_t));
+    fread(&iGD->nbp, sizeof(int32_t), 1, fp);
+    fread(&iGD->gType, sizeof(int32_t), 1, fp);  
+    fread(&iGD->nCtg, sizeof(int32_t), 1, fp);    
+   	int i, k;
+   	int32_t gdsize = (iGD->gType<1) ? sizeof(gdata_t): sizeof(gdata1_t);        
+    int32_t tileS, m = iGD->nCtg;	//the idx of a tile in the chrom 
+    //------------------------------------------
+    iGD->nTile = malloc(m*sizeof(int32_t));        
+    fread(iGD->nTile, sizeof(int32_t)*m, 1, fp);    
+    int64_t chr_loc = 12 + 44*m;	//header size in bytes
+    for(i=0;i<m;i++) chr_loc += iGD->nTile[i]*4;
+    //------------------------------------------
+    iGD->nCnt = malloc(m*sizeof(int32_t*));
+    iGD->tIdx = malloc(m*sizeof(int64_t*)); 
+    for(i=0;i<m;i++){
+    	k = iGD->nTile[i];    	
+    	iGD->nCnt[i] = calloc(k, sizeof(int32_t));
+    	fread(iGD->nCnt[i], sizeof(int32_t)*k, 1, fp);
+    	//--------------------------------------     	
+    	iGD->tIdx[i] = calloc(k, sizeof(int64_t)); 
+    	iGD->tIdx[i][0] = chr_loc;
+    	for(int j=1; j<k; j++)
+    		iGD->tIdx[i][j] = iGD->tIdx[i][j-1]+iGD->nCnt[i][j-1]*gdsize;
+    	chr_loc = iGD->tIdx[i][k-1]+iGD->nCnt[i][k-1]*gdsize;
     }
 
-    return log2(ratio);
+	iGD->cName = malloc(m*sizeof(char*));     
+    for(i=0;i<m;i++){
+		iGD->cName[i] = malloc(40*sizeof(char));   	
+		fread(iGD->cName[i], 40, 1, fp);     
+    }   
+    fclose(fp);
+   
+    //setup hc
+	hc = kh_init(str); 
+	int absent;
+	for(i=0;i<iGD->nCtg;i++){ 
+		khint_t k;
+		strhash_t *h = (strhash_t*)hc;
+		k = kh_put(str, h, iGD->cName[i], &absent);							
+		kh_val(h, k) = i;			
+		kh_key(h, k) = iGD->cName[i];
+	}    
+    return iGD;	
 }
 
-long double neglog10p(long double sig)
+int32_t get_id(const char *chrm)
 {
-    if (fabsl(sig) < -DBL_MAX)
-        return 10.0;
-    return -1.0 * log10l(sig);
+	khint_t k;
+	strhash_t *h = (strhash_t*)hc;
+	k = kh_get(str, h, chrm);
+	return k == kh_end(h)? -1 : kh_val(h, k);
+}
+
+void igd_saveT1(igd_t *igd, char *oPath)
+{	//Save/append tiles to disc, add cnts tp Cnts 
+	char idFile[128];
+	for (int i = 0; i < igd->nctg; i++){
+		ctg_t *ctg = &igd->ctg[i];
+		for(int j=0; j< ctg->mTiles; j++){
+			tile_t *tile = &ctg->gTile[j];
+			//--------------------------------------- 
+			if(tile->ncnts>0){                    
+		        sprintf(idFile, "%s%s%s_%i", oPath, "data0/", ctg->name, j);
+		        FILE *fp = fopen(idFile, "ab");
+		        if(fp==NULL)
+		            printf("Can't open file %s", idFile);
+		        fwrite(tile->gList1, sizeof(gdata1_t), tile->ncnts, fp);
+		        fclose(fp); 
+		    }			
+		    tile->nCnts += tile->ncnts;
+			tile->ncnts = 0;	
+		    free(tile->gList1);	    
+		    tile->mcnts = 16;//MAX(16, tile->mcnts/16);
+		    tile->gList1 = malloc(tile->mcnts*sizeof(gdata1_t));
+		    //tile->gList1 = realloc(tile->gList1, tile->mcnts*sizeof(gdata1_t));
+		}
+	}	
+	igd->total = 0;	//batch total
+}
+
+void igd_saveT(igd_t *igd, char *oPath)
+{	//Save/append tiles to disc, add cnts tp Cnts 
+	char idFile[128];
+	for (int i = 0; i < igd->nctg; i++){
+		ctg_t *ctg = &igd->ctg[i];
+		for(int j=0; j< ctg->mTiles; j++){
+			tile_t *tile = &ctg->gTile[j];
+			//--------------------------------------- 
+			if(tile->ncnts>0){                    
+		        sprintf(idFile, "%s%s%s_%i", oPath, "data0/", ctg->name, j);
+		        FILE *fp = fopen(idFile, "ab");
+		        if(fp==NULL)
+		            printf("Can't open file %s", idFile);
+		        fwrite(tile->gList, sizeof(gdata_t), tile->ncnts, fp);
+		        fclose(fp); 
+		    }			
+		    tile->nCnts += tile->ncnts;
+			tile->ncnts = 0;
+		    tile->mcnts = 16;//MAX(16, tile->mcnts/16);
+		    tile->gList = realloc(tile->gList, tile->mcnts*sizeof(gdata_t));
+		}
+	}	
+	igd->total = 0;	//batch total
+}
+
+void igd_save(igd_t *igd, char *oPath, char *igdName)
+{
+	char idFile[128], iname[128];
+	//1. Save iGD data info: ctg string length 40	
+    int32_t i, j, n, m  = igd->nctg;
+    sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");	
+    FILE *fp = fopen(idFile, "wb"); 
+    if(fp==NULL)
+        printf("Can't open file %s", idFile); 
+	fwrite(&igd->nbp, sizeof(int32_t), 1, fp); 		//4 bytes
+	fwrite(&igd->gType, sizeof(int32_t), 1, fp); 	//4
+	fwrite(&m, sizeof(int32_t), 1, fp); 			//4	
+	//-----------------
+	for(i=0;i<m;i++)								//m*4
+		fwrite(&igd->ctg[i].mTiles, sizeof(int32_t), 1, fp);
+	for(i=0;i<m;i++){								//sum(mTiles)
+		ctg_t *p = &igd->ctg[i];
+		n = p->mTiles;
+		for(j=0;j<n;j++)
+			fwrite(&p->gTile[j].nCnts, sizeof(int32_t), 1, fp);
+	}			
+	//write string array
+	for(i=0;i<m;i++)								//m*40
+		fwrite(igd->ctg[i].name, 40, 1, fp);		         
+	
+	//2. Sort and save tiles data
+	for(i=0;i<m;i++){
+		ctg_t *p = &igd->ctg[i];    
+		n = p->mTiles;         
+		for(j=0;j<n;j++){
+			tile_t *q = &p->gTile[j];	
+			int32_t nrec = q->nCnts, gdsize;		
+		    if(nrec>0){				    
+		    	sprintf(iname, "%s%s%s_%i", oPath, "data0/", p->name, j);
+				FILE *fp0 = fopen(iname, "rb");
+				if(fp0 == NULL)
+					printf("Can't open file %s", iname);
+		    	if(igd->gType==0){
+		    		gdsize = nrec*sizeof(gdata_t);
+				    gdata_t *gdata = malloc(gdsize);
+				    fread(gdata, gdsize, 1, fp0);
+				    fclose(fp0);
+				    radix_sort_intv(gdata, gdata+nrec); 
+				    fwrite(gdata, gdsize, 1, fp);
+				    free(gdata);
+		        }
+		        else{
+		    		gdsize = nrec*sizeof(gdata1_t);		        
+				    gdata1_t *gdata = malloc(gdsize);
+				    fread(gdata, gdsize, 1, fp0);
+				    fclose(fp0);
+				    radix_sort_intv1(gdata, gdata+nrec); 
+				    fwrite(gdata, gdsize, 1, fp);
+				    free(gdata);		        
+		        }
+		        remove(iname);              
+		    }
+		}
+    }
+    fclose(fp); 	
+}
+
+igd_t *igd_init(void)
+{
+	igd_t *igd = malloc(1*sizeof(igd_t));
+	igd->gType = 0;
+	igd->nbp = 16384;	
+	hc = kh_init(str);
+	igd->nctg = 0;
+	igd->mctg = 32;
+	igd->ctg = malloc(igd->mctg*sizeof(ctg_t));
+	igd->total = 0;
+	return igd;
+}
+
+void igd_destroy(igd_t *igd)
+{
+	if (igd == 0) return;
+	for (int i = 0; i < igd->nctg; ++i){
+		free(igd->ctg[i].name);
+		for(int j=0; j< igd->ctg[i].mTiles; j++){
+			if(igd->gType==0)
+				free(igd->ctg[i].gTile[j].gList);
+			else
+				free(igd->ctg[i].gTile[j].gList1);				
+		}
+	}	
+	free(igd->ctg);
+	kh_destroy(str, (strhash_t*)hc);
+	free(igd);
 }
 
