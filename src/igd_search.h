@@ -6,51 +6,29 @@
 //by Jianglin Feng  05/12/2018
 //
 //time ./igd_search Test110000.bed /media/john/Extra/ucsc_igd/ucsc.igd
+//database intervals sorted by _start: 8/12/2019
 //-------------------------------------------------------------------------------------
 #include "igd_base.h"
 //-------------------------------------------------------------------------------------
-struct query_data* get_igdlist(char *qfName, uint32_t *nblocks, uint32_t *nRegions, double *mRegion);	
+//Single query
+int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int32_t *hits);
+int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int32_t *hits);
 
-struct igd_info* get_igdinfo(char *ifName, uint32_t *nFiles);
+//query file: call _r
+int64_t getOverlaps(char *qFile, int32_t *hits);
+int64_t getOverlaps_v(char *qFile, int32_t *hits, int32_t v);	
 
-struct igd_mix* get_overlaps(struct query_data *query, uint32_t nblocks, uint32_t nmax, uint32_t *nOL);
+//construct for mapping
+void construct(gdata_t *glist, int32_t nr, int32_t *nc, int32_t *idxC, int32_t *lenC, int32_t *maxE, int cLen);
 
-struct igd_mix* get_overlaps_w(struct query_data *query, uint32_t nblocks, char *igdName, uint32_t nmax, uint32_t *nOL);
+//search with value, mapping
+int64_t getOverlaps_m0(uint32_t **hitmap); 	//map, dtype
+int64_t getOverlaps_m1(uint32_t **hitmap); 	//map, dtype, test
+int64_t getOverlaps_m2(uint32_t **hitmap); 	//map, dtype, test
+int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t x); //map, q extended
+int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t x); //map, q extended
 
-uint64_t get_overlaps_self(char *igdName, uint32_t nFiles, uint32_t **hitmap);
-
-uint64_t get_overlaps_n(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);//obsolete?
-
-uint64_t get_overlaps_n0(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
-
-uint64_t get_overlaps_n1(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
-
-uint64_t get_overlaps_n2(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
-
-uint64_t get_overlaps_n0_c(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
-
-uint64_t get_overlaps_n1_c(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
-
-uint64_t get_overlaps_n2_c(char *qfName, char *igdName, uint32_t *nq, double *mq, uint32_t *hits);
-
-uint64_t get_overlaps_n0_r(char *igdName, int ichr, uint32_t qs, uint32_t qe);
-
-uint64_t get_overlaps_n1_r(char *igdName, int ichr, uint32_t qs, uint32_t qe);
-
-uint64_t get_overlaps_n2_r(char *igdName, int ichr, uint32_t qs, uint32_t qe);
-
-int bSearch(struct igd_data2* As, int idxS, int idxE, uint32_t qe);
-
-uint64_t get_overlaps_v(char *qfName, char *igdName, uint32_t v, uint32_t *nq, double *mq, uint32_t *hits);
-uint64_t get_overlaps_self_v(char *igdName, uint32_t nFiles, uint32_t v, uint32_t *countf, uint32_t **hitmap);
-
-uint64_t get_overlaps_self_v_x(char *igdName, uint32_t nFiles, uint32_t v, int xlen, uint32_t *countf, uint32_t **hitmap);
-uint64_t get_overlaps_self_x(char *igdName, uint32_t nFiles, int xlen, uint32_t **hitmap);
-
-void search(char* igdName, char* qfName, uint32_t v, char* out, int checking);
-
-void search_r(char* igdName, int ichr, uint32_t qs, uint32_t qe);
-
+//search main
 int igd_search(int argc, char **argv);
 
 #endif

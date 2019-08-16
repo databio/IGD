@@ -1,6 +1,7 @@
 //===================================================================================
 //Read igd region data and query data, and then find all overlaps 
 //by Jianglin Feng  05/12/2018
+//database intervals sorted by _start: 8/12/2019
 //-----------------------------------------------------------------------------------
 #include "igd_create.h"
 
@@ -43,7 +44,11 @@ void create_igd(char *iPath, char *oPath, char *igdName, int gtype)
     printf("igd_create 1: %i\n", n_files); 
          
     //2. Read files
-    int32_t i, j, k, ig, i0=0, i1=0, L0=0, L1=1, m, nL;  
+    int nCols=16;
+    unsigned char buffer[256];    
+    char **splits = malloc((nCols+1)*sizeof(char *));     
+    int32_t i, j, k, ig, i0=0, i1=0, L0=0, L1=1, m, nL; //int64_t? 
+    
     while(i0<n_files){
         //2.1 Start from (i0, L0): read till (i1, L1)
         ig = i0; 
@@ -52,28 +57,18 @@ void create_igd(char *iPath, char *oPath, char *igdName, int gtype)
         while(m==0 && ig<n_files){   	//m>0 defines breaks when reading maxCount      
 			//printf("%i, %i, %i, %s\n", i0, ig, nL, file_ids[ig]);
 			gzFile fp;
-			kstream_t *ks;
-			kstring_t str = {0,0,0};
-			k = 0;
 			if ((fp = gzopen(file_ids[ig], "r")) == 0)
-				return;
-			ks = ks_init(fp);                              
+				return;                             
 		    nL = 0; 
-		    if(ig==i0 && L0>0){  		 //pass n0 lines of a big file
-		        while(nL<L0 && ks_getuntil(ks, KS_SEP_LINE, &str, 0) >= 0)
+		    if(ig==i0 && L0>0){  		 //pass L0 lines of a big file
+		        while(nL<L0 && gzgets(fp, buffer, 256)!=NULL)
 		            nL++;              
 		    }      			
-			while (m==0 && ks_getuntil(ks, KS_SEP_LINE, &str, 0) >= 0) {
-				char *chrm;
-				int32_t st, en, va;
-				if(gtype==0){
-					chrm = parse_bed(str.s, &st, &en);
-					igd_add(igd, chrm, st, en, ig);
-				}
-				else{
-					chrm = parse_bed(str.s, &st, &en);
-					igd_add1(igd, chrm, st, en, va, ig);
-				}
+			while (m==0 && gzgets(fp, buffer, 256)!=NULL) {
+				str_splits(buffer, &nCols, splits); 
+				int32_t  st = atol(splits[1]), en = atol(splits[2]), va = 0;
+				if(nCols>4) va = atol(splits[4]);
+				igd_add(igd, splits[0], st, en, va, i);
 				nr[ig]++;
 				avg[ig]+=en-st;
 				nL++;
@@ -83,16 +78,11 @@ void create_igd(char *iPath, char *oPath, char *igdName, int gtype)
                     L1 = nL;    		//number of total lines or next line
                 }
 			}
-			free(str.s);
-			ks_destroy(ks);
 			gzclose(fp);
 			if(m==0) ig++;
 		}
-        //2.3 Save/append tiles to disc, add cnts tp Cnts  
-        if(gtype==1)            
-			igd_saveT(igd, oPath);
-		else
-			igd_saveT1(igd, oPath);
+        //2.3 Save/append tiles to disc, add cnts tp Cnts           
+		igd_saveT(igd, oPath);
         i0 = ig; 
         L0 = L1;
         L1 = 0;        
@@ -118,7 +108,8 @@ void create_igd(char *iPath, char *oPath, char *igdName, int gtype)
     }
     fclose(fpi);   
     free(nr);
-    free(avg);    
+    free(avg);  
+    free(splits);  
     printf("igd_create 3\n");
     
 	//4. Sort tile data and save into single files per ctg
@@ -127,8 +118,8 @@ void create_igd(char *iPath, char *oPath, char *igdName, int gtype)
 	printf("igd_create 4\n");
 }
 
-//create igd from a single .bed.gz file with dataset index at 4th column
-void create_igd1(char *iPath, char *oPath, char *igdName)
+//create igd from a single .bed.gz Jaspar file with dataset index at 4th column
+void create_igd_Jaspar(char *iPath, char *oPath, char *igdName)
 {   //Process line by line: ipath is the file name
     //1. Get file_ids, n_files  
     char** file_ids;
@@ -198,7 +189,7 @@ void create_igd1(char *iPath, char *oPath, char *igdName)
         while(i<n_files && strcmp(splits[3], file_ids[i])!=0)
             i++;   
         int32_t st = atol(splits[1]), en = atol(splits[2]); 	
-		igd_add1(igd, splits[0], st, en, atol(splits[4]), i);			
+		igd_add(igd, splits[0], st, en, atol(splits[4]), i);			
 		nr[i]++;
 		avg[i]+=en-st;
 		nL++;	
@@ -206,13 +197,13 @@ void create_igd1(char *iPath, char *oPath, char *igdName)
         if(igd->total>=maxCount){ 
         	j++;
         	printf("--igd_saveT1--%i, %lld\n", j, (long long)igd->total);
-			igd_saveT1(igd, oPath);
+			igd_saveT(igd, oPath);
 		    nL = 0;        
         }
 	}	
 	gzclose(zfile); 
 	if(nL>0)
-		igd_saveT1(igd, oPath);  
+		igd_saveT(igd, oPath);  
 	printf("igd_create 2\n");
 	
 	//3. save _index.tsv: 4 columns--index, filename, nr, avg
@@ -238,7 +229,7 @@ void create_igd1(char *iPath, char *oPath, char *igdName)
     free(splits);     
     //kh_destroy(str, (strhash_t*)hf);  
     printf("igd_create 3\n");
-	//4. Sort tile data and save into single files per ctg
+	//4. Sort tile data and save into a single file
 	igd_save(igd, oPath, igdName);	
 	printf("igd_create 4\n");     
 }
@@ -289,10 +280,7 @@ int igd_create(int argc, char **argv)
         sprintf(ftmp, "%s%s", opath, "data0");
         if (stat(ftmp, &st) == -1)
             mkdir(ftmp, 0777);
-        if(dtype!=2)
-        	create_igd(ipath, opath, dbname, dtype);  
-        else
-         	create_igd1(ipath, opath, dbname);           
+        create_igd(ipath, opath, dbname, dtype);          
     } 
 
     return EX_OK;

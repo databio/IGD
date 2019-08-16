@@ -14,7 +14,6 @@ int igd_help(int argc, char **argv, int exit_code);
 void *hc;				//extern from igd_base.h
 iGD_t *IGD;
 gdata_t *gData = NULL;
-gdata1_t *gData1 = NULL;
 int32_t preIdx, preChr;
 FILE *fP;
 
@@ -29,7 +28,6 @@ int main(int argc, char **argv)
     else if (strcmp(cmd, "search") == 0){ 	
         return igd_search(argc, argv);
         if(gData!=NULL)free(gData);
-        if(gData1!=NULL)free(gData1);
         if(fP!=NULL)fclose(fP);
     }
     else {

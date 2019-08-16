@@ -11,7 +11,7 @@
 void create_igd(char *iPath, char *oPath, char *igdName, int gtype);
 
 //create igd from a single .bed.gz file with dataset index at 4th column
-void create_igd1(char *iPath, char *oPath, char *igdName);
+void create_igd_Jaspar(char *iPath, char *oPath, char *igdName);
 
 //main
 int igd_create(int argc, char **argv);

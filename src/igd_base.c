@@ -1,12 +1,11 @@
 //===================================================================================
 //Common igd struct, parameters, functions
 //by Jianglin Feng  05/12/2018
+//database intervals sorted by _start: 8/12/2019
 //-----------------------------------------------------------------------------------
 #include "igd_base.h"
-#define gdata_t_key(r) ((r).end)
-#define gdata1_t_key(r) ((r).end)
+#define gdata_t_key(r) ((r).start)
 KRADIX_SORT_INIT(intv, gdata_t, gdata_t_key, 4)
-KRADIX_SORT_INIT(intv1, gdata1_t, gdata1_t_key, 4)
 KHASH_MAP_INIT_STR(str, int32_t)
 typedef khash_t(str) strhash_t;
 
@@ -45,45 +44,29 @@ char *parse_bed(char *s, int32_t *st_, int32_t *en_)
 	return i >= 3? ctg : 0;
 }
 
-int32_t bSearch(gdata_t *gdata, int32_t tc, int32_t qs)
-{   //find tS: index of the first item satisfying .end>qs from left
-    int32_t tL=0, tR=tc-1;  
-    int32_t tM, tS = -1; 
-	gdata_t *gdatat = (gdata_t *)gdata;
+int32_t bSearch(gdata_t *gdata, int32_t t0, int32_t tc, int32_t qe)
+{   //find tE: index of the last item satisfying .start < qe from right
+	//assuming gdata sorted by start
+    int32_t tL=t0, tR=tc, tM, tE = -1; 
+    if(gdata[tR].start < qe)
+    	return tR;
+    else if(gdata[0].start >= qe)
+    	return -1;
     while(tL<tR-1){
         tM = (tL+tR)/2; 
-        if(gdatat[tM].end>qs)
-            tR = tM;
+        if(gdata[tM].start >= qe)
+            tR = tM-1;
         else
-            tL = tM+1;
+            tL = tM;
     }
-    if(gdatat[tL].end>qs)
-        tS = tL;
-    else if(gdatat[tR].end>qs)
-        tS = tR;
-  	return tS;
+    if(gdata[tR].start < qe)
+        tE = tR;
+    else if(gdata[tL].start < qe)
+        tE = tL;
+  	return tE;
 }
 
-int32_t bSearch1(gdata1_t *gdata, int32_t tc, int32_t qs)
-{   //find tS: index of the first item satisfying .end>qs from left
-    int32_t tL=0, tR=tc-1;  
-    int32_t tM, tS = -1; 
-	gdata_t *gdatat = (gdata_t *)gdata;
-    while(tL<tR-1){
-        tM = (tL+tR)/2; 
-        if(gdatat[tM].end>qs)
-            tR = tM;
-        else
-            tL = tM+1;
-    }
-    if(gdatat[tL].end>qs)
-        tS = tL;
-    else if(gdatat[tR].end>qs)
-        tS = tR;
-  	return tS;
-}
-
-void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t idx)
+void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t v, int32_t idx)
 {	//layers: igd->ctg->gTile->gdata(list)
 	if(s >= e)return;
 	int absent;
@@ -136,65 +119,6 @@ void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t idx)
 		gdata_t *gdata = &tile->gList[tile->ncnts++];	
 		gdata->start = s;
 		gdata->end   = e;
-		gdata->idx   = idx;	
-		igd->total++;		
-	}	
-	return;
-}
-
-void igd_add1(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t v, int32_t idx)
-{	//layers: igd->ctg->gTile->gdata(list)
-	if(s >= e)return;
-	int absent;
-	khint_t k;
-	strhash_t *h = (strhash_t*)hc;
-	k = kh_put(str, h, chrm, &absent);
-	int32_t n1 = s/igd->nbp;
-	int32_t n2 = (e-1)/igd->nbp;	
-	if (absent) {
-		//printf("%s %i %i %i\n", chrm, n1, n2, k);
-		//igd
-		if (igd->nctg == igd->mctg)
-			EXPAND(igd->ctg, igd->mctg);							
-		kh_val(h, k) = igd->nctg;
-		//ctg: initialize	
-		ctg_t *p = &igd->ctg[igd->nctg++];		
-		p->name = strdup(chrm);
-		p->mTiles= 1 + n2;
-		p->gTile = malloc(p->mTiles*sizeof(tile_t));		
-		kh_key(h, k) = p->name;
-		//tile: initialize
-		for(int i=0;i<p->mTiles;i++){
-			tile_t *tile = &p->gTile[i];
-			tile->ncnts = 0;	//each batch 
-			tile->nCnts = 0;	//total
-			tile->mcnts = 4;	
-			tile->gList1 = malloc(tile->mcnts*sizeof(gdata1_t));
-		}	
-	}
-	int32_t kk = kh_val(h, k);
-	ctg_t *p = &igd->ctg[kk];
-	if (n2+1>=p->mTiles){
-		int32_t tt = p->mTiles;
-		p->mTiles = n2+1;
-	    p->gTile = realloc(p->gTile, p->mTiles*sizeof(tile_t));
-	    //initialize new tiles
-		for(int i=tt;i<p->mTiles;i++){
-			tile_t *tile = &p->gTile[i];
-			tile->ncnts = 0;	//each batch 
-			tile->nCnts = 0;	//total
-			tile->mcnts = 16;	
-			tile->gList1 = malloc(tile->mcnts*sizeof(gdata1_t));
-		}
-	}
-	//add data elements
-	for(int i=n1;i<=n2;i++){
-		tile_t *tile = &p->gTile[i];
-		if(tile->ncnts == tile->mcnts)
-			EXPAND(tile->gList1, tile->mcnts);		
-		gdata1_t *gdata = &tile->gList1[tile->ncnts++];	
-		gdata->start = s;
-		gdata->end   = e;
 		gdata->value = v;
 		gdata->idx   = idx;	
 		igd->total++;		
@@ -244,7 +168,7 @@ iGD_t *get_igdinfo(char *igdFile)
     fread(&iGD->gType, sizeof(int32_t), 1, fp);  
     fread(&iGD->nCtg, sizeof(int32_t), 1, fp);    
    	int i, k;
-   	int32_t gdsize = (iGD->gType<1) ? sizeof(gdata_t): sizeof(gdata1_t);        
+   	int32_t gdsize = sizeof(gdata_t);//(iGD->gType<1) ? sizeof(gdata_t): sizeof(gdata1_t);        
     int32_t tileS, m = iGD->nCtg;	//the idx of a tile in the chrom 
     //------------------------------------------
     iGD->nTile = malloc(m*sizeof(int32_t));        
@@ -292,33 +216,6 @@ int32_t get_id(const char *chrm)
 	strhash_t *h = (strhash_t*)hc;
 	k = kh_get(str, h, chrm);
 	return k == kh_end(h)? -1 : kh_val(h, k);
-}
-
-void igd_saveT1(igd_t *igd, char *oPath)
-{	//Save/append tiles to disc, add cnts tp Cnts 
-	char idFile[128];
-	for (int i = 0; i < igd->nctg; i++){
-		ctg_t *ctg = &igd->ctg[i];
-		for(int j=0; j< ctg->mTiles; j++){
-			tile_t *tile = &ctg->gTile[j];
-			//--------------------------------------- 
-			if(tile->ncnts>0){                    
-		        sprintf(idFile, "%s%s%s_%i", oPath, "data0/", ctg->name, j);
-		        FILE *fp = fopen(idFile, "ab");
-		        if(fp==NULL)
-		            printf("Can't open file %s", idFile);
-		        fwrite(tile->gList1, sizeof(gdata1_t), tile->ncnts, fp);
-		        fclose(fp); 
-		    }			
-		    tile->nCnts += tile->ncnts;
-			tile->ncnts = 0;	
-		    free(tile->gList1);	    
-		    tile->mcnts = 16;//MAX(16, tile->mcnts/16);
-		    tile->gList1 = malloc(tile->mcnts*sizeof(gdata1_t));
-		    //tile->gList1 = realloc(tile->gList1, tile->mcnts*sizeof(gdata1_t));
-		}
-	}	
-	igd->total = 0;	//batch total
 }
 
 void igd_saveT(igd_t *igd, char *oPath)
@@ -383,24 +280,13 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 				FILE *fp0 = fopen(iname, "rb");
 				if(fp0 == NULL)
 					printf("Can't open file %s", iname);
-		    	if(igd->gType==0){
-		    		gdsize = nrec*sizeof(gdata_t);
-				    gdata_t *gdata = malloc(gdsize);
-				    fread(gdata, gdsize, 1, fp0);
-				    fclose(fp0);
-				    radix_sort_intv(gdata, gdata+nrec); 
-				    fwrite(gdata, gdsize, 1, fp);
-				    free(gdata);
-		        }
-		        else{
-		    		gdsize = nrec*sizeof(gdata1_t);		        
-				    gdata1_t *gdata = malloc(gdsize);
-				    fread(gdata, gdsize, 1, fp0);
-				    fclose(fp0);
-				    radix_sort_intv1(gdata, gdata+nrec); 
-				    fwrite(gdata, gdsize, 1, fp);
-				    free(gdata);		        
-		        }
+	    		gdsize = nrec*sizeof(gdata_t);
+			    gdata_t *gdata = malloc(gdsize);
+			    fread(gdata, gdsize, 1, fp0);
+			    fclose(fp0);
+			    radix_sort_intv(gdata, gdata+nrec); 
+			    fwrite(gdata, gdsize, 1, fp);
+			    free(gdata);
 		        remove(iname);              
 		    }
 		}
@@ -426,12 +312,8 @@ void igd_destroy(igd_t *igd)
 	if (igd == 0) return;
 	for (int i = 0; i < igd->nctg; ++i){
 		free(igd->ctg[i].name);
-		for(int j=0; j< igd->ctg[i].mTiles; j++){
-			if(igd->gType==0)
-				free(igd->ctg[i].gTile[j].gList);
-			else
-				free(igd->ctg[i].gTile[j].gList1);				
-		}
+		for(int j=0; j< igd->ctg[i].mTiles; j++)
+			free(igd->ctg[i].gTile[j].gList);			
 	}	
 	free(igd->ctg);
 	kh_destroy(str, (strhash_t*)hc);
