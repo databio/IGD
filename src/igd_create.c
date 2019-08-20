@@ -10,7 +10,6 @@ int create_help(int exit_code)
     fprintf(stderr,
 "%s, v%s\n"
 "usage:   %s create <input dir> <output dir> <output igd name> [options] \n"
-"         options:\n"
 "             -s  <Type of data structure> \n"
 "                   0 for [index, start, end], default \n"
 "                   1 for [index, start, end, value]\n"
@@ -68,7 +67,7 @@ void create_igd(char *iPath, char *oPath, char *igdName, int gtype)
 				str_splits(buffer, &nCols, splits); 
 				int32_t  st = atol(splits[1]), en = atol(splits[2]), va = 0;
 				if(nCols>4) va = atol(splits[4]);
-				igd_add(igd, splits[0], st, en, va, i);
+				igd_add(igd, splits[0], st, en, va, ig);				
 				nr[ig]++;
 				avg[ig]+=en-st;
 				nL++;
@@ -280,7 +279,10 @@ int igd_create(int argc, char **argv)
         sprintf(ftmp, "%s%s", opath, "data0");
         if (stat(ftmp, &st) == -1)
             mkdir(ftmp, 0777);
-        create_igd(ipath, opath, dbname, dtype);          
+        if(dtype!=2)
+        	create_igd(ipath, opath, dbname, dtype);  
+        else
+         	create_igd_Jaspar(ipath, opath, dbname);             
     } 
 
     return EX_OK;

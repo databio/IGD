@@ -71,11 +71,11 @@ void construct(gdata_t *glist, int32_t nr, int32_t *nc, int32_t *idxC, int32_t *
         free(L2),free(L0);     
     }
     //2. Augmentation
-    maxE = malloc(nr*sizeof(uint32_t)); 
+    //maxE = malloc(nr*sizeof(int32_t)); 
     for(j=0; j<*nc; j++){ 
         k0 = idxC[j];
         k = k0 + lenC[j];
-        uint32_t tt = L1[k0].end;
+        int32_t tt = L1[k0].end;
         maxE[k0]=tt;
         for(t=k0+1; t<k; t++){
             if(L1[t].end>tt)tt = L1[t].end;
@@ -85,7 +85,7 @@ void construct(gdata_t *glist, int32_t nr, int32_t *nc, int32_t *idxC, int32_t *
 }
 
 int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int32_t *hits)
-{   //no need to store every overlaps, only get the number of hits
+{   //no need to store every overlaps, only get the number of hits for each file
 	int ichr = get_id(chrm);
 	if(ichr<0)
 		return 0;
@@ -104,12 +104,11 @@ int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int32_t *hits)
 			fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
 			preIdx = n1;
 			preChr = ichr;
-		}
+		}		
 		if(qe>gData[0].start){					//sorted by start
 			if(tmpi<16){
 				tE = tmpi-1;
-				while(gData[tE].start>=qe)
-					tE--;
+				while(gData[tE].start>=qe)tE--;
 			}
 			else
 				tE = bSearch(gData, 0, tmpi-1, qe);	//idx
@@ -122,8 +121,8 @@ int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int32_t *hits)
 		}
 	}
 	if(n2>n1){									//n2>n1
-		int32_t bd = IGD->nbp*n1;				//only keep the first
-		for(j=n1+1; j<n2; j++){
+		int32_t bd = IGD->nbp*(n1+1);			//only keep the first		
+		for(j=n1+1; j<=n2; j++){				//n2 inclusive!!!
 			tmpi = IGD->nCnt[ichr][j];
 			if(tmpi>0){
 				if(j!=preIdx || ichr!=preChr){
@@ -133,19 +132,19 @@ int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int32_t *hits)
 					fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
 					preIdx = j;
 					preChr = ichr;
-				}
+				}				
+				
 				if(qe>gData[0].start){
 					if(tmpi<16){
-						tE = 0;
-						while(gData[tE].start>=qe)
-							tE--;
+						tE = tmpi-1;
+						while(gData[tE].start>=qe)tE--;
 					}
 					else
 						tE = bSearch(gData, 0, tmpi-1, qe);	//idx
 					tS = 0;
 					while(gData[tS].start<bd)tS++;		//exclude 
-					for(i=tE; i>=tS;i--){ 
-						if(gData[i].end>qs){// && gData[i].start>bd){//left boundary
+					for(i=tE; i>=tS; i--){ 
+						if(gData[i].end>qs){// && gData[i].start>bd){//left boundary		
 							nols++;
 							hits[gData[i].idx]++;
 						}
@@ -184,8 +183,7 @@ int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int32_t *h
 		if(qe>gData[0].start){					//sorted by start
 			if(tmpi<16){
 				tE = tmpi-1;
-				while(gData[tE].start>=qe)
-					tE--;
+				while(gData[tE].start>=qe)tE--;
 			}
 			else
 				tE = bSearch(gData, 0, tmpi-1, qe);	//idx
@@ -198,8 +196,8 @@ int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int32_t *h
 		}
 	}
 	if(n2>n1){									//n2>n1
-		int32_t bd = IGD->nbp*n1;				//only keep the first
-		for(j=n1+1; j<n2; j++){
+		int32_t bd = IGD->nbp*(n1+1);				//only keep the first
+		for(j=n1+1; j<=n2; j++){
 			tmpi = IGD->nCnt[ichr][j];
 			if(tmpi>0){
 				if(j!=preIdx || ichr!=preChr){
@@ -212,9 +210,8 @@ int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int32_t *h
 				}
 				if(qe>gData[0].start){
 					if(tmpi<16){
-						tE = 0;
-						while(gData[tE].start>=qe)
-							tE--;
+						tE = tmpi-1;
+						while(gData[tE].start>=qe)tE--;
 					}
 					else
 						tE = bSearch(gData, 0, tmpi-1, qe);	//idx
@@ -287,14 +284,14 @@ int64_t getOverlaps_v(char *qFile, int32_t *hits, int32_t v)
 
 int64_t getOverlaps_m0(uint32_t **hitmap)
 {	//load igd tile one by one
-	int i, j, ichr, n1;	//define boundary!
+	int i, j, jj, ichr, n1;	//define boundary!
 	int32_t tE, tS, tmpi, bd, qe, qs;
 	int64_t nols = 0;
 	for(ichr=0; ichr<IGD->nCtg; ichr++){	
 		for(n1=0; n1<IGD->nTile[ichr]; n1++){
 			bd = IGD->nbp*n1;
-			tmpi = IGD->nCnt[ichr][n1];
-			if(tmpi>0){								
+			tmpi = IGD->nCnt[ichr][n1];	
+			if(tmpi>0){							
 				fseek(fP, IGD->tIdx[ichr][n1], SEEK_SET);			
 				free(gData);					
 				gData = malloc(tmpi*sizeof(gdata_t));
@@ -303,6 +300,7 @@ int64_t getOverlaps_m0(uint32_t **hitmap)
 					qe = gData[j].end;
 					qs = gData[j].start;
 					if(qe>gData[0].start){
+						jj = gData[j].idx;
 						if(tmpi<16){
 							tE = tmpi-1;
 							while(gData[tE].start>=qe)
@@ -311,11 +309,12 @@ int64_t getOverlaps_m0(uint32_t **hitmap)
 						else
 							tE = bSearch(gData, 0, tmpi-1, qe);	//idx
 						tS = 0;
-						while(gData[tS].start<bd)tS++;		//exclude 
-						for(i=tE; i>=tS;i--){ 
+						if(qs<bd)
+							while(tS<=tE && gData[tS].start<bd)tS++;		//exclude 
+						for(i=tE; i>=tS; i--){ 
 							if(gData[i].end>qs){// && gData[i].start>bd){//left boundary
 								nols++;
-								hitmap[gData[j].idx][gData[i].idx]++;
+								hitmap[jj][gData[i].idx]++;
 							}
 						} 
 					}
@@ -353,19 +352,20 @@ int64_t getOverlaps_m1(uint32_t **hitmap)
 				for(j=0;j<tmpi;j++){
 					qe = gData[j].end;
 					qs = gData[j].start;
-					jj = gData[j].idx;
-					if(qe>gData[0].start){
+					if(qe>gData[0].start){					
+						jj = gData[j].idx;						
+						tS = 0;
+						if(qs<bd)
+							while(tS<tmpi && gData[tS].start<bd)tS++;		//exclude 
+						//---------------------------------------------------
 						if(tmpi<16){
-							tE = tmpi-1;
-							while(gData[tE].start>=qe)tE--;
+							i = tmpi-1;
+							while(gData[i].start>=qe)i--;
 						}
 						else
-							tE = bSearch(gData, 0, tmpi-1, qe);	//idx
-						tS = 0;
-						while(gData[tS].start<bd)tS++;		//exclude 
-						i=tE;
-						while(maxE[i]>qs && i>=tS){
-							if(gData[i].end>qs){// && gData[i].start>bd){//left boundary
+							i = bSearch(gData, tS, tmpi-1, qe);	//idx
+						while(i>=tS && maxE[i]>qs){
+							if(gData[i].end>qs){
 								nols++;
 								hitmap[jj][gData[i].idx]++;
 							}
@@ -387,11 +387,15 @@ int64_t getOverlaps_m2(uint32_t **hitmap)
 	int32_t tE, tS, tmpi, bd, qe, qs, tmax, rs, re;
 	int64_t nols = 0;
 	int32_t *maxE;
-	int nc=1, lenC[MAXC], idxC[MAXC];		//components	
+	int nc=1, lenC[MAXC], idxC[MAXC];		//components
+	int32_t m = 0;	
 	for(ichr=0; ichr<IGD->nCtg; ichr++){	
 		for(n1=0; n1<IGD->nTile[ichr]; n1++){
 			bd = IGD->nbp*n1;		
 			tmpi = IGD->nCnt[ichr][n1];
+			m++;
+			if(m%1000==0)
+				printf("%i\n", m);
 			if(tmpi>0){								
 				fseek(fP, IGD->tIdx[ichr][n1], SEEK_SET);			
 				free(gData);					
@@ -400,27 +404,28 @@ int64_t getOverlaps_m2(uint32_t **hitmap)
 				//construct ailist--------------------------------
 				maxE = malloc(tmpi*sizeof(int32_t));				
 				construct(gData, tmpi, &nc, idxC, lenC, maxE, 20);
-				//-----
+				/*printf("%i\t%i\t%i\n", ichr, n1, nc);
+				for(k=0;k<nc;k++){
+					rs = idxC[k], re = rs+lenC[k];
+					printf("--%i\t%i\n", rs, re);
+					for(j=rs;j<re;j++)
+						printf(":%i\t%i\t%u\n",gData[j].start, gData[j].end, maxE[j]);
+				}*/
 				for(j=0;j<tmpi;j++){
 					qe = gData[j].end;
 					qs = gData[j].start;
-					jj = gData[j].idx;
+					jj = gData[j].idx;							
 					//for each component:
 					for(k=0;k<nc;k++){
-						rs = idxC[k], re = idxC[k+1]-1;
-						if(qe>gData[rs].start){
-							if(lenC[k]<16){
-								tE = re;
-								while(gData[tE].start>=qe)tE--;
-							}
-							else
-								tE = bSearch(gData, rs, re, qe);	//idx
+						rs = idxC[k], re = rs+lenC[k];		
+						if(qe>gData[rs].start){						
 							tS = rs;
-							while(gData[tS].start<bd)tS++;		//exclude 
-							i=tE;
-							while(maxE[i]>qs && i>=tS){
-								if(gData[i].end>qs){// && gData[i].start>bd){//left boundary
-									nols++;
+							if(qs<bd)
+								while(tS<re && gData[tS].start<bd)tS++;		//exclude 
+							i = bSearch(gData, tS, re-1, qe);	//idx
+							while(i>=tS && maxE[i]>qs){
+								if(gData[i].end>qs){
+									//nols++;
 									hitmap[jj][gData[i].idx]++;
 								}
 								i--;
@@ -450,30 +455,12 @@ int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t x)
 				gData = malloc(tmpi*sizeof(gdata_t));
 				fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
 				for(j=0;j<tmpi;j++){
-					//left/right flanking: over the boundary?
-					//only consider flanking area inside the current tile
-					//1.Left
+					//flanking
+					//1.Left: qe>bd (case 1: qs>=bd; case 2: qs<bd)
 					qe = gData[j].start;
 					if(qe>bd){
-						qs = MAX(0,qe-x);
-						if(qe>gData[0].start){
-							if(tmpi<16){
-								tE = tmpi-1;
-								while(gData[tE].start>=qe)
-									tE--;
-							}
-							else
-								tE = bSearch(gData, 0, tmpi-1, qe);	//idx
-							tS = 0;
-							//while(gData[tS].start<bd)tS++;		//exclude 
-							for(i=tE; i>=tS;i--){ 
-								if(gData[i].end>qs){// && gData[i].start>bd){//left boundary
-									nols++;
-									hitmap[gData[j].idx][gData[i].idx]++;
-								}
-							} 
-						}						
-						if(qs<bd && n1>0){//rare case:cross boundary-->load another tile
+						qs = MAX(0,qe-x);						
+						if(qs<bd && n1>0){//rare case:cross boundary-->load (n1-1)th tile
 							int tmpt = IGD->nCnt[ichr][n1-1];
 							fseek(fP, IGD->tIdx[ichr][n1-1], SEEK_SET);								
 							gdata_t *gtmp = malloc(tmpi*sizeof(gdata_t));
@@ -486,20 +473,39 @@ int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t x)
 							else
 								tE = bSearch(gtmp, 0, tmpt-1, qe);	//idx
 							tS = 0;
-							//while(gtmp[tS].start<bd)tS++;		//exclude 
 							for(i=tE; i>=tS;i--){ 
-								if(gtmp[i].end>qs && gtmp[i].end<=bd){//left boundary
+								if(gtmp[i].end>qs){//left boundary
 									nols++;
 									hitmap[gData[j].idx][gData[i].idx]++;
 								}
 							} 
 							free(gtmp);
 						}
-					}
+						if(qe>gData[0].start){
+							if(tmpi<16){
+								tE = tmpi-1;
+								while(gData[tE].start>=qe)
+									tE--;
+							}
+							else
+								tE = bSearch(gData, 0, tmpi-1, qe);	//idx
+							tS = 0;
+							if(qs<bd)
+								while(gData[tS].start<bd)tS++;		//exclude 
+							for(i=tE; i>=tS;i--){ 
+								if(gData[i].end>qs){// && gData[i].start>bd){//left boundary
+									nols++;
+									hitmap[gData[j].idx][gData[i].idx]++;
+								}
+							} 
+						}						
+
+					}//qe<=bd belongs to the previous tile
 					
-					//2.Right
+					//2.Right:qs<bd1 (case 1: qe<=bd1; case2--cross bd1: qe>bd1)
 					qs = gData[j].end;
-					if(qs<bd+IGD->nbp){
+					int32_t bd1 = bd+IGD->nbp;
+					if(qs<bd1){
 						qs = MAX(0,qe-x);						
 						qe = qs+x;
 						if(qe>gData[0].start){
@@ -511,7 +517,6 @@ int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t x)
 							else
 								tE = bSearch(gData, 0, tmpi-1, qe);	//idx
 							tS = 0;
-							//while(gData[tS].start<bd)tS++;		//exclude 
 							for(i=tE; i>=tS;i--){ 
 								if(gData[i].end>qs){// && gData[i].start>bd){//left boundary
 									nols++;
@@ -519,21 +524,19 @@ int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t x)
 								}
 							} 
 						}		
-
-						if(qe>bd+IGD->nbp){//cross boundary: n1+1<nTiles?
+						if(qe>bd1){//cross boundary: n1+1<nTiles?
 							int tmpt = IGD->nCnt[ichr][n1+1];
 							fseek(fP, IGD->tIdx[ichr][n1+1], SEEK_SET);								
 							gdata_t *gtmp = malloc(tmpi*sizeof(gdata_t));
 							fread(gtmp, sizeof(gdata_t)*tmpt, 1, fP);
 							if(tmpt<16){
 								tE = tmpt-1;
-								while(gtmp[tE].start>=qe)
-									tE--;
+								while(gtmp[tE].start>=qe)tE--;
 							}
 							else
 								tE = bSearch(gtmp, 0, tmpt-1, qe);	//idx
-							tS = 0;
-							while(gtmp[tS].start<bd)tS++;		//exclude 
+							tS = 0;//qs<bd1
+							while(gtmp[tS].start<bd1)tS++;		//exclude 
 							for(i=tE; i>=tS;i--){ 
 								if(gtmp[i].end>qs){// && gData[i].start>bd){//left boundary
 									nols++;
@@ -576,7 +579,7 @@ int igd_search(int argc, char **argv)
     fclose(fi); 
         
     int32_t v = 0, qs=1, qe=2;
-    int checking=0, mode=-1, ext=0, xlen=0,  ichr, k;
+    int checking=0, mode=-1, mt=0, ext=0, xlen=0,  ichr, k;
     char out[64]="";  
     char *chrm;    
     char *qfName = "";  
@@ -591,7 +594,8 @@ int igd_search(int argc, char **argv)
     char *idFile = tmp;	//str_split(tmp, '.', &nCols)[0];
     strcat(idFile, "_index.tsv");            
     IGD->finfo = get_fileinfo(idFile, &IGD->nFiles);      
-    int32_t *hits = calloc(IGD->nFiles, sizeof(int32_t));    
+    int32_t nfiles = IGD->nFiles; 
+    int32_t *hits = calloc(nfiles, sizeof(int32_t));  
     //-----------------------------------------------------
     for(int i=3; i<argc; i++){
         if(strcmp(argv[i], "-q")==0){
@@ -608,7 +612,7 @@ int igd_search(int argc, char **argv)
                 qe = atoi(argv[i+3]);
             }        
         }
-        /*else if(strcmp(argv[i], "-v")==0){
+        else if(strcmp(argv[i], "-v")==0){
             if(i+1<argc)
                 v = atoi(argv[i+1]);
         }
@@ -621,20 +625,49 @@ int igd_search(int argc, char **argv)
         } 
         else if(strcmp(argv[i], "-m")==0){
             mode = 0;
+            if(i+1<argc)
+                mt = atoi(argv[i+1]);//mode type
         }  
         else if(strcmp(argv[i], "-x")==0){
             if(i+1<argc){
                 ext = 1; //find cofactors
                 xlen = atoi(argv[i+1]);//symmetric: .end+, .start-
             }
-        } */                               
+        }                               
     }  
     //check if fils exist
 
       
     //----------------------------------------------------------
 	fP = fopen(igdName, "rb");				//share
-    if(mode==0){
+    if(mode==0){	//mapping
+    	uint32_t **hitmap = malloc(nfiles*sizeof(uint32_t*));
+    	for(int i=0;i<nfiles;i++)
+    		hitmap[i] = calloc(nfiles, sizeof(uint32_t));
+    	if(mt==0)
+    		getOverlaps_m0(hitmap);
+    	else if(mt==1)
+    		getOverlaps_m1(hitmap);
+     	else if(mt==2)
+    		getOverlaps_m2(hitmap); 
+    	FILE *fp;
+		if(strlen(out)<2)strcpy(out,"Hitmap");
+		fp = fopen(out, "w");
+	    if(fp==NULL)
+	        printf("Can't open file %s\n", out);
+	    else{
+	        fprintf(fp, "%u\t%u\t%u\n", nfiles, nfiles, v);
+	        for(int i=0;i<nfiles;i++){
+	            for(int j=0;j<nfiles;j++)
+	                fprintf(fp, "%u\t", hitmap[i][j]); 
+	            fprintf(fp, "\n");
+	        } 
+	        fclose(fp);
+	    }     
+	
+    	for(int i=0;i<nfiles;i++)
+    		free(hitmap[i]);
+    	free(hitmap);  		
         //if(ext==0)
         //    search_self(igdName, v, out);
         //else
@@ -644,8 +677,9 @@ int igd_search(int argc, char **argv)
     	getOverlaps(qfName, hits);
     	printf("index\t File_name\t number of regions\t number of hits\n"); 
     	int64_t total = 0;       
-        for(int i=0;i<IGD->nFiles;i++){
-            printf("%i %s %i %i\n", i, IGD->finfo[i].fileName, IGD->finfo[i].nr, hits[i]); 
+        for(int i=0;i<nfiles;i++){
+        	if(hits[i]>0)
+            	printf("%i\t%i\t%i\t%s\n", i, IGD->finfo[i].nr, hits[i], IGD->finfo[i].fileName); 
         	total += hits[i];
         }
         //char *qtype = qfName + strlen(qfName) - 4;    
@@ -665,8 +699,8 @@ int igd_search(int argc, char **argv)
     else if(mode==2){//mode 2 for a single region
     	ols = get_overlaps(chrm, qs, qe, hits); 
     	printf("index\t File_name\t number of regions\t number of hits\n");        
-        for(int i=0;i<IGD->nFiles;i++)
-            printf("%i %s %i %i\n", i, IGD->finfo[i].fileName, IGD->finfo[i].nr, hits[i]);
+        for(int i=0;i<nfiles;i++)
+            printf("%i\t%i\t%i\t%s\n", i, IGD->finfo[i].nr, hits[i], IGD->finfo[i].fileName);
     }
     else
         return search_help(EX_OK);      

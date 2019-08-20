@@ -236,8 +236,10 @@ void igd_saveT(igd_t *igd, char *oPath)
 		    }			
 		    tile->nCnts += tile->ncnts;
 			tile->ncnts = 0;
+			free(tile->gList);
 		    tile->mcnts = 16;//MAX(16, tile->mcnts/16);
-		    tile->gList = realloc(tile->gList, tile->mcnts*sizeof(gdata_t));
+		    tile->gList = malloc(tile->mcnts*sizeof(gdata_t));
+		    //tile->gList = realloc(tile->gList, tile->mcnts*sizeof(gdata_t));?		    
 		}
 	}	
 	igd->total = 0;	//batch total
