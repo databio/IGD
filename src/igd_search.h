@@ -22,11 +22,14 @@ int64_t getOverlaps_v(char *qFile, int32_t *hits, int32_t v);
 void construct(gdata_t *glist, int32_t nr, int32_t *nc, int32_t *idxC, int32_t *lenC, int32_t *maxE, int cLen);
 
 //search with value, mapping
-int64_t getOverlaps_m0(uint32_t **hitmap); 	//map, dtype
+int64_t getOverlaps_m0(uint32_t **hitmap, int32_t v); 	//map, dtype
 int64_t getOverlaps_m1(uint32_t **hitmap); 	//map, dtype, test
 int64_t getOverlaps_m2(uint32_t **hitmap); 	//map, dtype, test
-int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t x); //map, q extended
-int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t x); //map, q extended
+int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v); 	//map, dtype, test
+int64_t getOverlaps_m2_v(uint32_t **hitmap, int32_t v); 	//map, dtype, test
+int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t v, int32_t x); //map, q extended
+int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t v, int32_t x); //map, q extended
+int64_t getOverlaps_m2_x(uint32_t **hitmap, int32_t v, int32_t x); //map, q extended
 
 //search main
 int igd_search(int argc, char **argv);

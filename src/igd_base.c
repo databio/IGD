@@ -50,7 +50,7 @@ int32_t bSearch(gdata_t *gdata, int32_t t0, int32_t tc, int32_t qe)
     int32_t tL=t0, tR=tc, tM, tE = -1; 
     if(gdata[tR].start < qe)
     	return tR;
-    else if(gdata[0].start >= qe)
+    else if(gdata[tL].start >= qe)
     	return -1;
     while(tL<tR-1){
         tM = (tL+tR)/2; 
