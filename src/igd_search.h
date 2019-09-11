@@ -10,6 +10,14 @@
 //-------------------------------------------------------------------------------------
 #include "igd_base.h"
 //-------------------------------------------------------------------------------------
+//for gdata0_t only-----
+int32_t get_overlaps0(char *chrm, int32_t qs, int32_t qe, int32_t *hits);
+int64_t getOverlaps0(char *qFile, int32_t *hits);
+int64_t getOverlaps0_m0(uint32_t **hitmap); 	
+int64_t getOverlaps0_m1(uint32_t **hitmap); 
+int64_t getOverlaps0_m2(uint32_t **hitmap); 
+void construct0(gdata0_t *glist, int32_t nr, int32_t *nc, int32_t *idxC, int32_t *lenC, int32_t *maxE, int cLen);
+
 //Single query
 int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int32_t *hits);
 int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int32_t *hits);
@@ -20,13 +28,15 @@ int64_t getOverlaps_v(char *qFile, int32_t *hits, int32_t v);
 
 //construct for mapping
 void construct(gdata_t *glist, int32_t nr, int32_t *nc, int32_t *idxC, int32_t *lenC, int32_t *maxE, int cLen);
+void constructNew(gdata_t *glist, int32_t nr, int32_t *nc, int32_t *idxC, int32_t *lenC, int32_t *maxE, int cLen);
 
 //search with value, mapping
-int64_t getOverlaps_m0(uint32_t **hitmap, int32_t v); 	//map, dtype
-int64_t getOverlaps_m1(uint32_t **hitmap); 	//map, dtype, test
-int64_t getOverlaps_m2(uint32_t **hitmap); 	//map, dtype, test
-int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v); 	//map, dtype, test
-int64_t getOverlaps_m2_v(uint32_t **hitmap, int32_t v); 	//map, dtype, test
+int64_t getOverlaps_m0(uint32_t **hitmap, int32_t v); 	
+int64_t getOverlaps_m1(uint32_t **hitmap); 
+int64_t getOverlaps_m2(uint32_t **hitmap); 	
+int64_t getOverlaps_m2a(uint32_t **hitmap); 	
+int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v); 	
+int64_t getOverlaps_m2_v(uint32_t **hitmap, int32_t v); 	
 int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t v, int32_t x); //map, q extended
 int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t v, int32_t x); //map, q extended
 int64_t getOverlaps_m2_x(uint32_t **hitmap, int32_t v, int32_t x); //map, q extended

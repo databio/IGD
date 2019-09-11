@@ -14,7 +14,8 @@ int igd_help(int argc, char **argv, int exit_code);
 void *hc;				//extern from igd_base.h
 iGD_t *IGD;
 gdata_t *gData = NULL;
-int32_t preIdx, preChr;
+gdata0_t *gData0 = NULL;
+int32_t preIdx, preChr, tile_size;
 FILE *fP;
 
 int main(int argc, char **argv)

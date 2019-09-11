@@ -8,7 +8,8 @@
 #include "igd_base.h"
 
 //create igd from .bed.gz files
-void create_igd(char *iPath, char *oPath, char *igdName, int gtype);
+void create_igd(char *iPath, char *oPath, char *igdName);
+void create_igd0(char *iPath, char *oPath, char *igdName);
 
 //create igd from a single .bed.gz file with dataset index at 4th column
 void create_igd_Jaspar(char *iPath, char *oPath, char *igdName);

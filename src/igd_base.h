@@ -43,6 +43,12 @@ typedef struct{							//default
     int32_t value;
 } gdata_t;
 
+typedef struct{							//default 
+    int32_t idx;        				//genomic object--data set index
+    int32_t start;      				//region start
+    int32_t end;        				//region end
+} gdata0_t;
+
 typedef struct{
     char* fileName;						//dataset file
     int32_t nr;							//number regions/dataset
@@ -55,16 +61,33 @@ typedef struct{
 } tile_t;
 
 typedef struct{
+	int32_t ncnts, nCnts, mcnts;		//batch counts, total, max
+	gdata0_t *gList;
+} tile0_t;
+
+typedef struct{
 	char *name;    						//name of the contig
 	int32_t mTiles;						//determined by the interval start and end 
 	tile_t *gTile;                  	//tile data
 } ctg_t;
+
+typedef struct{
+	char *name;    						//name of the contig
+	int32_t mTiles;						//determined by the interval start and end 
+	tile0_t *gTile;                  	//tile data
+} ctg0_t;
 
 typedef struct{		
 	int32_t nbp, gType, nctg, mctg;		// number of base pairs, data type: 0, 1, 2 etc; size differs	
 	int64_t total;						//total region in each ctg
 	ctg_t *ctg;        					//list of contigs (of size _n_ctg_) 
 } igd_t;
+
+typedef struct{		
+	int32_t nbp, gType, nctg, mctg;		// number of base pairs, data type: 0, 1, 2 etc; size differs	
+	int64_t total;						//total region in each ctg
+	ctg0_t *ctg;        					//list of contigs (of size _n_ctg_) 
+} igd0_t;
 
 typedef struct{							//for retrieving from disk file
 	int32_t nFiles;
@@ -81,7 +104,8 @@ typedef struct{							//for retrieving from disk file
 extern void *hc;						//dict for converting contig names to int
 extern iGD_t *IGD;
 extern gdata_t *gData;
-extern int32_t preIdx, preChr;
+extern gdata0_t *gData0;
+extern int32_t preIdx, preChr, tile_size;
 extern FILE *fP;
 //---------------------------------------------------------------------------------
 //Parse a line of BED file
@@ -90,9 +114,11 @@ char *parse_bed(char *s, int32_t *st_, int32_t *en_);
 
 //Binary search
 int32_t bSearch(gdata_t *gdata, int32_t t0, int32_t tc, int32_t qe);
+int32_t bSearch0(gdata0_t *gdata, int32_t t0, int32_t tc, int32_t qe);
 
 //Add an interval
 void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t v, int32_t idx);
+void igd0_add(igd0_t *igd, const char *chrm, int32_t s, int32_t e, int32_t idx);
 
 //Get id from igd dict
 int32_t get_id(const char *chrm);
@@ -105,16 +131,19 @@ iGD_t *get_igdinfo(char *igdFile);
 
 //Initialize igd_t
 igd_t *igd_init(void);
+igd0_t *igd0_init(void);
 
 //Save tile data
 void igd_saveT(igd_t *igd, char *oPath);
+void igd0_saveT(igd0_t *igd, char *oPath);
 
 //Sort and save igd
 void igd_save(igd_t *igd, char *oPath, char *igdName);
+void igd0_save(igd0_t *igd, char *oPath, char *igdName);
 
 //Free ailist data
 void igd_destroy(igd_t *igd);
-
+void igd0_destroy(igd0_t *igd);
 //---------------------------------------------------------------------------------
 //The following section taken from Dr Heng Li's cgranges
 // (https://github.com/lh3/cgranges)
