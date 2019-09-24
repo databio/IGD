@@ -970,8 +970,8 @@ int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v)
 	int32_t tE, tS, tmpi, tmpi1, bd, qe, qs, tmax;
 	int64_t nols = 0;
 	int32_t *maxE;	
-	for(i=0;i<IGD->nFiles;i++)
-		IGD->finfo[i].nr = 1;	
+	//for(i=0;i<IGD->nFiles;i++)
+	//	IGD->finfo[i].nr = 1;	
 	for(ichr=0; ichr<IGD->nCtg; ichr++){	
 		for(n1=0; n1<IGD->nTile[ichr]; n1++){
 			bd = IGD->nbp*n1;		
@@ -997,7 +997,7 @@ int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v)
 						qe = gData[j].end;
 						qs = gData[j].start;						
 						jj = gData[j].idx;						
-						IGD->finfo[jj].nr++;
+						//IGD->finfo[jj].nr++;
 						if(qe>gData[0].start){	
 							tS = j;
 							if(qs<bd){
@@ -1095,8 +1095,8 @@ int64_t getOverlaps_m2_v(uint32_t **hitmap, int32_t v)
 	int64_t nols = 0;
 	int32_t *maxE;
 	int nc=1, lenC[MAXC], idxC[MAXC];		//components
-	for(i=0;i<IGD->nFiles;i++)
-		IGD->finfo[i].nr = 1;
+	//for(i=0;i<IGD->nFiles;i++)
+	//	IGD->finfo[i].nr = 1;
 	for(ichr=0; ichr<IGD->nCtg; ichr++){	
 		for(n1=0; n1<IGD->nTile[ichr]; n1++){
 			bd = IGD->nbp*n1;		
@@ -1115,7 +1115,7 @@ int64_t getOverlaps_m2_v(uint32_t **hitmap, int32_t v)
 				while(j<tmpi){	
 					if(gData[j].value>=v){			
 						qe = gData[j].end, qs = gData[j].start, jj = gData[j].idx;	
-						IGD->finfo[jj].nr++;				
+						//IGD->finfo[jj].nr++;				
 						//for each component-----------------------------------------------------------
 						for(k=0;k<nc;k++){
 							rs = MAX(idxC[k],j), re = idxC[k]+lenC[k];			
@@ -1214,6 +1214,8 @@ int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t v, int32_t x)
 	int32_t tE, tS, tmpi, bd, qe, qs;
 	int64_t nols = 0;
 	if(v==0)v=-1;
+	for(i=0;i<IGD->nFiles;i++)
+		IGD->finfo[i].nr = 1;	
 	for(ichr=0; ichr<IGD->nCtg; ichr++){	
 		for(n1=0; n1<IGD->nTile[ichr]; n1++){
 			bd = IGD->nbp*n1;
@@ -1229,6 +1231,7 @@ int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t v, int32_t x)
 				for(j=0;j<tmpi;j++){
 				if(gData[j].value>=v){
 					jj = gData[j].idx;
+					IGD->finfo[jj].nr++;
 					//flanking
 					//1.Left: qe>bd (case 1: qs>=bd; case 2: qs<bd)
 					qe = gData[j].start;
@@ -1783,13 +1786,27 @@ int igd_search(int argc, char **argv)
 			} 
     	}
     	//calculate J-index
-    	//if(xlen==0){
-		for(j=0;j<nfiles;j++){
-			fmap[j][j] = (float)hitmap[j][j]/(float)IGD->finfo[j].nr;
-			for(i=j+1;i<nfiles;i++){
-				fmap[j][i] = (float)hitmap[j][i]/(float)(IGD->finfo[i].nr+IGD->finfo[j].nr-hitmap[j][i]);
-				fmap[i][j] = fmap[j][i];
+    	if(xlen>0){
+			for(j=0;j<nfiles;j++){
+				fmap[j][j] = 1.0;
+				for(i=j+1;i<nfiles;i++){
+					if(hitmap[j][i]>0){
+						fmap[j][i] = (float)hitmap[j][i]/(float)(hitmap[j][j]+hitmap[i][i]-hitmap[j][i]);
+						fmap[i][j] = fmap[j][i];
+					}
+				}
 			}
+    	}
+    	else{
+			for(j=0;j<nfiles;j++){
+				fmap[j][j] = 0.0;
+				for(i=j+1;i<nfiles;i++){
+					if(hitmap[j][i]>0){
+						fmap[j][i] = 0.5*(float)hitmap[j][i]/(float)(IGD->finfo[i].nr+IGD->finfo[j].nr-hitmap[j][i]);
+						fmap[i][j] = fmap[j][i];
+					}
+				}
+			}    	
     	}	   		
     	FILE *fp;
 		if(strlen(out)<2)strcpy(out,"Hitmap");
