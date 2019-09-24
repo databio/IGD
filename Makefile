@@ -9,7 +9,7 @@ $(OBJ)/%.o: %.c
 	cc -c $(CFLAGS) $< -o $@ 
 
 igd_dev1: $(OBJS)
-	cc -o $(BIN)/igd_dev1 $(OBJS) $(CFLAGS)
+	cc -o $(BIN)/igd $(OBJS) $(CFLAGS)
 all: $(OBJS)
 
 $(OBJS): | $(OBJ) $(BIN)

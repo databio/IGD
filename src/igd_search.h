@@ -33,6 +33,7 @@ void constructNew(gdata_t *glist, int32_t nr, int32_t *nc, int32_t *idxC, int32_
 //search with value, mapping
 int64_t getOverlaps_m0(uint32_t **hitmap, int32_t v); 	
 int64_t getOverlaps_m1(uint32_t **hitmap); 
+int64_t getOverlaps_m1a(uint32_t **hitmap); 
 int64_t getOverlaps_m2(uint32_t **hitmap); 	
 int64_t getOverlaps_m2a(uint32_t **hitmap); 	
 int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v); 	

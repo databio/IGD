@@ -75,7 +75,6 @@ void create_igd(char *iPath, char *oPath, char *igdName)
                     L1 = nL;    		//number of total lines or next line
                 }
 			}
-
 			gzclose(fp);
 			if(m==0) ig++;
 		}

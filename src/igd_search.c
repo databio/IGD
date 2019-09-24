@@ -590,7 +590,7 @@ int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int32_t *h
 			else
 				tE = bSearch(gData, 0, tmpi-1, qe);	//idx
 			for(i=tE; i>=0; i--){
-				if(gData[i].end>qs && gData[i].value>v){
+				if(gData[i].end>qs && gData[i].value>=v){
 					nols++;
 					hits[gData[i].idx]++;
 				} 
@@ -620,7 +620,7 @@ int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int32_t *h
 					tS = 0;
 					while(tS<tmpi && gData[tS].start<bd)tS++;		//exclude <left boundary
 					for(i=tE; i>=tS;i--){ 
-						if(gData[i].end>qs && gData[i].value>v){
+						if(gData[i].end>qs && gData[i].value>=v){
 							nols++;
 							hits[gData[i].idx]++;
 						}
@@ -702,7 +702,7 @@ int64_t getOverlaps_m0(uint32_t **hitmap, int32_t v)
 				gData = malloc(tmpi*sizeof(gdata_t));
 				fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
 				for(j=0;j<tmpi;j++){
-					if(gData[j].value>v){
+					if(gData[j].value>=v){
 						qe = gData[j].end;
 						qs = gData[j].start;
 						if(qe>gData[0].start){
@@ -718,7 +718,7 @@ int64_t getOverlaps_m0(uint32_t **hitmap, int32_t v)
 							if(qs<bd)
 								while(tS<=tE && gData[tS].start<bd)tS++;		//exclude 
 							for(i=tE; i>=tS; i--){ 
-								if(gData[i].end>qs && gData[i].value>v){
+								if(gData[i].end>qs && gData[i].value>=v){
 									nols++;
 									hitmap[jj][gData[i].idx]++;
 								}
@@ -736,6 +736,66 @@ int64_t getOverlaps_m0(uint32_t **hitmap, int32_t v)
 
 //using AIList: no decomp
 int64_t getOverlaps_m1(uint32_t **hitmap)
+{	//load igd tile one by one
+	int i, j, ii, jj, ichr, n1, mm, m=0;	
+	int32_t tE, tS, tmpi, tmpi1,bd, qe, qs, tmax;
+	int64_t nols = 0;
+	int32_t *maxE;	
+	for(ichr=0; ichr<IGD->nCtg; ichr++){	
+		for(n1=0; n1<IGD->nTile[ichr]; n1++){
+			bd = IGD->nbp*n1;		
+			tmpi = IGD->nCnt[ichr][n1];
+			tmpi1=tmpi-1;
+			if(m%1000==0)
+				printf("%i\t%i\t%i\n", n1, m, tmpi);			
+			if(tmpi>0){								
+				fseek(fP, IGD->tIdx[ichr][n1], SEEK_SET);			
+				free(gData);					
+				gData = malloc(tmpi*sizeof(gdata_t));
+				fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
+				//construct ailist---------------------------------------------------
+				maxE = malloc(tmpi*sizeof(int32_t));
+				tmax = gData[0].end;
+				for(i=0;i<tmpi;i++){
+					if(gData[i].end>tmax)tmax = gData[i].end;
+					maxE[i]=tmax;
+				}
+				j=0;
+				while(j<tmpi){
+					qe = gData[j].end;
+					qs = gData[j].start;
+					if(qe>gData[0].start){					
+						jj = gData[j].idx;	
+						tS = j;
+						if(qs<bd){
+							while(tS<tmpi && gData[tS].start<bd)tS++;	//exclude 
+						}
+						if(tS==j){
+							hitmap[jj][jj]++;	
+							tS++;
+						}
+						i = bSearch(gData, tS, tmpi1, qe);	
+						while(i>=tS && maxE[i]>qs){
+							if(gData[i].end>qs){
+								ii = gData[i].idx;
+								hitmap[jj][ii]++;
+								hitmap[ii][jj]++; 	
+							}
+							i--;
+						} 
+					}
+					j++;
+				}
+				free(maxE);	
+			}			
+			m++;
+		}
+	}
+    return nols;
+}
+
+//for comparison
+int64_t getOverlaps_m1a(uint32_t **hitmap)
 {	//load igd tile one by one
 	int i, j, ii, jj, ichr, n1, mm, m=0;	
 	int32_t tE, tS, tmpi, bd, qe, qs, tmax;
@@ -763,27 +823,20 @@ int64_t getOverlaps_m1(uint32_t **hitmap)
 				while(j<tmpi){
 					qe = gData[j].end;
 					qs = gData[j].start;
-					mm = 1;
 					if(qe>gData[0].start){					
-						jj = gData[j].idx;	
-						mm+=j;
-						while(mm<tmpi && gData[mm].end==qe && gData[mm].start==qs && gData[mm].idx==jj)
-							mm++;
-						mm-=j;	
-						tS = j;
+						jj = gData[j].idx;		
+						tS = 0;
 						if(qs<bd)
 							while(tS<tmpi && gData[tS].start<bd)tS++;		//exclude 
 						i = bSearch(gData, tS, tmpi-1, qe);	//idx
 						while(i>=tS && maxE[i]>qs){
 							if(gData[i].end>qs){
-								ii = gData[i].idx;
-								if(ii>jj)hitmap[jj][ii]+=mm;
-								else hitmap[ii][jj]+=mm; 	
+								hitmap[jj][gData[i].idx]++;
 							}
 							i--;
 						} 
 					}
-					j+=mm;
+					j++;
 				}
 				free(maxE);	
 			}			
@@ -824,28 +877,30 @@ int64_t getOverlaps_m2(uint32_t **hitmap)
 				//printf("%i\t%i\t%i\t %i\n", ichr, n1, tmpi, nc);				
 				j = 0;	
 				while(j<tmpi){				
-					qe = gData[j].end, qs = gData[j].start, jj = gData[j].idx;
-					mm=j+1;
-					while(mm<tmpi && gData[mm].end==qe && gData[mm].start==qs && gData[mm].idx==jj)
-						mm++;
-					mm-=j;						
+					qe = gData[j].end, qs = gData[j].start, jj = gData[j].idx;					
 					//for each component-----------------------------------------------------------
 					for(k=0;k<nc;k++){
 						rs = MAX(idxC[k],j), re = idxC[k]+lenC[k];			
 						if(rs<re && qe>gData[rs].start){		
-							if(qs<bd)
+							if(qs<bd){
 								while(rs<re && gData[rs].start<bd)rs++;		//exclude 
+							}
+							if(rs==j){
+								hitmap[jj][jj]++;
+								rs++;
+							}
 							i = bSearch(gData, rs, re-1, qe);				//idx
 							while(i>=rs && maxE[i]>qs){
 								if(gData[i].end>qs){
-									if(gData[i].idx>jj)hitmap[jj][gData[i].idx]+=mm;
-									else hitmap[gData[i].idx][jj]+=mm; 		//nols++;    	
+									ii = gData[i].idx;
+									hitmap[jj][ii]++;
+									hitmap[ii][jj]++; 		//nols++;    	
 								}
 								i--;
 							} 
 						}
 					}
-					j+=mm;
+					j++;
 				}
 				free(maxE);	
 			}
@@ -910,6 +965,72 @@ int64_t getOverlaps_m2a(uint32_t **hitmap)
 //using AIList: no decomp
 int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v)
 {	//load igd tile one by one
+	//define: >=v
+	int i, j, ii, jj, ichr, n1, m=0;	
+	int32_t tE, tS, tmpi, tmpi1, bd, qe, qs, tmax;
+	int64_t nols = 0;
+	int32_t *maxE;	
+	for(i=0;i<IGD->nFiles;i++)
+		IGD->finfo[i].nr = 1;	
+	for(ichr=0; ichr<IGD->nCtg; ichr++){	
+		for(n1=0; n1<IGD->nTile[ichr]; n1++){
+			bd = IGD->nbp*n1;		
+			tmpi = IGD->nCnt[ichr][n1];
+			tmpi1=tmpi-1;
+			if(m%1000==0)
+				printf("%i\t%i\t%i\n", n1, m, tmpi);			
+			if(tmpi>0){								
+				fseek(fP, IGD->tIdx[ichr][n1], SEEK_SET);			
+				free(gData);					
+				gData = malloc(tmpi*sizeof(gdata_t));
+				fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
+				//construct ailist--------------------------------
+				maxE = malloc(tmpi*sizeof(int32_t));
+				tmax = gData[0].end;
+				for(i=0;i<tmpi;i++){
+					if(gData[i].end>tmax)tmax = gData[i].end;
+					maxE[i]=tmax;
+				}
+				j=0;
+				while(j<tmpi){				
+					if(gData[j].value>=v){
+						qe = gData[j].end;
+						qs = gData[j].start;						
+						jj = gData[j].idx;						
+						IGD->finfo[jj].nr++;
+						if(qe>gData[0].start){	
+							tS = j;
+							if(qs<bd){
+								while(tS<tmpi && gData[tS].start<bd)tS++;	//exclude 
+							}
+							if(tS==j){
+								hitmap[jj][jj]++;	
+								tS++;
+							}
+							i = bSearch(gData, tS, tmpi1, qe);	
+							while(i>=tS && maxE[i]>qs){
+								if(gData[i].end>qs && gData[i].value>=v){
+									ii = gData[i].idx;
+									hitmap[jj][ii]++;
+									hitmap[ii][jj]++; 
+								}
+								i--;
+							} 						
+						}
+					}
+					j++;
+				}
+				free(maxE);	
+			}			
+			m++;
+		}
+	}
+    return nols;
+}
+
+/*
+int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v)
+{	//load igd tile one by one
 	int i, j, jj, ichr, n1, m=0;	
 	int32_t tE, tS, tmpi, bd, qe, qs, tmax;
 	int64_t nols = 0;
@@ -934,7 +1055,7 @@ int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v)
 					maxE[i]=tmax;
 				}
 				for(j=0;j<tmpi;j++){
-					if(gData[j].value>v){
+					if(gData[j].value>=v){
 						qe = gData[j].end;
 						qs = gData[j].start;
 						if(qe>gData[0].start){					
@@ -950,7 +1071,7 @@ int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v)
 							else
 								i = bSearch(gData, tS, tmpi-1, qe);	//idx
 							while(i>=tS && maxE[i]>qs){
-								if(gData[i].end>qs && gData[i].value>v){
+								if(gData[i].end>qs && gData[i].value>=v){
 									nols++;
 									hitmap[jj][gData[i].idx]++;
 								}
@@ -964,9 +1085,69 @@ int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v)
 		}
 	}
     return nols;
-}
+}*/
 
 //using AIList: decomp
+int64_t getOverlaps_m2_v(uint32_t **hitmap, int32_t v)
+{	//load igd tile one by one
+	int i, j, ii, jj, k, ichr, n1, m=0, mm;	
+	int32_t tE, tS, tmpi, bd, qe, qs, tmax, rs, re;
+	int64_t nols = 0;
+	int32_t *maxE;
+	int nc=1, lenC[MAXC], idxC[MAXC];		//components
+	for(i=0;i<IGD->nFiles;i++)
+		IGD->finfo[i].nr = 1;
+	for(ichr=0; ichr<IGD->nCtg; ichr++){	
+		for(n1=0; n1<IGD->nTile[ichr]; n1++){
+			bd = IGD->nbp*n1;		
+			tmpi = IGD->nCnt[ichr][n1];
+			if((m++)%1000==0) printf("--%s\t%i\t%i\t%i\n", IGD->cName[ichr], n1, m, tmpi);			
+			if(tmpi>0){	//ichr==12 && n1>1000 && 						
+				fseek(fP, IGD->tIdx[ichr][n1], SEEK_SET);			
+				free(gData);					
+				gData = malloc(tmpi*sizeof(gdata_t));
+				fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
+				//construct ailist-----------------------------------------------------------------
+				maxE = malloc(tmpi*sizeof(int32_t));				
+				construct(gData, tmpi, &nc, idxC, lenC, maxE, 20);	
+				//printf("%i\t%i\t%i\t %i\n", ichr, n1, tmpi, nc);				
+				j = 0;	
+				while(j<tmpi){	
+					if(gData[j].value>=v){			
+						qe = gData[j].end, qs = gData[j].start, jj = gData[j].idx;	
+						IGD->finfo[jj].nr++;				
+						//for each component-----------------------------------------------------------
+						for(k=0;k<nc;k++){
+							rs = MAX(idxC[k],j), re = idxC[k]+lenC[k];			
+							if(rs<re && qe>gData[rs].start){		
+								if(qs<bd){
+									while(rs<re && gData[rs].start<bd)rs++;		//exclude 
+								}
+								if(rs==j){
+									hitmap[jj][jj]++;
+									rs++;
+								}	
+								i = bSearch(gData, rs, re-1, qe);				//idx
+								while(i>=rs && maxE[i]>qs){
+									if(gData[i].end>qs && gData[i].value>=v){
+										ii = gData[i].idx;
+										hitmap[jj][ii]++;
+										hitmap[ii][jj]++; 		   	
+									}
+									i--;
+								} 
+							}
+						}
+					}
+					j++;
+				}
+				free(maxE);	
+			}
+		}
+	}
+    return nols;
+}
+/*
 int64_t getOverlaps_m2_v(uint32_t **hitmap, int32_t v)
 {	//load igd tile one by one
 	int i, j, jj, k, ichr, n1, m=0;	
@@ -989,15 +1170,15 @@ int64_t getOverlaps_m2_v(uint32_t **hitmap, int32_t v)
 				//construct ailist--------------------------------
 				maxE = malloc(tmpi*sizeof(int32_t));				
 				construct(gData, tmpi, &nc, idxC, lenC, maxE, 20);
-				/*printf("%i\t%i\t%i\n", ichr, n1, nc);
-				for(k=0;k<nc;k++){
-					rs = idxC[k], re = rs+lenC[k];
-					printf("--%i\t%i\n", rs, re);
-					for(j=rs;j<re;j++)
-						printf(":%i\t%i\t%u\n",gData[j].start, gData[j].end, maxE[j]);
-				}*/
+				//printf("%i\t%i\t%i\n", ichr, n1, nc);
+				//for(k=0;k<nc;k++){
+				//	rs = idxC[k], re = rs+lenC[k];
+				//	printf("--%i\t%i\n", rs, re);
+				//	for(j=rs;j<re;j++)
+				//		printf(":%i\t%i\t%u\n",gData[j].start, gData[j].end, maxE[j]);
+				//}
 				for(j=0;j<tmpi;j++){
-					if(gData[j].value>v){
+					if(gData[j].value>=v){
 						qe = gData[j].end;
 						qs = gData[j].start;
 						jj = gData[j].idx;							
@@ -1010,7 +1191,7 @@ int64_t getOverlaps_m2_v(uint32_t **hitmap, int32_t v)
 									while(tS<re && gData[tS].start<bd)tS++;		//exclude 
 								i = bSearch(gData, tS, re-1, qe);	//idx
 								while(i>=tS && maxE[i]>qs){
-									if(gData[i].end>qs && gData[i].value>v){
+									if(gData[i].end>qs && gData[i].value>=v){
 										//nols++;
 										hitmap[jj][gData[i].idx]++;
 									}
@@ -1025,7 +1206,7 @@ int64_t getOverlaps_m2_v(uint32_t **hitmap, int32_t v)
 		}
 	}
     return nols;
-}
+}*/
 
 int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t v, int32_t x)
 {	//flanking x	
@@ -1046,7 +1227,7 @@ int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t v, int32_t x)
 				gData = malloc(tmpi*sizeof(gdata_t));
 				fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
 				for(j=0;j<tmpi;j++){
-				if(gData[j].value>v){
+				if(gData[j].value>=v){
 					jj = gData[j].idx;
 					//flanking
 					//1.Left: qe>bd (case 1: qs>=bd; case 2: qs<bd)
@@ -1061,7 +1242,7 @@ int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t v, int32_t x)
 							tE = bSearch(gtmp, 0, tmpt-1, qe);	//idx
 							tS = 0;
 							for(i=tE; i>=tS;i--){ 
-								if(gtmp[i].end>qs && gtmp[i].value>v){//left boundary
+								if(gtmp[i].end>qs && gtmp[i].value>=v){//left boundary
 									nols++;
 									hitmap[jj][gtmp[i].idx]++;
 								}
@@ -1074,7 +1255,7 @@ int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t v, int32_t x)
 							if(qs<bd)
 								while(tS<tmpi && gData[tS].start<bd)tS++;		//exclude 
 							for(i=tE; i>=tS;i--){ 
-								if(gData[i].end>qs && gData[i].value>v){// && gData[i].start>bd){//left boundary
+								if(gData[i].end>qs && gData[i].value>=v){// && gData[i].start>bd){//left boundary
 									nols++;
 									hitmap[jj][gData[i].idx]++;
 								}
@@ -1092,7 +1273,7 @@ int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t v, int32_t x)
 							tE = bSearch(gData, 0, tmpi-1, qe);	//idx
 							tS = 0;
 							for(i=tE; i>=tS;i--){ 
-								if(gData[i].end>qs && gData[i].value>v){// && gData[i].start>bd){//left boundary
+								if(gData[i].end>qs && gData[i].value>=v){// && gData[i].start>bd){//left boundary
 									nols++;
 									hitmap[jj][gData[i].idx]++;
 								}
@@ -1113,7 +1294,7 @@ int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t v, int32_t x)
 							if(qs<bd1)
 								while(tS<tmpt && gtmp[tS].start<bd1)tS++;		//exclude 
 							for(i=tE; i>=tS;i--){ 
-								if(gtmp[i].end>qs && gtmp[i].value>v){
+								if(gtmp[i].end>qs && gtmp[i].value>=v){
 									nols++;
 									hitmap[jj][gtmp[i].idx]++;
 								}
@@ -1136,12 +1317,14 @@ int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t v, int32_t x)
 	int64_t nols = 0;
 	int32_t *E1, *E2, *E3;
 	gdata_t *g1, *g2, *g3;
-	if(v==0) v = -1;
+	for(i=0;i<IGD->nFiles;i++)
+		IGD->finfo[i].nr = 1;
 	for(ichr=0; ichr<IGD->nCtg; ichr++){
 		int32_t nT = IGD->nTile[ichr];
 		//--------------------------------------------			
 		for(n1=0; n1<nT; n1++){
-			if(n1<nT-1 && n1>0){
+			//work on 3 consective tiles
+			if(n1<nT-1 && n1>0){//general
 				if(len1>0){
 					free(g1), free(E1), len1=0;
 				}
@@ -1167,7 +1350,7 @@ int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t v, int32_t x)
 					}
 				}				
 			}			
-			else if(n1==0){
+			else if(n1==0){//first
 				len1=0;
 				len2 = IGD->nCnt[ichr][n1];
 				len3 = IGD->nCnt[ichr][n1+1];
@@ -1194,7 +1377,7 @@ int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t v, int32_t x)
 					}			
 				}			
 			}			
-			else{//n1==nT-1
+			else{//n1==nT-1: last
 				if(len1>0){
 					free(g1), free(E1), len1=0;
 				}
@@ -1216,8 +1399,9 @@ int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t v, int32_t x)
 			m++;
 			if(len2>0){												
 				for(j=0;j<len2;j++){
-				if(g2[j].value>v){
+				if(g2[j].value>=v){
 					jj = g2[j].idx;
+					IGD->finfo[jj].nr++;					
 					//flanking
 					//1.Left: qe>bd (case 1: qs>=bd; case 2: qs<bd)
 					qe = g2[j].start;
@@ -1226,7 +1410,7 @@ int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t v, int32_t x)
 						if(qs<bd && len1>0){
 							i = bSearch(g1, 0, len1-1, qe);	//idx
 							while(i>=0 && E1[i]>qs){ 
-								if(g1[i].end>qs && g1[i].value>v){//left boundary
+								if(g1[i].end>qs && g1[i].value>=v){//left boundary
 									nols++;
 									hitmap[jj][g1[i].idx]++;
 								}
@@ -1239,7 +1423,7 @@ int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t v, int32_t x)
 							if(qs<bd)
 								while(g2[tS].start<bd)tS++;		//exclude 
 							while(i>=tS && E2[i]>qs){ 
-								if(g2[i].end>qs && g2[i].value>v){
+								if(g2[i].end>qs && g2[i].value>=v){
 									nols++;
 									hitmap[jj][g2[i].idx]++;
 								}
@@ -1256,7 +1440,7 @@ int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t v, int32_t x)
 						if(qe>g2[0].start){
 							i = bSearch(g2, 0, len2-1, qe);	//idx
 							while(i>=0 && E2[i]>qs){ 
-								if(g2[i].end>qs && g2[i].value>v){// && gData[i].start>bd){//left boundary
+								if(g2[i].end>qs && g2[i].value>=v){// && gData[i].start>bd){//left boundary
 									nols++;
 									hitmap[jj][g2[i].idx]++;
 								}
@@ -1269,7 +1453,7 @@ int64_t getOverlaps_m1_x(uint32_t **hitmap, int32_t v, int32_t x)
 							if(qs<bd1)
 								while(g3[tS].start<bd1)tS++;		//?tS<tmpt-1
 							while(i>=tS && E3[i]>qs){ 
-								if(g3[i].end>qs && g3[i].value>v){// && gData[i].start>bd){//left boundary
+								if(g3[i].end>qs && g3[i].value>=v){// && gData[i].start>bd){//left boundary
 									nols++;
 									hitmap[jj][g3[i].idx]++;
 								}
@@ -1302,6 +1486,8 @@ int64_t getOverlaps_m2_x(uint32_t **hitmap, int32_t v, int32_t x)
 	int32_t *E1, *E2, *E3;
 	gdata_t *g1, *g2, *g3;
 	if(v==0) v = -1;
+	for(i=0;i<IGD->nFiles;i++)
+		IGD->finfo[i].nr = 1;
 	for(ichr=0; ichr<IGD->nCtg; ichr++){
 		int32_t nT = IGD->nTile[ichr];
 		//--------------------------------------------			
@@ -1377,8 +1563,9 @@ int64_t getOverlaps_m2_x(uint32_t **hitmap, int32_t v, int32_t x)
 			m++;
 			if(len2>0){												
 				for(j=0;j<len2;j++){
-				if(g2[j].value>v){
+				if(g2[j].value>=v){
 					jj = g2[j].idx;	
+					IGD->finfo[jj].nr++;
 					//flanking
 					//1.Left: qe>bd (case 1: qs>=bd; case 2: qs<bd)
 					qe = g2[j].start;
@@ -1391,7 +1578,7 @@ int64_t getOverlaps_m2_x(uint32_t **hitmap, int32_t v, int32_t x)
 								if(qe>g1[rs].start){	
 									i = bSearch(g1, rs, re-1, qe);	//idx
 									while(i>=rs && E1[i]>qs){
-										if(g1[i].end>qs && g1[i].value>v){
+										if(g1[i].end>qs && g1[i].value>=v){
 											nols++;
 											hitmap[jj][g1[i].idx]++;
 										}
@@ -1410,7 +1597,7 @@ int64_t getOverlaps_m2_x(uint32_t **hitmap, int32_t v, int32_t x)
 										while(tS<re && g2[tS].start<bd)tS++;	//exclude 
 									i = bSearch(g2, tS, re-1, qe);	//idx
 									while(i>=tS && E2[i]>qs){
-										if(g2[i].end>qs && g2[i].value>v){
+										if(g2[i].end>qs && g2[i].value>=v){
 											nols++;
 											hitmap[jj][g2[i].idx]++;
 										}
@@ -1432,7 +1619,7 @@ int64_t getOverlaps_m2_x(uint32_t **hitmap, int32_t v, int32_t x)
 								if(qe>g2[rs].start){
 									i = bSearch(g2, rs, re-1, qe);	//idx
 									while(i>=rs && E2[i]>qs){
-										if(g2[i].end>qs && g2[i].value>v){
+										if(g2[i].end>qs && g2[i].value>=v){
 											nols++;
 											hitmap[jj][g2[i].idx]++;
 										}
@@ -1450,7 +1637,7 @@ int64_t getOverlaps_m2_x(uint32_t **hitmap, int32_t v, int32_t x)
 										while(tS<re && g3[tS].start<bd1)tS++;		//exclude 
 									i = bSearch(g3, tS, re-1, qe);	//idx
 									while(i>=tS && E3[i]>qs){
-										if(g3[i].end>qs && g3[i].value>v){
+										if(g3[i].end>qs && g3[i].value>=v){
 											nols++;
 											hitmap[jj][g3[i].idx]++;
 										}
@@ -1494,7 +1681,7 @@ int igd_search(int argc, char **argv)
     fclose(fi); 
         
     int32_t v = 0, qs=1, qe=2;
-    int checking=0, mode=-1, mt=0, ext=0, xlen=0,  ichr, k;
+    int i, j, checking=0, mode=-1, mt=0, ext=0, xlen=0,  ichr, k;
     char out[64]="";  
     char *chrm;    
     char *qfName = "";  
@@ -1512,7 +1699,10 @@ int igd_search(int argc, char **argv)
     int32_t nfiles = IGD->nFiles; 
     int32_t *hits = calloc(nfiles, sizeof(int32_t));  
     //-----------------------------------------------------
-    for(int i=3; i<argc; i++){
+    //for(i=0;i<nfiles;i++){
+    //	printf("%i\t%i\t%i\n", i, IGD->finfo[i].nr, IGD->finfo[i].md);
+    //}
+    for(i=3; i<argc; i++){
         if(strcmp(argv[i], "-q")==0){
             if(i+1<argc){
                 qfName = argv[i+1];
@@ -1527,7 +1717,7 @@ int igd_search(int argc, char **argv)
                 qe = atoi(argv[i+3]);
             }        
         }
-        else if(strcmp(argv[i], "-v")==0){
+        else if(strcmp(argv[i], "-v")==0){//>=v
             if(i+1<argc)
                 v = atoi(argv[i+1]);
         }
@@ -1555,9 +1745,11 @@ int igd_search(int argc, char **argv)
 	fP = fopen(igdName, "rb");				//share
     if(mode==0){	//mapping: gType==1
     	uint32_t **hitmap = malloc(nfiles*sizeof(uint32_t*));
-    	for(int i=0;i<nfiles;i++)
+    	for(i=0;i<nfiles;i++)
     		hitmap[i] = calloc(nfiles, sizeof(uint32_t));
-    		
+    	float **fmap = malloc(nfiles*sizeof(float*));
+    	for(i=0;i<nfiles;i++)
+    		fmap[i] = calloc(nfiles, sizeof(float));    		
     	if(IGD->gType==0){
  			if(mt==1)
 				getOverlaps0_m1(hitmap);
@@ -1590,12 +1782,15 @@ int igd_search(int argc, char **argv)
 					getOverlaps_m2_v(hitmap, v);
 			} 
     	}
-    	//symmetry
-    	for(int j=0;j<nfiles;j++){
-    		for(int i=0;i<j;i++)
-    			hitmap[j][i] = hitmap[i][j];
-    	}
-    		   		
+    	//calculate J-index
+    	//if(xlen==0){
+		for(j=0;j<nfiles;j++){
+			fmap[j][j] = (float)hitmap[j][j]/(float)IGD->finfo[j].nr;
+			for(i=j+1;i<nfiles;i++){
+				fmap[j][i] = (float)hitmap[j][i]/(float)(IGD->finfo[i].nr+IGD->finfo[j].nr-hitmap[j][i]);
+				fmap[i][j] = fmap[j][i];
+			}
+    	}	   		
     	FILE *fp;
 		if(strlen(out)<2)strcpy(out,"Hitmap");
 		fp = fopen(out, "w");
@@ -1603,16 +1798,35 @@ int igd_search(int argc, char **argv)
 	        printf("Can't open file %s\n", out);
 	    else{
 	        fprintf(fp, "%u\t%u\t%u\n", nfiles, nfiles, v);
-	        for(int i=0;i<nfiles;i++){
-	            for(int j=0;j<nfiles;j++)
+	        for(i=0;i<nfiles;i++){
+	            for(j=0;j<nfiles;j++)
 	                fprintf(fp, "%u\t", hitmap[i][j]); 
 	            fprintf(fp, "\n");
 	        } 
 	        fclose(fp);
-	    }     
+	    }  
+	    //ratio: 
+	    char out1[64];
+	    strcpy(out1, out);
+	    strcat(out1, "_j"); 
+	    fp = fopen(out1, "w");
+	    if(fp==NULL)
+	        printf("Can't open file %s\n", out1);
+	    else{
+	        fprintf(fp, "%u\t%u\t%u\n", nfiles, nfiles, v);
+	        for(i=0;i<nfiles;i++){
+	            for(j=0;j<nfiles;j++)
+	                fprintf(fp, "%.5f\t", fmap[i][j]); 
+	            fprintf(fp, "\n");
+	        } 
+	        fclose(fp);
+	    }    
 	
-    	for(int i=0;i<nfiles;i++)
+    	for(i=0;i<nfiles;i++){
     		free(hitmap[i]);
+    		free(fmap[i]);
+    	}
+    	free(fmap);
     	free(hitmap);  		
     }
     else if(mode==1){//for a query dataset (file)
@@ -1626,7 +1840,7 @@ int igd_search(int argc, char **argv)
     	}
     	printf("index\t File_name\t number of regions\t number of hits\n"); 
     	int64_t total = 0;       
-        for(int i=0;i<nfiles;i++){
+        for(i=0;i<nfiles;i++){
         	if(hits[i]>0)
             	printf("%i\t%i\t%i\t%s\n", i, IGD->finfo[i].nr, hits[i], IGD->finfo[i].fileName); 
         	total += hits[i];
@@ -1643,7 +1857,7 @@ int igd_search(int argc, char **argv)
      			ols = get_overlaps(chrm, qs, qe, hits);    			
     	}
     	printf("index\t File_name\t number of regions\t number of hits\n");        
-        for(int i=0;i<nfiles;i++)
+        for(i=0;i<nfiles;i++)
             printf("%i\t%i\t%i\t%s\n", i, IGD->finfo[i].nr, hits[i], IGD->finfo[i].fileName);
     }
     else
@@ -1651,7 +1865,7 @@ int igd_search(int argc, char **argv)
 
 	fclose(fP);
     free(IGD->nTile);
-    for(int i=0;i<IGD->nCtg;i++){
+    for(i=0;i<IGD->nCtg;i++){
      	free(IGD->nCnt[i]);
      	free(IGD->tIdx[i]);
     }
