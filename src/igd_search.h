@@ -35,7 +35,8 @@ int64_t getOverlaps_m0(uint32_t **hitmap, int32_t v);
 int64_t getOverlaps_m1(uint32_t **hitmap); 
 int64_t getOverlaps_m1a(uint32_t **hitmap); 
 int64_t getOverlaps_m2(uint32_t **hitmap); 	
-int64_t getOverlaps_m2a(uint32_t **hitmap); 	
+int64_t getOverlaps_m2a(uint32_t **hitmap); 
+int64_t getOverlaps_m3(uint32_t **hitmap); //using fjoin	
 int64_t getOverlaps_m1_v(uint32_t **hitmap, int32_t v); 	
 int64_t getOverlaps_m2_v(uint32_t **hitmap, int32_t v); 	
 int64_t getOverlaps_m0_x(uint32_t **hitmap, int32_t v, int32_t x); //map, q extended
