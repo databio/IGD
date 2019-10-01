@@ -941,9 +941,11 @@ int64_t getOverlaps_m(int64_t **hitmap)
 					}
 					while(i<tmpi && gData[i].start<qe){
 						ii = gData[i].idx;
-						if(ii>jj)hitmap[jj][ii]++;
-						else if(jj>ii)hitmap[ii][jj]++;
-						else hitmap[ii][jj]+=2;
+						hitmap[jj][ii]++;
+						hitmap[ii][jj]++;						
+						//if(ii>jj)hitmap[jj][ii]++;
+						//else if(jj>ii)hitmap[ii][jj]++;
+						//else hitmap[ii][jj]+=2;
 						i++;
 					}
 				}
@@ -989,9 +991,8 @@ int64_t getOverlaps_m_v(int64_t **hitmap, int32_t v)
 						while(i<tmpi && gData[i].start<qe){
 							if(gData[i].value>=v){
 								ii = gData[i].idx;
-								if(ii>jj)hitmap[jj][ii]++;
-								else if(jj>ii)hitmap[ii][jj]++;
-								else hitmap[ii][jj]+=2;
+								hitmap[jj][ii]++;
+								hitmap[ii][jj]++;
 							}
 							i++;
 						}						
@@ -1127,9 +1128,8 @@ int64_t getOverlaps0_m_x(int64_t **hitmap, int32_t x)
 					}
 					while(i<tmpi && gG[i].start<qe){
 						ii = gG[i].idx;
-						if(ii>jj)hitmap[jj][ii]++;
-						else if(jj>ii)hitmap[ii][jj]++;
-						else hitmap[ii][jj]+=2;
+						hitmap[jj][ii]++;
+						hitmap[ii][jj]++;
 						i++;
 					}					
 				}
@@ -1152,9 +1152,8 @@ int64_t getOverlaps0_m_x(int64_t **hitmap, int32_t x)
 					}
 					while(i<tmpi && g1[i].start<qe){
 						ii = g1[i].idx;
-						if(ii>jj)hitmap[jj][ii]++;
-						else if(jj>ii)hitmap[ii][jj]++;
-						else hitmap[ii][jj]+=2;
+						hitmap[jj][ii]++;
+						hitmap[ii][jj]++;
 						i++;
 					}
 				}
@@ -1301,9 +1300,8 @@ int64_t getOverlaps_m_v_x(int64_t **hitmap, int32_t v, int32_t x)
 						while(i<tmpi && gG[i].start<qe){
 							if(gG[i].value>=v){
 								ii = gG[i].idx;
-								if(ii>jj)hitmap[jj][ii]++;
-								else if(jj>ii)hitmap[ii][jj]++;
-								else hitmap[ii][ii]+=2;
+								hitmap[jj][ii]++;
+								hitmap[ii][jj]++;
 							}
 							i++;
 						}
@@ -1330,9 +1328,8 @@ int64_t getOverlaps_m_v_x(int64_t **hitmap, int32_t v, int32_t x)
 						while(i<tmpi && g1[i].start<qe){
 							if(g1[i].value>=v){
 								ii = g1[i].idx;
-								if(ii>jj)hitmap[jj][ii]++;
-								else if(jj>ii)hitmap[ii][jj]++;
-								else hitmap[ii][jj]+=2;
+								hitmap[jj][ii]++;
+								hitmap[ii][jj]++;
 							}
 							i++;
 						}	
@@ -1572,9 +1569,8 @@ int64_t getOverlaps_m1(int64_t **hitmap)
 						while(i>=tS && maxE[i]>qs){
 							if(gData[i].end>qs){
 								ii = gData[i].idx;
-								if(ii>=jj)hitmap[jj][ii]++;
-								else if(jj>ii)hitmap[ii][jj]++; 
-								else hitmap[ii][jj]+=2;	
+								hitmap[jj][ii]++;
+								hitmap[ii][jj]++; 
 							}
 							i--;
 						} 
@@ -1681,9 +1677,8 @@ int64_t getOverlaps_m2(int64_t **hitmap)
 							while(i>=rs && maxE[i]>qs){
 								if(gData[i].end>qs){
 									ii = gData[i].idx;
-									if(ii>jj)hitmap[jj][ii]++;
-									else if(jj>ii)hitmap[ii][jj]++;
-									else hitmap[ii][jj]+=2;   	
+									hitmap[jj][ii]++;
+									hitmap[ii][jj]++;  	
 								}
 								i--;
 							} 
@@ -1736,9 +1731,8 @@ int64_t getOverlaps_m2a(int64_t **hitmap)
 							while(i>=rs && maxE[i]>qs){
 								if(gData[i].end>qs){
 									ii = gData[i].idx;
-									if(ii>jj)hitmap[jj][ii]+=mm;
-									else if(jj>ii)hitmap[ii][jj]+=mm; 		//nols++; 
-									else hitmap[ii][jj]+=2;   	
+									hitmap[jj][ii]+=mm;
+									hitmap[ii][jj]+=mm; 		   	
 								}
 								i--;
 							} 
@@ -1802,9 +1796,8 @@ int64_t getOverlaps_m1_v(int64_t **hitmap, int32_t v)
 							while(i>=tS && maxE[i]>qs){
 								if(gData[i].end>qs && gData[i].value>=v){
 									ii = gData[i].idx;
-									if(ii>jj)hitmap[jj][ii]++;
-									else if(jj>ii)hitmap[ii][jj]++; 
-									else hitmap[ii][ii]+=2;
+									hitmap[jj][ii]++;
+									hitmap[ii][jj]++;
 								}
 								i--;
 							} 						
@@ -1864,9 +1857,8 @@ int64_t getOverlaps_m2_v(int64_t **hitmap, int32_t v)
 								while(i>=rs && maxE[i]>qs){
 									if(gData[i].end>qs && gData[i].value>=v){
 										ii = gData[i].idx;
-										if(ii>jj)hitmap[jj][ii]++;
-										else if(jj>ii)hitmap[ii][jj]++;
-										else hitmap[ii][ii]+=2; 	   	
+										hitmap[jj][ii]++;
+										hitmap[ii][jj]++;	   	
 									}
 									i--;
 								} 
