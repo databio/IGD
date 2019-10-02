@@ -1142,7 +1142,7 @@ int64_t getOverlaps0_m_x(int64_t **hitmap, int32_t x)
 					qs = g1[j].start;
 					jj = g1[j].idx;	
 					if(qs>=bd){
-						hitmap[jj][jj]++;
+						hitmap[jj][jj]--;
 						i=j+1;
 					}
 					else{//skip duplications
@@ -1152,8 +1152,8 @@ int64_t getOverlaps0_m_x(int64_t **hitmap, int32_t x)
 					}
 					while(i<tmpi && g1[i].start<qe){
 						ii = g1[i].idx;
-						hitmap[jj][ii]++;
-						hitmap[ii][jj]++;
+						hitmap[jj][ii]--;
+						hitmap[ii][jj]--;
 						i++;
 					}
 				}
@@ -1292,11 +1292,15 @@ int64_t getOverlaps_m_v_x(int64_t **hitmap, int32_t v, int32_t x)
 						qs = gG[j].start;
 						jj = gG[j].idx;
 						IGD->finfo[jj].nr++;			
-						i = j;
-						if(qs<bd){
+						if(qs>=bd){
+							hitmap[jj][jj]++;
+							i=j+1;
+						}
+						else{//skip duplications
+							i=j+1;
 							while(i<tmpi && gG[i].start<bd)
-								i++;					
-						}	
+								i++;
+						}
 						while(i<tmpi && gG[i].start<qe){
 							if(gG[i].value>=v){
 								ii = gG[i].idx;
@@ -1317,7 +1321,7 @@ int64_t getOverlaps_m_v_x(int64_t **hitmap, int32_t v, int32_t x)
 						qs = g1[j].start;
 						jj = g1[j].idx;			
 						if(qs>=bd){
-							hitmap[jj][jj]++;
+							hitmap[jj][jj]--;
 							i=j+1;
 						}
 						else{//skip duplications
@@ -1328,8 +1332,8 @@ int64_t getOverlaps_m_v_x(int64_t **hitmap, int32_t v, int32_t x)
 						while(i<tmpi && g1[i].start<qe){
 							if(g1[i].value>=v){
 								ii = g1[i].idx;
-								hitmap[jj][ii]++;
-								hitmap[ii][jj]++;
+								hitmap[jj][ii]--;
+								hitmap[ii][jj]--;
 							}
 							i++;
 						}	
@@ -2481,8 +2485,8 @@ int igd_search(int argc, char **argv)
 			for(j=0;j<nfiles;j++){
 				fmap[j][j] = 0.0;
 				for(i=j+1;i<nfiles;i++){
-					if(hitmap[j][i]>0){
-						fmap[j][i] = (double)hitmap[j][i]/(double)(IGD->finfo[i].nr+IGD->finfo[j].nr-hitmap[j][i]);
+					if(hitmap[j][i]>0){//ratio of increased intersections over the number of sites
+						fmap[j][i] = (double)hitmap[j][i]/(double)(IGD->finfo[i].nr+IGD->finfo[j].nr);
 						fmap[i][j] = fmap[j][i];
 					}
 				}
