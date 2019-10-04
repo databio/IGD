@@ -1007,7 +1007,7 @@ int64_t getOverlaps_m_v(int64_t **hitmap, int32_t v)
 
 int64_t getOverlaps0_m_x(int64_t **hitmap, int32_t x)
 {	//extend all regions then self mapping==>subtract m_v 's results
-	int i, j, k, j1, j2, ii, tmpi, ichr, n1, jj, m=0;	//define boundary!
+	int i, j, k, j1, j2, ii, tmpi, ix, iy, ichr, n1, jj, m=0;	//define boundary!
 	int32_t tE, tS, len1, len2, lenG, lenH, lenT, bd, bd1, rs, re, qe, qs, tmax;
 	int64_t nols = 0;
 	gdata_t *g1=NULL, *g2=NULL, *gG=NULL, *gH=NULL;		
@@ -1108,7 +1108,7 @@ int64_t getOverlaps0_m_x(int64_t **hitmap, int32_t x)
 			}
 			
 			//3. map gt1	
-			tmpi = lenG;
+			/*tmpi = lenG;
 			if(m%1000==0)
 				printf("m_x %i\t%i\t%i\n", n1, m, tmpi);			
 			if(tmpi>0){								
@@ -1133,7 +1133,39 @@ int64_t getOverlaps0_m_x(int64_t **hitmap, int32_t x)
 						i++;
 					}					
 				}
-			}
+			}*/
+			
+			if(m%1000==0)
+				printf("m_x %i\t%i\t%i\t%i\n", n1, m, len1, lenG);	
+			//----------------------------------------------
+			//
+			if(lenG>0 && len1>0){
+				ix=0, iy=0;	//ix: g1; iy: gG
+				while(ix<len1 && iy<lenG){
+					if(g1[ix].end>gG[iy].start){
+						qe = g1[ix].end;
+						qs = g1[ix].start;
+						jj = g1[ix].idx;
+						i = iy;
+						while(i<lenG && qe>gG[i].start){
+							if(qs<gG[i].end){
+								if(gG[i].start>=bd || qs>=bd){	
+									ii = gG[i].idx;					
+									hitmap[ii][jj]++;
+								}
+							}
+							i++;
+						}	
+						//move iy
+						while(iy<lenG && gG[iy].end<=qs)
+							iy++;		
+					}
+					ix++;
+				}
+			}	
+
+			//---------------------------------------------
+			
 			tmpi = len1;
 			if(tmpi>0){								
 				//in-bin search: O(n)
@@ -1141,6 +1173,7 @@ int64_t getOverlaps0_m_x(int64_t **hitmap, int32_t x)
 					qe = g1[j].end;
 					qs = g1[j].start;
 					jj = g1[j].idx;	
+					IGD->finfo[jj].nr++;
 					if(qs>=bd){
 						hitmap[jj][jj]--;
 						i=j+1;
@@ -1178,7 +1211,7 @@ int64_t getOverlaps0_m_x(int64_t **hitmap, int32_t x)
 
 int64_t getOverlaps_m_v_x(int64_t **hitmap, int32_t v, int32_t x)
 {	//extend all regions then self mapping==>subtract m_v 's results
-	int i, j, k, j1, j2, ii, tmpi, ichr, n1, jj, m=0;	//define boundary!
+	int i, j, k, ix, iy, j1, j2, ii, tmpi, ichr, n1, jj, m=0;	//define boundary!
 	int32_t tE, tS, len1, len2, lenG, lenH, lenT, bd, bd1, rs, re, qe, qs, tmax;
 	int64_t nols = 0;
 	gdata_t *g1=NULL, *g2=NULL, *gG=NULL, *gH=NULL;		
@@ -1280,38 +1313,37 @@ int64_t getOverlaps_m_v_x(int64_t **hitmap, int32_t v, int32_t x)
 				lenG=k;
 			}
 			
-			//3. map gt1	
-			tmpi = lenG;
+			//3. map gG*g1 then subtract g1*g1	
 			if(m%1000==0)
-				printf("m_v_x %i\t%i\t%i\n", n1, m, tmpi);			
-			if(tmpi>0){								
-				//in-bin search: O(n)
-				for(j=0;j<tmpi;j++){
-					if(gG[j].value>=v){
-						qe = gG[j].end;
-						qs = gG[j].start;
-						jj = gG[j].idx;
-						IGD->finfo[jj].nr++;			
-						if(qs>=bd){
-							hitmap[jj][jj]++;
-							i=j+1;
-						}
-						else{//skip duplications
-							i=j+1;
-							while(i<tmpi && gG[i].start<bd)
-								i++;
-						}
-						while(i<tmpi && gG[i].start<qe){
-							if(gG[i].value>=v){
-								ii = gG[i].idx;
-								hitmap[jj][ii]++;
-								hitmap[ii][jj]++;
+				printf("m_v_x %i\t%i\t%i\t%i\n", n1, m, len1, lenG);	
+			//----------------------------------------------
+			//
+			if(lenG>0 && len1>0){
+				ix=0, iy=0;	//ix: g1; iy: gG
+				while(ix<len1 && iy<lenG){
+					if(g1[ix].end>gG[iy].start && g1[ix].value>=v){
+						qe = g1[ix].end;
+						qs = g1[ix].start;
+						jj = g1[ix].idx;
+						i = iy;
+						while(i<lenG && qe>gG[i].start){
+							if(qs<gG[i].end && gG[i].value>=v){
+								if(gG[i].start>=bd || qs>=bd){	
+									ii = gG[i].idx;					
+									hitmap[ii][jj]++;
+								}
 							}
 							i++;
-						}
+						}	
+						//move iy
+						while(iy<lenG && (gG[iy].end<=qs || gG[iy].value<v))
+							iy++;		
 					}
+					ix++;
 				}
-			}
+			}	
+
+			//---------------------------------------------
 			tmpi = len1;
 			if(tmpi>0){								
 				//in-bin search: O(n)
@@ -1319,7 +1351,8 @@ int64_t getOverlaps_m_v_x(int64_t **hitmap, int32_t v, int32_t x)
 					if(g1[j].value>=v){
 						qe = g1[j].end;
 						qs = g1[j].start;
-						jj = g1[j].idx;			
+						jj = g1[j].idx;
+						IGD->finfo[jj].nr++;			
 						if(qs>=bd){
 							hitmap[jj][jj]--;
 							i=j+1;
@@ -2472,16 +2505,16 @@ int igd_search(int argc, char **argv)
 					getOverlaps_m0(hitmap, v);			
 			}
 			//symmetry
-			if(mt<3){
-				for(j=0;j<nfiles;j++){
-					for(i=j+1;i<nfiles;i++){
-						hitmap[i][j]=hitmap[j][i];//uint32_t	
-					}
-				}
-			}
+			//if(mt<3){
+			//	for(j=0;j<nfiles;j++){
+			//		for(i=j+1;i<nfiles;i++){
+			//			hitmap[i][j]=hitmap[j][i];//uint32_t	
+			//		}
+			//	}
+			//}
     	}
     	//calculate J-index
-    	if(xlen>0){
+    	if(mx>0){
 			for(j=0;j<nfiles;j++){
 				fmap[j][j] = 0.0;
 				for(i=j+1;i<nfiles;i++){
