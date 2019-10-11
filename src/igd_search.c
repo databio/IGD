@@ -221,6 +221,89 @@ void construct0(gdata0_t *glist, int32_t nr, int32_t *nc, int32_t *idxC, int32_t
 }
 
 int32_t get_overlaps0(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
+{   
+	int ichr = get_id(chrm);
+	if(ichr<0)
+		return 0;
+	int i, j, n1 = qs/IGD->nbp, n2 = (qe-1)/IGD->nbp;	//define boundary!
+	int32_t tE, tS, tL, tR, tM, tmpi, tmpi1, mlen, mTile = IGD->nTile[ichr]-1;
+	int32_t nols = 0;
+	if(n1>mTile) 
+		return 0;
+	n2 = MIN(n2, mTile);	
+	tmpi = IGD->nCnt[ichr][n1];
+	tmpi1 = tmpi-1;
+	if(tmpi>0){
+		if(n1!=preIdx || ichr!=preChr){
+			fseek(fP, IGD->tIdx[ichr][n1], SEEK_SET);			
+			free(gData0);					
+			gData0 = malloc(tmpi*sizeof(gdata0_t));
+			fread(gData0, sizeof(gdata0_t)*tmpi, 1, fP);
+			preIdx = n1;
+			preChr = ichr;
+		}		
+		if(qe>gData0[0].start){	//sorted by start
+			//find the 1st rs < qe from right
+			tL = 0, tR=tmpi1;
+			while(tL<tR-1){					//result: tR=tL+1, tL.s<qe
+				tM = (tL+tR)/2; 			//possible case: tmpi=2 or 1 or [tmpi1].s<qe
+				if(gData0[tM].start < qe)	 
+				    tL = tM;
+				else
+				    tR = tM;				
+			}
+			if(gData0[tR].start<qe)tL = tR;
+			//-----------------------------------------
+			for(i=tL; i>=0; i--){			
+				if(gData0[i].end>qs){
+					hits[gData0[i].idx]++;
+				} 
+			}			
+		}
+		if(n2>n1){									//n2>n1
+			int32_t bd = IGD->nbp*(n1+1);			//only keep the first		
+			for(j=n1+1; j<=n2; j++){				//n2 inclusive!!!
+				tmpi = IGD->nCnt[ichr][j];
+				tmpi1 = tmpi-1;
+				if(tmpi>0){
+					if(j!=preIdx || ichr!=preChr){
+						fseek(fP, IGD->tIdx[ichr][j], SEEK_SET);			
+						free(gData0);					
+						gData0 = malloc(tmpi*sizeof(gdata0_t));
+						fread(gData0, sizeof(gdata0_t)*tmpi, 1, fP);
+						preIdx = j;
+						preChr = ichr;
+					}	
+					if(qe>gData0[0].start){	
+						//find the 1st rs < qe						
+						tS = 0;
+						while(tS<tmpi && gData0[tS].start<bd)tS++;	//qs<bd	
+						tL = 0, tR=tmpi1;
+						while(tL<tR-1){					//result: tR=tL+1, tL.s<qe
+							tM = (tL+tR)/2; 
+							if(gData0[tM].start < qe)	 
+								tL = tM;
+							else
+								tR = tM;				
+						}
+						if(gData0[tR].start<qe)tL = tR;
+						//-----------------------------------------
+						for(i=tL; i>=tS; i--){ 		
+							if(gData0[i].end>qs){
+								hits[gData0[i].idx]++;
+							} 
+						}
+					}
+				}
+				bd+=IGD->nbp;		
+			}	
+		}
+	}
+	//-----------------------------------------------------	
+    return nols;
+}
+/*
+int32_t get_overlaps0(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 {   //for gdat0_t
 	int ichr = get_id(chrm);
 	if(ichr<0)
@@ -291,7 +374,7 @@ int32_t get_overlaps0(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 	}
 	//-----------------------------------------------------	
     return nols;
-}
+}*/
 
 int32_t get_overlaps0_f(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 {   //replace bSearch with forward sweep
@@ -314,17 +397,17 @@ int32_t get_overlaps0_f(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 			preIdx = n1;
 			preChr = ichr;
 		}		
-		if(qe>gData0[0].start){					//sorted by start
+		if(qe>gData0[0].start){						//sorted by start
 			i=0;
-			while(i<tmpi && gData0[i].end<=qs)
-				i++;		
+			while(i<=tmpi && gData0[i].end<=qs)
+				i++;//		
 			while(i<tmpi && gData0[i].start<qe){
 				if(gData0[i].end>qs)
 					hits[gData0[i].idx]++;
 				i++;
 			}		
 		}
-		if(n2>n1){									//n2>n1
+		if(n2>n1){									//n2>n1: qs<bd
 			int32_t bd = IGD->nbp*(n1+1);			//only keep the first		
 			for(j=n1+1; j<=n2; j++){				//n2 inclusive!!!
 				tmpi = IGD->nCnt[ichr][j];
@@ -337,10 +420,10 @@ int32_t get_overlaps0_f(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 						preIdx = j;
 						preChr = ichr;
 					}				
-					if(qe>gData0[0].start){//bSearch!=-1	
+					if(qe>gData0[0].start){//qs<maxE	
 						i = 0;
 						while(i<tmpi && gData0[i].start<bd)
-							i++;		//qs<bd
+							i++;		//qs<bdi<tmpi && 
 						while(i<tmpi && gData0[i].end<=qs)
 							i++;		
 						while(i<tmpi && gData0[i].start<qe){
@@ -373,7 +456,7 @@ int64_t getOverlaps0(char *qFile, int64_t *hits)
 	while (ks_getuntil(ks, KS_SEP_LINE, &str, 0) >= 0) {
 		chrm = parse_bed(str.s, &st, &en);
 		if (chrm) {
-			nl = get_overlaps0_f(chrm, st, en, hits);
+			nl = get_overlaps0(chrm, st, en, hits);
 			ols += nl;
 		}
 	}
@@ -616,10 +699,10 @@ int32_t get_overlaps_f(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 			preIdx = n1;
 			preChr = ichr;
 		}		
-		if(qe>gData[0].start){						//sorted by start
+		if(qe>gData[0].start){//sorted by start
 			i=0;				
 			while(i<tmpi && gData[i].end<=qs)
-				i++;		
+				i++;	// 	
 			while(i<tmpi && gData[i].start<qe){
 				if(gData[i].end>qs)
 					hits[gData[i].idx]++;
@@ -644,7 +727,7 @@ int32_t get_overlaps_f(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 						while(i<tmpi && gData[i].start<bd)
 							i++;		//qs<bd
 						while(i<tmpi && gData[i].end<=qs)
-							i++;		
+							i++;//		
 						while(i<tmpi && gData[i].start<qe){
 							if(gData[i].end>qs)
 								hits[gData[i].idx]++;
@@ -660,6 +743,89 @@ int32_t get_overlaps_f(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
     return nols;
 }
 
+int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
+{   
+	int ichr = get_id(chrm);
+	if(ichr<0)
+		return 0;
+	int i, j, n1 = qs/IGD->nbp, n2 = (qe-1)/IGD->nbp;	//define boundary!
+	int32_t tE, tS, tL, tR, tM, tmpi, tmpi1, mlen, mTile = IGD->nTile[ichr]-1;
+	int32_t nols = 0;
+	if(n1>mTile) 
+		return 0;
+	n2 = MIN(n2, mTile);	
+	tmpi = IGD->nCnt[ichr][n1];
+	tmpi1 = tmpi-1;
+	if(tmpi>0){
+		if(n1!=preIdx || ichr!=preChr){
+			fseek(fP, IGD->tIdx[ichr][n1], SEEK_SET);			
+			free(gData);					
+			gData = malloc(tmpi*sizeof(gdata_t));
+			fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
+			preIdx = n1;
+			preChr = ichr;
+		}		
+		if(qe>gData[0].start){						//sorted by start
+			//find the 1st rs < qe
+			tL = 0, tR=tmpi1;
+			while(tL<tR-1){					//result: tR=tL+1, tL.s<qe
+				tM = (tL+tR)/2; 
+				if(gData[tM].start < qe)	//right side: 
+				    tL = tM;
+				else
+				    tR = tM;				//left side
+			}
+			if(gData[tR].start<qe)tL = tR;
+			//-----------------------------------------
+			for(i=tL; i>=0; i--){			
+				if(gData[i].end>qs){
+					hits[gData[i].idx]++;
+				} 
+			}			
+		}
+		if(n2>n1){									//n2>n1
+			int32_t bd = IGD->nbp*(n1+1);			//only keep the first		
+			for(j=n1+1; j<=n2; j++){				//n2 inclusive!!!
+				tmpi = IGD->nCnt[ichr][j];
+				tmpi1 = tmpi-1;
+				if(tmpi>0){
+					if(j!=preIdx || ichr!=preChr){
+						fseek(fP, IGD->tIdx[ichr][j], SEEK_SET);			
+						free(gData);					
+						gData = malloc(tmpi*sizeof(gdata_t));
+						fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
+						preIdx = j;
+						preChr = ichr;
+					}	
+					if(qe>gData[0].start){						
+						tS = 0;
+						while(tS<tmpi && gData[tS].start<bd)tS++;	//qs<bd								
+						tL = 0, tR=tmpi1;
+						while(tL<tR-1){					//result: tR=tL+1, tL.s<qe
+							tM = (tL+tR)/2; 
+							if(gData[tM].start < qe)	//right side: 
+								tL = tM;
+							else
+								tR = tM;				//left side
+						}
+						if(gData[tR].start<qe)tL = tR;
+						//-----------------------------------------
+						for(i=tL; i>=tS; i--){ 		
+							if(gData[i].end>qs){
+								hits[gData[i].idx]++;
+							} 
+						}
+					}
+				}
+				bd+=IGD->nbp;		
+			}	
+		}
+	}
+	//-----------------------------------------------------	
+    return nols;
+}
+
+/*
 int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 {   //for gdat0_t
 	int ichr = get_id(chrm);
@@ -731,7 +897,7 @@ int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 	}
 	//-----------------------------------------------------	
     return nols;
-}
+}*/
 
 
 //for gData with v
@@ -823,7 +989,7 @@ int64_t getOverlaps(char *qFile, int64_t *hits)
 	while (ks_getuntil(ks, KS_SEP_LINE, &str, 0) >= 0) {
 		chrm = parse_bed(str.s, &st, &en);
 		if (chrm) {
-			nl = get_overlaps_f(chrm, st, en, hits);
+			nl = get_overlaps(chrm, st, en, hits);
 			ols += nl;
 		}
 	}
