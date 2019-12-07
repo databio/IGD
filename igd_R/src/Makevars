@@ -1,0 +1,6 @@
+#To link to igd library
+
+PKG_CPPFLAGS= -O2
+PKG_LIBS= -lz -lm
+
+all: $(SHLIB)
