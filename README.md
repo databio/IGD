@@ -65,6 +65,6 @@ options:
 For a detailed example, please check out the `vignettes`.
 
 ## iGD databases
-Downloads of some iGD databases (fully created and directly searchable by using iGD) are available at [databio.org/igd](http://big.databio.org/igd).
+Downloads of some iGD databases (fully created and directly searchable by using iGD) are available at [big.databio.org/example_data/igd](http://big.databio.org/example_data/igd).
 
 
