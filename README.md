@@ -42,7 +42,7 @@ where:
 
 option:
 
--t: data source in .bed (default .bed.gz)
+-b: bin-size (power of 2; default 14, which is 16384 bp)
 ```
 
 ### 2. Search iGD for overlaps
@@ -99,7 +99,7 @@ Search the igd database with a single query:
 > hits <- search_1r(igd, "chr6", 1000000, 10000000)
 > hits
 ```
-Search the igd database with a n queries:
+Search the igd database with n queries:
 ```
 > igd_file = "igdr_b14/roadmap.igd"
 > library(IGDr)
@@ -113,7 +113,7 @@ Search the igd database with a n queries:
 Search a whole query file chainRn4.bed
 ```
 > igd_file = "igdr_b14/roadmap.igd"
-> query_file = "chainRn4.bed"
+> query_file = "r10000.bed"
 > library(bit64)
 > library(IGDr)
 > fi = IGDr::getFInfo(igdFile)
