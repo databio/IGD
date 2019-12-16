@@ -116,9 +116,9 @@ Search a whole query file chainRn4.bed
 > query_file = "r10000.bed"
 > library(bit64)
 > library(IGDr)
-> fi = IGDr::getFInfo(igdFile)
+> fi = IGDr::getFInfo(igd_file)
 > hits = integer64(fi$nFiles)
-> ret = IGDr::search_n(igdFile, qFile, hits)
+> ret = IGDr::search_all(igd_file, query_file, hits)
 > for(i in 1:fi$nFiles){
   cat(i, "\t", toString(ret[i]), "\t", toString(fi$fInfo[i,2]), "\n")
   }
