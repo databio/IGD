@@ -6,7 +6,9 @@
 //---------------------------------------------------------------------------------
 #ifndef __IGD_BASE_H__
 #define __IGD_BASE_H__
-
+#include <R.h>
+#include <Rinternals.h>
+#include <Rdefines.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -120,6 +122,7 @@ void igd_destroy(igd_t *igd);
 
 //Free iGD data
 void close_iGD(iGD_t *iGD);
+
 //---------------------------------------------------------------------------------
 //The following section taken from Dr Heng Li's cgranges
 // (https://github.com/lh3/cgranges)
