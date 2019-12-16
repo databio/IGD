@@ -69,9 +69,7 @@ Downloads of some iGD databases (fully created and directly searchable by using 
 
 ## R-wrapper of IGD
 
-### 1. install the package: IGDr_0.1.0.tar.gz
-
-### 2. Create iGD database from a genome data source
+### 1. Create iGD database from a genome data source
  
 ```
 > library(IGDr)
@@ -89,7 +87,7 @@ option:
 
 -b: bin size in bp (default 16384)
 ```
-### 3. search the igd database in R (an example for a created igd file)
+### 2. search the igd database in R (an example for a created igd file)
 
 Search the igd database with a single query:
 ```
