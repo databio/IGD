@@ -1,0 +1,14 @@
+Package: IGDr
+Type: Package
+Title: R wrapper of IGD
+Version: 0.1.0
+Author: Jianglin (John) Feng
+Maintainer: John Feng <jf.xtable@gmail.com>
+Description: Provides an R wrapper for high performance search engine IGD--integrated genomic database. 
+    Create igd database from a collection of .bed files and then search it.
+Imports: Rcpp (>= 0.12.7)
+LinkingTo: Rcpp
+NeedsCompilation: yes    
+License: GPL (>=2)
+Encoding: UTF-8
+LazyData: true

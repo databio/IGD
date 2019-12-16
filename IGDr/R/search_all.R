@@ -11,6 +11,6 @@
 #   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
 #-----------------------------------------------------------------------------------------
-search_n <- function(igdFile, qFile, hits) {
-    .C("getOverlaps", as.character(igdFile), as.character(qFile), hits=as.integer64(hits))$hits
+search_n <- function(igdFile, qFile, hits) { #
+    .C("getOverlaps", as.character(igdFile), as.character(qFile), hits=as.integer64(hits), PACKAGE="IGDr")$hits
 }

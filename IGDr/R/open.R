@@ -2,7 +2,6 @@
 # Open iGD database
 # Dec, 2019: Jianglin Feng
 #-------------------------------------------------------------------------------------
-#library(RCurl) #for CFILE fp@ref-- C file pointer
 openIGD <- function(igd_file) {
   #fp = CFILE(igd_file, "rb")
   finfo = getFInfo(igd_file)
@@ -38,16 +37,4 @@ openIGD <- function(igd_file) {
   #setup hc?
   gdata = vector(mode='integer', length=4) #a single gdata_t: idx, start, end, value
   #---------construct IGD obj
-  igd <- IGD(igdFile = igd_file,
-              nBp = nbp, gType = gtype,
-              nCtg = nctg, cName = cname,
-              preIdx = pre_idx,
-              preChr = pre_chr,
-              nTile = ntile,
-              nCnt = ncnt,
-              tIdx = tidx,
-              gData = gdata,
-              fP = fconn,
-              fInfo = finfo)
-  return(igd)
 }

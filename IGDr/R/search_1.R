@@ -11,6 +11,6 @@
 #   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
 #-----------------------------------------------------------------------------------------
-search_1 <- function(gdata, nd, ichr, qs, qe, hits) {
-  #.C("search_1", as.integer(gdata), as.integer(nd), as.integer(ichr), as.integer(qs), as.integer(qe), hits=as.integer64(hits))$hits
+search_1 <- function(igdFile, qchr, qs, qe, hits) {
+    .C("search_1", as.character(igdFile), as.character(qchr), as.integer(qs), as.integer(qe), hits=as.integer64(hits), PACKAGE="IGDr")$hits
 }
