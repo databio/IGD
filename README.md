@@ -67,4 +67,60 @@ For a detailed example, please check out the `vignettes`.
 ## iGD databases
 Downloads of some iGD databases (fully created and directly searchable by using iGD) are available at [big.databio.org/example_data/igd](http://big.databio.org/example_data/igd).
 
+## R-wrapper of IGD
 
+### 1. install the package: IGDr_0.1.0.tar.gz
+
+### 2. Create iGD database from a genome data source
+ 
+```
+> library(IGDr)
+> createIGD("/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName" [option]
+
+where:
+
+- "path/to/data_source_folder/" is the path of the folder that contains .bed.gz or .bed data files.
+
+- "path/to/igd_folder/" is the path to the output igd folder;
+
+- "databaseName" is the name you give to the database, for eaxmple, "roadmap"
+
+option:
+
+-b: bin size in bp (default 16384)
+```
+### 3. search the igd database in R (an example for a created igd file)
+
+Search the igd database with a single query:
+```
+> igd_file = "igdr_b14/roadmap.igd"
+> library(IGDr)
+> igd <- IGDr::IGDr(igd_file)
+> hits <- search_1r(igd, "chr6", 1000000, 10000000)
+> hits
+```
+Search the igd database with a n queries:
+```
+> igd_file = "igdr_b14/roadmap.igd"
+> library(IGDr)
+> igd <- IGDr::IGDr(igd_file)
+> chrms = c("chr6", "chr1", "chr2")
+> starts = c(10000, 100000, 1000000)
+> ends = (100000, 1000000, 10000000)
+> hits <- search_nr(igd, 3, chrms, starts, ends)
+> hits
+```
+Search a whole query file chainRn4.bed
+```
+> igd_file = "igdr_b14/roadmap.igd"
+> query_file = "chainRn4.bed"
+> library(bit64)
+> library(IGDr)
+> fi = IGDr::getFInfo(igdFile)
+> hits = integer64(fi$nFiles)
+> ret = IGDr::search_n(igdFile, qFile, hits)
+> for(i in 1:fi$nFiles){
+  cat(i, "\t", toString(ret[i]), "\t", toString(fi$fInfo[i,2]), "\n")
+  }
+>
+```
