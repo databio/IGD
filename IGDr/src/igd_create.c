@@ -147,3 +147,143 @@ void create_iGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
 	globfree(&gResult);
 	printf("igd_create done!\n");
 }
+
+void create_iGD_f(char **i_path, char **o_path, char **igd_name, int *tile_size)
+{   //.C call using pointers to pass arguments!!!
+    char iPath[256];
+    char oPath[256];
+    char igdName[128];
+    strcpy(iPath, *i_path);
+    strcpy(oPath, *o_path);
+    strcpy(igdName, *igd_name);
+    int binSize = *tile_size;
+
+    //printf("Enter: %s\t %s\t %s\t %i\n", iPath, oPath, igdName, binSize);
+    //*. Check if the subfolders exist:
+    if(oPath[strlen(oPath)-1]!='/'){
+        strcat(oPath, "/");
+    }
+    
+    //1. Get the files--------------------------------------------
+    FILE *fp = fopen(iPath, "r");
+    if(fp==NULL)
+        printf("Can't open file %s", iPath);
+        
+	char buf[1024];
+    int n_files=0;  
+    while(fgets(buf, 1024, fp)!=NULL)
+		n_files++;    
+    
+    char** file_ids = malloc(n_files*sizeof(char *));
+    fseek(fp, 0, SEEK_SET);
+    int ix=0;    
+    while(fgets(buf, 1024, fp)!=NULL){	      
+        file_ids[ix] = strdup(buf); 
+        ix++;
+    }        
+    fclose(fp);
+    
+    if(n_files<1){   
+        printf("Too few files (add to path /*): %i\n", n_files);  
+        return;
+	} 
+	//------------------------------------------------------------
+	
+    char ftmp[128];
+    struct stat st = {0};
+
+    sprintf(ftmp, "%s%s%s", oPath, igdName, ".igd");
+    if(stat(ftmp, &st) == 0){
+        printf("The igd database file %s exists!\n", ftmp);
+        return;
+    }
+    else{
+        if (stat(oPath, &st) == -1){
+            mkdir(oPath, 0777);
+        }
+        sprintf(ftmp, "%s%s", oPath, "data0");
+        if (stat(ftmp, &st) == -1)
+            mkdir(ftmp, 0777);
+    }
+
+	//0. Initialize igd
+	igd_t *igd = igd_init(binSize);
+
+	//------------------------------------------------------------	 
+    int32_t *nr = calloc(n_files, sizeof(int32_t));
+    double *avg = calloc(n_files, sizeof(double));
+    //printf("igd_create 1: %i\n", n_files);
+    //2. Read files
+    int nCols=16;
+    unsigned char buffer[256];
+    int32_t i, j, k, ig, i0=0, i1=0, L0=0, L1=1, m, nL; //int64_t?
+    while(i0<n_files){
+        //2.1 Start from (i0, L0): read till (i1, L1)
+        ig = i0;
+        m = 0;
+        char **splits = malloc((nCols+1)*sizeof(char *));
+		//2.2 Read ~4GB data from files
+        while(m==0 && ig<n_files){   	//m>0 defines breaks when reading maxCount
+			//printf("%i, %i, %i, %s\n", i0, ig, nL, file_ids[ig]);
+			gzFile fp;
+			if ((fp = gzopen(file_ids[ig], "r")) == 0)
+				return;
+		    nL = 0;
+		    if(ig==i0 && L0>0){  		 //pass L0 lines of a big file
+		        while(nL<L0 && gzgets(fp, buffer, 256)!=NULL)
+		            nL++;
+		    }
+			while (m==0 && gzgets(fp, buffer, 256)!=NULL) {
+				str_splits(buffer, &nCols, splits);
+				int32_t  st = atol(splits[1]), en = atol(splits[2]), va = 0;
+				if(nCols>4) va = atol(splits[4]);
+				igd_add(igd, splits[0], st, en, va, ig);
+				nr[ig]++;
+				avg[ig]+=en-st;
+				nL++;
+                if(igd->total>maxCount){
+                    m = 1;
+                    i1 = ig;
+                    L1 = nL;    		//number of total lines or next line
+                }
+			}
+			gzclose(fp);
+			if(m==0) ig++;
+		}
+        //2.3 Save/append tiles to disc, add cnts tp Cnts
+		free(splits);
+		igd_saveT(igd, oPath);
+        i0 = ig;
+        L0 = L1;
+        L1 = 0;
+	}
+	//printf("igd_create 2\n");
+
+	//3. save _index.tsv: 4 columns--index, filename, nr, avg
+    //Also has a header line:
+    char idFile[128];
+    char *tchr;
+    sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");
+    FILE *fpi = fopen(idFile, "w");
+    if(fpi==NULL)
+        printf("Can't open file %s", idFile);
+    fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");
+    for(i=0; i<n_files; i++){
+        tchr = strrchr(file_ids[i], '/');
+        if(tchr!=NULL)
+            tchr += 1;
+        else
+            tchr = file_ids[i];
+        fprintf(fpi, "%i\t%s\t%i\t%f\n", i, tchr, nr[i], avg[i]/nr[i]);
+    }
+    fclose(fpi);
+    free(nr);
+    free(avg);
+    //printf("igd_create 3\n");
+
+	//4. Sort tile data and save into single files per ctg
+	igd_save(igd, oPath, igdName);
+	printf("igd_create done!\n");
+}
+
+

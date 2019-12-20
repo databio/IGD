@@ -218,7 +218,7 @@ info_t* get_fileinfo(char *ifName, int32_t *nFiles)
     }
     char buf[1024], *s0, *s1, *s2, *s3;
     int nfiles=0; 
-    fgets(buf, 1024, fp);
+    fgets(buf, 1024, fp);//head line
     while(fgets(buf, 1024, fp)!=NULL)
 		nfiles++;
 

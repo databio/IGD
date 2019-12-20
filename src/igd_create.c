@@ -115,6 +115,113 @@ void create_igd(char *iPath, char *oPath, char *igdName)
 	printf("igd_create 4\n");
 }
 
+//create igd from a file list
+void create_igd_f(char *iPath, char *oPath, char *igdName)
+{  	
+	//0. Initialize igd
+	igd_t *igd = igd_init();
+	printf("igd_create 0\n");
+	
+    //1. Get the files  
+    FILE *fp = fopen(iPath, "r");
+    if(fp==NULL)
+        printf("Can't open file %s", iPath);
+        
+	char buf[1024];
+    int n_files=0;  
+    while(fgets(buf, 1024, fp)!=NULL)
+		n_files++;    
+    
+    char** file_ids = malloc(n_files*sizeof(char *));
+    fseek(fp, 0, SEEK_SET);
+    int ix=0;    
+    while(fgets(buf, 1024, fp)!=NULL){	      
+        file_ids[ix] = strdup(buf); 
+        ix++;
+    }        
+    fclose(fp);
+    
+    if(n_files<1){   
+        printf("Too few files (add to path /*): %i\n", n_files);  
+        return;
+	}  
+    int32_t *nr = calloc(n_files, sizeof(int32_t));
+    double *avg = calloc(n_files, sizeof(double));
+    printf("igd_create 1: %i\n", n_files); 
+           
+    //2. Read files
+    int nCols=16;
+    unsigned char buffer[256];     
+    int32_t i, j, k, ig, i0=0, i1=0, L0=0, L1=1, m, nL; //int64_t? 
+    while(i0<n_files){
+        //2.1 Start from (i0, L0): read till (i1, L1)
+        ig = i0; 
+        m = 0;    
+        char **splits = malloc((nCols+1)*sizeof(char *));                
+		//2.2 Read ~4GB data from files
+        while(m==0 && ig<n_files){   	//m>0 defines breaks when reading maxCount      
+			//printf("%i, %i, %i, %s\n", i0, ig, nL, file_ids[ig]);
+			gzFile fp;
+			if ((fp = gzopen(file_ids[ig], "r")) == 0)
+				return;                             
+		    nL = 0; 
+		    if(ig==i0 && L0>0){  		 //pass L0 lines of a big file
+		        while(nL<L0 && gzgets(fp, buffer, 256)!=NULL)
+		            nL++;              
+		    }      			
+			while (m==0 && gzgets(fp, buffer, 256)!=NULL) {
+				str_splits(buffer, &nCols, splits); 
+				int32_t  st = atol(splits[1]), en = atol(splits[2]), va = 0;
+				if(nCols>4) va = atol(splits[4]);
+				igd_add(igd, splits[0], st, en, va, ig);				
+				nr[ig]++;
+				avg[ig]+=en-st;
+				nL++;
+                if(igd->total>maxCount){
+                    m = 1;
+                    i1 = ig;
+                    L1 = nL;    		//number of total lines or next line
+                }
+			}
+			gzclose(fp);
+			if(m==0) ig++;
+		}
+        //2.3 Save/append tiles to disc, add cnts tp Cnts 			
+		free(splits);          
+		igd_saveT(igd, oPath);
+        i0 = ig; 
+        L0 = L1;
+        L1 = 0;        
+	}    
+	printf("igd_create 2\n");
+	
+	//3. save _index.tsv: 4 columns--index, filename, nr, avg
+    //Also has a header line: 
+    char idFile[128];
+    char *tchr;   
+    sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
+    FILE *fpi = fopen(idFile, "w");
+    if(fpi==NULL)
+        printf("Can't open file %s", idFile);     
+    fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
+    for(i=0; i<n_files; i++){
+        tchr = strrchr(file_ids[i], '/');
+        if(tchr!=NULL)
+            tchr += 1;
+        else
+            tchr = file_ids[i];
+        fprintf(fpi, "%i\t%s\t%i\t%f\n", i, tchr, nr[i], avg[i]/nr[i]);     
+    }
+    fclose(fpi);   
+    free(nr);
+    free(avg);    
+    printf("igd_create 3\n");
+    
+	//4. Sort tile data and save into single files per ctg
+	igd_save(igd, oPath, igdName);	
+	printf("igd_create 4\n");
+}
+
 //create ucsc igd from gz
 void create_igd0(char *iPath, char *oPath, char *igdName)
 {  	
@@ -339,7 +446,7 @@ int igd_create(int argc, char **argv)
     strcpy(ipath, argv[2]);
     strcpy(opath, argv[3]);
     char *dbname = argv[4]; 
-    int dtype = 1;
+    int dtype = 1, ftype = 0;	//file type 1: list of bed file
     
     tile_size = 16384;								//b14 default
     for(i=5; i<argc; i++){
@@ -349,20 +456,23 @@ int igd_create(int argc, char **argv)
             n = atoi(argv[i+1]);
             if(n>10 && n<20)
             	tile_size = pow(2, n);  
-        }                                 
+        } 
+        if(strcmp(argv[i], "-f")==0) 
+        	ftype = 1;                                
     }
-    if(opath[strlen(opath)-1]!='/'){
-        strcat(opath, "/");
-    }          
-      
-    if(dtype!=2){                            
-        if(ipath[strlen(ipath)-1]=='/'){
-            strcat(ipath, "*");
-        }
-        else if(ipath[strlen(ipath)-1]!='*'){
-            strcat(ipath, "/*");
-        }
-    }  
+    
+	if(opath[strlen(opath)-1]!='/'){
+	    strcat(opath, "/");
+	}          
+		  
+	if(ftype==0 && dtype!=2){                            
+	    if(ipath[strlen(ipath)-1]=='/'){
+	        strcat(ipath, "*");
+	    }
+	    else if(ipath[strlen(ipath)-1]!='*'){
+	        strcat(ipath, "/*");
+	    }
+	}  
     
     //check if the subfolders exist:    
     char ftmp[128];      
