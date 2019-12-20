@@ -69,8 +69,8 @@ Downloads of some iGD databases (fully created and directly searchable by using 
 
 ## R-wrapper of IGD
 
-### 1. Create iGD database from a genome data source
- 
+### 1. Create iGD database 
+#### 1.1  from a genome data source
 ```
 > library(IGDr)
 > createIGD("/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName" [option]
@@ -83,10 +83,28 @@ where:
 
 - "databaseName" is the name you give to the database, for eaxmple, "roadmap"
 
-option:
+options:
 
 -b: bin size in bp (default 16384)
 ```
+#### 1.2  from a file that contains the list of genome data source files 
+```
+> library(IGDr)
+> createIGD("/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName" [option]
+
+where:
+
+- "path/to/the list file/" is the path to the file that contains the .bed.gz or .bed data files.
+
+- "path/to/igd_folder/" is the path to the output igd folder;
+
+- "databaseName" is the name you give to the database, for eaxmple, "roadmap"
+
+options:
+
+-b: bin size in bp (default 16384)
+```
+
 ### 2. search the igd database in R (an example for a created igd file)
 
 Search the igd database with a single query:
