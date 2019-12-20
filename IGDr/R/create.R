@@ -18,3 +18,7 @@
 createIGD <- function(iPath, oPath, igdName, binsize=16384) {
     .C("create_iGD", as.character(iPath), as.character(oPath), as.character(igdName), as.integer(binsize))
 }
+
+createIGD_f <- function(iPath, oPath, igdName, binsize=16384) {
+    .C("create_iGD_f", as.character(iPath), as.character(oPath), as.character(igdName), as.integer(binsize))
+}
