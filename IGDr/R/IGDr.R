@@ -38,30 +38,34 @@ get_ctgId <- function(igdr, chrm)
 
 get_nCtgs <- function(igdr)
 {
-  nCtgs <- .Call("get_nCtgs", igrd@ref, PACKAGE = "IGDr")
+  nCtgs <- .Call("get_nCtgs", igdr@ref, PACKAGE = "IGDr")
 }
 
 get_nFiles <- function(igdr)
 {
-  nFiles <- .Call("get_nFiles", igrd@ref, PACKAGE = "IGDr")
+  nFiles <- .Call("get_nFiles", igdr@ref, PACKAGE = "IGDr")
 }
 
 get_binSize <- function(igdr)
 {
-  binSize <- .Call("get_nbp", igrd@ref, PACKAGE = "IGDr")
+  binSize <- .Call("get_nbp", igdr@ref, PACKAGE = "IGDr")
 }
 
-get_igdInfo <- function(igdr)
+get_binLen <- function(igdr, ichr, binID)
 {
-  igdInfo <- .Call("get_fInfo", igdr@ref, PACKAGE = "IGDr")
+  binLen <- .Call("get_binLen", igdr@ref, as.integer(ichr), as.integer(binID), PACKAGE = "IGDr")
 }
 
-get_bin <- function(igdr, binNumber)
+get_binData <- function(igdr, ichr, binID)
 {
-  binCount <- .Call("get_nCnt", igdr@ref, as.integer(binNumber), PACKAGE = "IGDr")
+  binData <- .Call("get_binData", igdr@ref, as.integer(ichr), as.integer(binID), PACKAGE = "IGDr")
 }
 
-get_binData <- function(igdr, binNumber)
-{
-  binData <- .Call("get_gData", igdr@ref, as.integer(binNumber), PACKAGE = "IGDr")
-}
+
+
+
+
+
+
+
+
