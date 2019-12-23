@@ -407,3 +407,61 @@ SEXP get_cid(SEXP igdr, SEXP chrom)
   return(cid);
 }
 
+SEXP get_nbp(SEXP igdr)
+{ //chrom id
+  iGD_t *iGD = (iGD_t *) R_ExternalPtrAddr(igdr);
+  if(iGD==NULL)
+    error("iGD_free: iGDr external pointer is NULL");
+  SEXP t_nbp;
+  PROTECT(t_nbp = allocVector(INTSXP, 1));
+  INTEGER(t_nbp)[0] = iGD->nbp;
+  UNPROTECT(1);
+  return(t_nbp);
+}
+
+SEXP get_nfiles(SEXP igdr)
+{
+  iGD_t *iGD = (iGD_t *) R_ExternalPtrAddr(igdr);
+  if(iGD==NULL)
+    error("iGD_free: iGDr external pointer is NULL");
+  SEXP nfile;
+  PROTECT(nfile = allocVector(INTSXP, 1));
+  INTEGER(nfile)[0] = iGD->nFiles;
+  UNPROTECT(1);
+  return(nfile);
+}
+
+SEXP get_nCtgs(SEXP igdr)
+{ //chrom id
+  iGD_t *iGD = (iGD_t *) R_ExternalPtrAddr(igdr);
+  if(iGD==NULL)
+    error("iGD_free: iGDr external pointer is NULL");
+  SEXP n_ctgs;
+  PROTECT(n_ctgs = allocVector(INTSXP, 1));
+  INTEGER(n_ctgs)[0] = iGD->nCtg;
+  UNPROTECT(1);
+  return(n_ctgs);
+}
+
+SEXP get_binLen(SEXP igdr, SEXP ichr, SEXP bin)
+{ //not really necessary
+  iGD_t *iGD = (iGD_t *) R_ExternalPtrAddr(igdr);
+  if(iGD==NULL)
+    error("iGD_free: iGDr external pointer is NULL");
+  SEXP binLen;
+  int ichr0 = INTEGER(ichr)[0]-1;
+  int j = INTEGER(bin)[0]-1;
+  if(ichr0 >= iGD->nCtg || ichr0<0 || j<0 || j>=iGD->nTile[ichr0])
+    return(R_NilValue);
+  PROTECT(binLen = allocVector(INTSXP, 1));
+  INTEGER(binLen)[0] = iGD->nCnt[ichr0][j];
+  UNPROTECT(1);
+  return(binLen);
+}
+
+
+
+
+
+
+
