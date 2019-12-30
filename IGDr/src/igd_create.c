@@ -148,6 +148,7 @@ void create_iGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
 	printf("igd_create done!\n");
 }
 
+
 void create_iGD_f(char **i_path, char **o_path, char **igd_name, int *tile_size)
 {   //.C call using pointers to pass arguments!!!
     char iPath[256];
@@ -163,32 +164,32 @@ void create_iGD_f(char **i_path, char **o_path, char **igd_name, int *tile_size)
     if(oPath[strlen(oPath)-1]!='/'){
         strcat(oPath, "/");
     }
-    
+
     //1. Get the files--------------------------------------------
     FILE *fp = fopen(iPath, "r");
     if(fp==NULL)
         printf("Can't open file %s", iPath);
-        
+
 	char buf[1024];
-    int n_files=0;  
+    int n_files=0;
     while(fgets(buf, 1024, fp)!=NULL)
-		n_files++;    
-    
+		n_files++;
+
     char** file_ids = malloc(n_files*sizeof(char *));
     fseek(fp, 0, SEEK_SET);
-    int ix=0;    
-    while(fgets(buf, 1024, fp)!=NULL){	      
-        file_ids[ix] = strdup(buf); 
+    int ix=0;
+    while(fgets(buf, 1024, fp)!=NULL){
+        file_ids[ix] = strdup(buf);
         ix++;
-    }        
+    }
     fclose(fp);
-    
-    if(n_files<1){   
-        printf("Too few files (add to path /*): %i\n", n_files);  
+
+    if(n_files<1){
+        printf("Too few files (add to path /*): %i\n", n_files);
         return;
-	} 
+	}
 	//------------------------------------------------------------
-	
+
     char ftmp[128];
     struct stat st = {0};
 
@@ -209,7 +210,7 @@ void create_iGD_f(char **i_path, char **o_path, char **igd_name, int *tile_size)
 	//0. Initialize igd
 	igd_t *igd = igd_init(binSize);
 
-	//------------------------------------------------------------	 
+	//------------------------------------------------------------
     int32_t *nr = calloc(n_files, sizeof(int32_t));
     double *avg = calloc(n_files, sizeof(double));
     //printf("igd_create 1: %i\n", n_files);
@@ -285,5 +286,3 @@ void create_iGD_f(char **i_path, char **o_path, char **igd_name, int *tile_size)
 	igd_save(igd, oPath, igdName);
 	printf("igd_create done!\n");
 }
-
-

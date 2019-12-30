@@ -31,6 +31,14 @@ search_nr <- function(igdr, n, chrm, qs, qe)
   hits <- .Call("search_nr", igdr@ref, as.integer(n), as.character(chrm), as.integer(qs), as.integer(qe), PACKAGE = "IGDr")
 }
 
+search_qfile <- function(igdr, qfile) { #int32 for counts
+  if(!file.exists(qfile))
+    stop("File '", qfile, "' is not found. ")
+  qinfo <- read.csv(file=qfile, head=FALSE, sep="\t") #Index(0-based), File, Number of regions, Avg size
+  nfiles <- length(qinfo[,1])
+  hits <- .Call("search_nr", igdr@ref, as.integer(nfiles), as.character(qinfo[,1]), as.integer(qinfo[,2]), as.integer(qinfo[,3]), PACKAGE = "IGDr")
+}
+
 get_ctgId <- function(igdr, chrm)
 {
   ctgId <- .Call("get_cid", igdr@ref, as.character(chrm), PACKAGE = "IGDr")
@@ -60,12 +68,3 @@ get_binData <- function(igdr, ichr, binID)
 {
   binData <- .Call("get_binData", igdr@ref, as.integer(ichr), as.integer(binID), PACKAGE = "IGDr")
 }
-
-
-
-
-
-
-
-
-
