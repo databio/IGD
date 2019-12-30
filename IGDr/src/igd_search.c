@@ -316,6 +316,25 @@ SEXP search_1r(SEXP igdr, SEXP qchrm, SEXP qs, SEXP qe)
   return(hits);
 }
 
+/*SEXP search_nr(SEXP igdr, SEXP n, SEXP qchrm, SEXP qs, SEXP qe)
+{ //NO need to supply output vector!!!
+  iGD_t *iGD = (iGD_t *) R_ExternalPtrAddr(igdr);
+  if(iGD==NULL)
+    error("iGD_free: iGDr external pointer is NULL");
+  SEXP hits;
+  const char *chrm;
+  int32_t *tmp = calloc(iGD->nFiles, sizeof(int32_t));
+  for(int i=0; i<INTEGER(n)[0]; i++){
+    chrm = CHAR(STRING_ELT(qchrm, i));
+    get_overlaps32(iGD, chrm, INTEGER(qs)[i], INTEGER(qe)[i], tmp);
+  }
+  PROTECT(hits = allocVector(INTSXP, iGD->nFiles));//not initialized
+  memcpy(INTEGER(hits), tmp, iGD->nFiles * sizeof(int32_t));
+  UNPROTECT(1);
+  free(tmp);
+  return(hits);
+}*/
+
 SEXP search_nr(SEXP igdr, SEXP n, SEXP qchrm, SEXP qs, SEXP qe)
 { //NO need to supply output vector!!!
   iGD_t *iGD = (iGD_t *) R_ExternalPtrAddr(igdr);
@@ -328,8 +347,45 @@ SEXP search_nr(SEXP igdr, SEXP n, SEXP qchrm, SEXP qs, SEXP qe)
   for(int i=0; i<INTEGER(n)[0]; i++){
     chrm = CHAR(STRING_ELT(qchrm, i));
     get_overlaps32(iGD, chrm, INTEGER(qs)[i], INTEGER(qe)[i], INTEGER(hits));
-    //printf("%i\t %s\t %i\t %i\t, %i\n", i, chrm, INTEGER(qs)[i], INTEGER(qe)[i], INTEGER(hits)[0]);
   }
   UNPROTECT(1);
   return(hits);
+}
+
+SEXP get_binData(SEXP igdr, SEXP ichr, SEXP bin)
+{
+  iGD_t *iGD = (iGD_t *) R_ExternalPtrAddr(igdr);
+  if(iGD==NULL)
+    error("iGD_free: iGDr external pointer is NULL");
+  int ichr0 = INTEGER(ichr)[0]-1;
+  int j = INTEGER(bin)[0]-1;
+  if(ichr0<0 || j>=iGD->nTile[ichr0] || j<0){
+    printf("Max bin number is %i\n", iGD->nTile[ichr0]);
+    return(R_NilValue);
+  }
+  int ncnt = iGD->nCnt[ichr0][j];
+  if(ncnt<1){
+    printf("No records in bin %i \n", j);
+    return(R_NilValue);
+  }
+  SEXP starts = PROTECT(allocVector(INTSXP, ncnt));
+  SEXP ends = PROTECT(allocVector(INTSXP, ncnt));
+  SEXP idx = PROTECT(allocVector(INTSXP, ncnt));
+  //--------------------------------------------
+  gdata_t *gd = malloc(ncnt*sizeof(gdata_t));
+  fseek(iGD->fP, iGD->tIdx[ichr0][j], SEEK_SET);
+  fread(gd, sizeof(gdata_t)*ncnt, 1, iGD->fP);
+  //--------------------------------------------
+  for(int i=0;i<ncnt;i++){
+    INTEGER(idx)[i] = gd[i].idx;
+    INTEGER(starts)[i] = gd[i].start;
+    INTEGER(ends)[i] = gd[i].end;
+  }
+  free(gd);
+  SEXP gdata = PROTECT(allocVector(VECSXP, 3));
+  SET_VECTOR_ELT(gdata, 0, idx);
+  SET_VECTOR_ELT(gdata, 1, starts);
+  SET_VECTOR_ELT(gdata, 2, ends);
+  UNPROTECT(4);
+  return(gdata);
 }

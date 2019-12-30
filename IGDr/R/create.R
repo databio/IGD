@@ -15,6 +15,18 @@
 #   GNU General Public License for more details.
 #-----------------------------------------------------------------------------------------
 
+#' Function to create an IGD database from a folder of .bed or .bed.gz files,
+#' or a list of such folders
+#'
+#' @param iPath	folder where your input files are stored
+#' @param oPath	the folder that the created IGD database will be stored
+#' @param igdName the name you give to the IGD database (.igd will be added to it)
+#' @param binsize the size in basepairs for the bin (block) used in the database:
+#' usually 8192, 16384, 32768, ... as a power of 2
+#' @return an igd database will be created in the specified folder
+#' @export
+#' @examples
+#' createIGD("rme10", "rme_b14", "roadmap")
 createIGD <- function(iPath, oPath, igdName, binsize=16384) {
     .C("create_iGD", as.character(iPath), as.character(oPath), as.character(igdName), as.integer(binsize))
 }

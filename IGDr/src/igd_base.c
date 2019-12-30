@@ -459,9 +459,3 @@ SEXP get_binLen(SEXP igdr, SEXP ichr, SEXP bin)
   return(binLen);
 }
 
-
-
-
-
-
-
