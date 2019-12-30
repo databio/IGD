@@ -24,24 +24,14 @@ void create_iGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
     strcpy(iPath, *i_path);
     strcpy(oPath, *o_path);
     strcpy(igdName, *igd_name);
-    int binSize = *tile_size;
+    int rtn, binSize = *tile_size;
 
-    //printf("Enter: %s\t %s\t %s\t %i\n", iPath, oPath, igdName, binSize);
-    //*. Check if the subfolders exist:
+    //Check if the subfolders exist:
+    char ftmp[255];
+    struct stat st = {0};
     if(oPath[strlen(oPath)-1]!='/'){
         strcat(oPath, "/");
     }
-
-    if(iPath[strlen(iPath)-1]=='/'){
-        strcat(iPath, "*");
-    }
-    else if(iPath[strlen(iPath)-1]!='*'){
-        strcat(iPath, "/*");
-    }
-
-    char ftmp[128];
-    struct stat st = {0};
-
     sprintf(ftmp, "%s%s%s", oPath, igdName, ".igd");
     if(stat(ftmp, &st) == 0){
         printf("The igd database file %s exists!\n", ftmp);
@@ -56,24 +46,59 @@ void create_iGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
             mkdir(ftmp, 0777);
     }
 
+    //check if iPath a file or directory
+    stat(iPath, &st);
+    glob_t gResult;
+    if(S_ISREG(st.st_mode)){
+    	FILE *fp = fopen(iPath, "r");
+    	if(fgets(ftmp, 255, fp)){
+  			if(ftmp[strlen(iPath)-1]=='/'){
+  				strcat(ftmp, "*");
+  			}
+  			else if(ftmp[strlen(ftmp)-1]!='*'){
+  				strcat(ftmp, "/*");
+  			}
+    		rtn = glob(ftmp, 0, NULL, &gResult);
+    	}
+    	while(fgets(ftmp, 255, fp)){
+  			if(ftmp[strlen(iPath)-1]=='/'){
+  				strcat(ftmp, "*");
+  			}
+  			else if(ftmp[strlen(ftmp)-1]!='*'){
+  				strcat(ftmp, "/*");
+  			}
+    		rtn = glob(ftmp, GLOB_APPEND, NULL, &gResult);
+    	}
+    	fclose(fp);
+    }
+    else{	//S_ISDIR(..)
+  		if(iPath[strlen(iPath)-1]=='/'){
+  		    strcat(iPath, "*");
+  		}
+  		else if(iPath[strlen(iPath)-1]!='*'){
+  		    strcat(iPath, "/*");
+  		}
+  		rtn = glob(iPath, 0, NULL, &gResult);
+  		if(rtn!=0){
+  		    printf("wrong dir path: %s", iPath);
+  		    return;
+  		}
+    }
+
 	//0. Initialize igd
 	igd_t *igd = igd_init(binSize);
 	//printf("igd_create 0\n");
 
     //1. Get the files
-    glob_t gResult;
-    int rtn = glob(iPath, 0, NULL, &gResult);
-    if(rtn!=0){
-        printf("wrong dir path: %s", iPath);
-        return;
-    }
     char** file_ids = gResult.gl_pathv;
     int32_t n_files = gResult.gl_pathc;
     if(n_files<1)
         printf("Too few files (add to path /*): %i\n", n_files);
+
     int32_t *nr = calloc(n_files, sizeof(int32_t));
     double *avg = calloc(n_files, sizeof(double));
-    //printf("igd_create 1: %i\n", n_files);
+    printf("igd_create 1: %i\n", n_files);
+
     //2. Read files
     int nCols=16;
     unsigned char buffer[256];
