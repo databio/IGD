@@ -26,7 +26,8 @@
 #' @return an igd database will be created in the specified folder
 #' @export
 #' @examples
-#' createIGD("rme10", "rme_b14", "roadmap")
+#' library("IGDr")
+#' IGDr::createIGD("data/rme3", "data/testigd", "roadmap_b14")
 createIGD <- function(iPath, oPath, igdName, binsize=16384) {
     .C("create_iGD", as.character(iPath), as.character(oPath), as.character(igdName), as.integer(binsize))
 }
@@ -40,8 +41,6 @@ createIGD <- function(iPath, oPath, igdName, binsize=16384) {
 #' usually 8192, 16384, 32768, ... as a power of 2
 #' @return an igd database will be created in the specified folder
 #' @export
-#' @examples
-#' createIGD("rmelist", "rme_b14", "roadmap")
 createIGD_f <- function(iPath, oPath, igdName, binsize=16384) {
     .C("create_iGD_f", as.character(iPath), as.character(oPath), as.character(igdName), as.integer(binsize))
 }
