@@ -18,5 +18,7 @@ ichr (0 if not exist)
 Function to get the contig id of a chromosome name
 }
 \examples{
+\dontrun{
 ichr <- get_ctgId(igdr, "chrX")
+}
 }

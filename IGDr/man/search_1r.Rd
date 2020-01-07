@@ -22,5 +22,6 @@ hits: number of intersections to each database source file
 Function to search the igd database for a single query
 }
 \examples{
-hits <- search_1r(igdr, "chr1", 1000000, 1100000)
+\dontrun{
+hits <- search_1r(igdr, "chr1", 1000000, 1100000)}
 }

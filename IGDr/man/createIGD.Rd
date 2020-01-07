@@ -25,6 +25,8 @@ Function to create an IGD database from a folder of .bed or .bed.gz files,
 or a list of such folders
 }
 \examples{
-library("IGDr")
-IGDr::createIGD("data/rme3", "data/testigd", "roadmap_b14")
+\dontrun{library("IGDr")
+iPath <- system.file("extdata", "rme3", "IGDr")
+oPath <- system.file("extdata", "rme3_igd", "IGDr")
+IGDr::createIGD(iPath, oPath, "roadmap_b14")}
 }

@@ -20,5 +20,6 @@ binLen
 Function to get the number of regions in a given bin and a given contig
 }
 \examples{
-binLen <- get_binLen(igdr, 10, 123)
+\dontrun{
+binLen <- get_binLen(igdr, 10, 123)}
 }

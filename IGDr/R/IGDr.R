@@ -1,13 +1,9 @@
 # S4 class of iGD
+
+#' IGDr Construction
 setClass("IGDr",
          representation(ref="externalptr")
 )
-
-setMethod("close", "IGDr",
-          function(con, ...) {
-           .Call("iGD_free", con@ref, PACKAGE = "IGDr")
-           con
-         })
 
 #' Function to open/load an igd database for search 
 #'
@@ -15,8 +11,9 @@ setMethod("close", "IGDr",
 #' @return an IGDr object
 #' @export
 #' @examples
-#' library(IGDr)
-#' igdr <- IGDr("data/rme3_igd/roadmap_b14.igd")
+#' \dontrun{library(IGDr)
+#' igd_file <- system.file("extdata", "rme3_igd/roadmap_b14.igd")
+#' igdr <- IGDr(igd_file)}
 IGDr <- function(igd_file)
 {
   #check if igd file exist
@@ -38,7 +35,8 @@ IGDr <- function(igd_file)
 #' @return hits: number of intersections to each database source file
 #' @export
 #' @examples
-#' hits <- search_1r(igdr, "chr1", 1000000, 1100000)
+#' \dontrun{
+#' hits <- search_1r(igdr, "chr1", 1000000, 1100000)}
 search_1r <- function(igdr, chrm, qs, qe)
 {
   hits <- .Call("search_1r", igdr@ref, as.character(chrm), as.integer(qs), as.integer(qe), PACKAGE = "IGDr")
@@ -53,8 +51,6 @@ search_1r <- function(igdr, chrm, qs, qe)
 #' @param qe vector of the end locations of the queries
 #' @return hits: number of intersections to each database source file
 #' @export
-#' @examples
-#' hits <- search_nr(igdr, chrm, qs, qe)
 search_nr <- function(igdr, n, chrm, qs, qe)
 {
   hits <- .Call("search_nr", igdr@ref, as.integer(n), as.character(chrm), as.integer(qs), as.integer(qe), PACKAGE = "IGDr")
@@ -67,7 +63,8 @@ search_nr <- function(igdr, n, chrm, qs, qe)
 #' @return hits: number of intersections to each database source file
 #' @export
 #' @examples
-#' hits <- search_qfile(igdr, "data/r10000.bed")
+#' \dontrun{
+#' hits <- search_qfile(igdr, "data/r10000.bed")}
 search_qfile <- function(igdr, qfile) { #int32 for counts
   if(!file.exists(qfile))
     stop("File '", qfile, "' is not found. ")
@@ -83,7 +80,9 @@ search_qfile <- function(igdr, qfile) { #int32 for counts
 #' @return ichr (0 if not exist)
 #' @export
 #' @examples
+#' \dontrun{
 #' ichr <- get_ctgId(igdr, "chrX")
+#' }
 get_ctgId <- function(igdr, chrm)
 {
   ichr <- .Call("get_cid", igdr@ref, as.character(chrm), PACKAGE = "IGDr")
@@ -95,7 +94,8 @@ get_ctgId <- function(igdr, chrm)
 #' @return nCtgs: number of contigs
 #' @export
 #' @examples
-#' nCtgs <- get_ctgId(igdr)
+#' \dontrun{
+#' nCtgs <- get_ctgId(igdr)}
 get_nCtgs <- function(igdr)
 {
   nCtgs <- .Call("get_nCtgs", igdr@ref, PACKAGE = "IGDr")
@@ -107,7 +107,8 @@ get_nCtgs <- function(igdr)
 #' @return nCtgs: number of source files
 #' @export
 #' @examples
-#' nFiles <- get_nFiles(igdr)
+#' \dontrun{
+#' nFiles <- get_nFiles(igdr)}
 get_nFiles <- function(igdr)
 {
   nFiles <- .Call("get_nFiles", igdr@ref, PACKAGE = "IGDr")
@@ -119,7 +120,9 @@ get_nFiles <- function(igdr)
 #' @return binSize
 #' @export
 #' @examples
+#' \dontrun{
 #' binSize <- get_binSize(igdr)
+#' }
 get_binSize <- function(igdr)
 {
   binSize <- .Call("get_nbp", igdr@ref, PACKAGE = "IGDr")
@@ -133,7 +136,8 @@ get_binSize <- function(igdr)
 #' @return binLen
 #' @export
 #' @examples
-#' binLen <- get_binLen(igdr, 10, 123)
+#' \dontrun{
+#' binLen <- get_binLen(igdr, 10, 123)}
 get_binLen <- function(igdr, ichr, binID)
 {
   binLen <- .Call("get_binLen", igdr@ref, as.integer(ichr), as.integer(binID), PACKAGE = "IGDr")
@@ -147,7 +151,8 @@ get_binLen <- function(igdr, ichr, binID)
 #' @return binData: vector of regions start, end, source_id
 #' @export
 #' @examples
-#' binData <- get_binLen(igdr, 10, 123)
+#' \dontrun{
+#' binData <- get_binLen(igdr, 10, 123)}
 get_binData <- function(igdr, ichr, binID)
 {
   binData <- .Call("get_binData", igdr@ref, as.integer(ichr), as.integer(binID), PACKAGE = "IGDr")

@@ -16,5 +16,7 @@ binSize
 Function to get the bin size of an igd database
 }
 \examples{
+\dontrun{
 binSize <- get_binSize(igdr)
+}
 }

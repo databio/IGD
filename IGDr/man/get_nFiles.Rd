@@ -16,5 +16,6 @@ nCtgs: number of source files
 Function to get the number of source files in an igd database
 }
 \examples{
-nFiles <- get_nFiles(igdr)
+\dontrun{
+nFiles <- get_nFiles(igdr)}
 }

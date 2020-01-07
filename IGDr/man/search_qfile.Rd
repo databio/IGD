@@ -18,5 +18,6 @@ hits: number of intersections to each database source file
 Function to search the igd database for a query set from a file
 }
 \examples{
-hits <- search_qfile(igdr, "data/r10000.bed")
+\dontrun{
+hits <- search_qfile(igdr, "data/r10000.bed")}
 }
