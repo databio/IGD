@@ -9,7 +9,7 @@
 //-------------------------------------------------------------------------------------
 int search_help(int exit_code)
 {
-    fprintf(stderr,
+    printf(
 "%s, v%s\n"
 "usage:   %s search <igd database file> [options]\n"
 "         options:\n"
@@ -34,12 +34,13 @@ void get_overlaps(iGD_t *iGD, char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 	n2 = MIN(n2, mTile);
 	tmpi = iGD->nCnt[ichr][n1];
 	tmpi1 = tmpi-1;
+	long rtn;
 	if(tmpi>0){
 		if(n1!=iGD->preIdx || ichr!=iGD->preChr){
 			fseek(iGD->fP, iGD->tIdx[ichr][n1], SEEK_SET);
 			free(iGD->gData);
 			iGD->gData = malloc(tmpi*sizeof(gdata_t));
-			fread(iGD->gData, sizeof(gdata_t)*tmpi, 1, iGD->fP);
+			rtn = fread(iGD->gData, sizeof(gdata_t)*tmpi, 1, iGD->fP);
 			iGD->preIdx = n1;
 			iGD->preChr = ichr;
 		}
@@ -71,7 +72,7 @@ void get_overlaps(iGD_t *iGD, char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 						fseek(iGD->fP, iGD->tIdx[ichr][j], SEEK_SET);
 						free(iGD->gData);
 						iGD->gData = malloc(tmpi*sizeof(gdata_t));
-						fread(iGD->gData, sizeof(gdata_t)*tmpi, 1, iGD->fP);
+						rtn = fread(iGD->gData, sizeof(gdata_t)*tmpi, 1, iGD->fP);
 						iGD->preIdx = j;
 						iGD->preChr = ichr;
 					}
@@ -115,12 +116,13 @@ void get_overlaps32(iGD_t *iGD, char *chrm, int32_t qs, int32_t qe, int32_t *hit
   n2 = MIN(n2, mTile);
   tmpi = iGD->nCnt[ichr][n1];
   tmpi1 = tmpi-1;
+  long rtn;
   if(tmpi>0){
     if(n1!=iGD->preIdx || ichr!=iGD->preChr){
       fseek(iGD->fP, iGD->tIdx[ichr][n1], SEEK_SET);
       free(iGD->gData);
       iGD->gData = malloc(tmpi*sizeof(gdata_t));
-      fread(iGD->gData, sizeof(gdata_t)*tmpi, 1, iGD->fP);
+      rtn = fread(iGD->gData, sizeof(gdata_t)*tmpi, 1, iGD->fP);
       iGD->preIdx = n1;
       iGD->preChr = ichr;
     }
@@ -152,7 +154,7 @@ void get_overlaps32(iGD_t *iGD, char *chrm, int32_t qs, int32_t qe, int32_t *hit
             fseek(iGD->fP, iGD->tIdx[ichr][j], SEEK_SET);
             free(iGD->gData);
             iGD->gData = malloc(tmpi*sizeof(gdata_t));
-            fread(iGD->gData, sizeof(gdata_t)*tmpi, 1, iGD->fP);
+            rtn = fread(iGD->gData, sizeof(gdata_t)*tmpi, 1, iGD->fP);
             iGD->preIdx = j;
             iGD->preChr = ichr;
           }
@@ -374,7 +376,7 @@ SEXP get_binData(SEXP igdr, SEXP ichr, SEXP bin)
   //--------------------------------------------
   gdata_t *gd = malloc(ncnt*sizeof(gdata_t));
   fseek(iGD->fP, iGD->tIdx[ichr0][j], SEEK_SET);
-  fread(gd, sizeof(gdata_t)*ncnt, 1, iGD->fP);
+  long rtn = fread(gd, sizeof(gdata_t)*ncnt, 1, iGD->fP);
   //--------------------------------------------
   for(int i=0;i<ncnt;i++){
     INTEGER(idx)[i] = gd[i].idx;

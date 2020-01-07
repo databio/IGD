@@ -26,10 +26,12 @@
 #' @return an igd database will be created in the specified folder
 #' @export
 #' @examples
-#' library("IGDr")
-#' IGDr::createIGD("data/rme3", "data/testigd", "roadmap_b14")
+#' \dontrun{library("IGDr")
+#' iPath <- system.file("extdata", "rme3", "IGDr")
+#' oPath <- system.file("extdata", "rme3_igd", "IGDr")
+#' IGDr::createIGD(iPath, oPath, "roadmap_b14")}
 createIGD <- function(iPath, oPath, igdName, binsize=16384) {
-    .C("create_iGD", as.character(iPath), as.character(oPath), as.character(igdName), as.integer(binsize))
+    .C("create_iGD", as.character(iPath), as.character(oPath), as.character(igdName), as.integer(binsize), PACKAGE = "IGDr")
 }
 
 #' Function to create an IGD database from a list of source files (.bed or .bed.gz)
@@ -42,5 +44,5 @@ createIGD <- function(iPath, oPath, igdName, binsize=16384) {
 #' @return an igd database will be created in the specified folder
 #' @export
 createIGD_f <- function(iPath, oPath, igdName, binsize=16384) {
-    .C("create_iGD_f", as.character(iPath), as.character(oPath), as.character(igdName), as.integer(binsize))
+    .C("create_iGD_f", as.character(iPath), as.character(oPath), as.character(igdName), as.integer(binsize), PACKAGE = "IGDr")
 }

@@ -20,5 +20,6 @@ binData: vector of regions start, end, source_id
 Function to get region data in the given bin of a given contig
 }
 \examples{
-binData <- get_binLen(igdr, 10, 123)
+\dontrun{
+binData <- get_binLen(igdr, 10, 123)}
 }

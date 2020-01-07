@@ -16,5 +16,6 @@ nCtgs: number of contigs
 Function to get the number of contigs in an igd database
 }
 \examples{
-nCtgs <- get_ctgId(igdr)
+\dontrun{
+nCtgs <- get_ctgId(igdr)}
 }

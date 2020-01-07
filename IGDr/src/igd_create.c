@@ -7,7 +7,7 @@
 
 int create_help(int exit_code)
 {
-    fprintf(stderr,
+    printf(
 "%s, v%s\n"
 "usage:   %s create <input dir> <output dir> <output igd name> [options] \n"
 "             -b  <Tile size in power of 2 (default 14)> \n"
@@ -18,8 +18,8 @@ int create_help(int exit_code)
 
 void create_iGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
 {   //.C call using pointers to pass arguments!!!
-    char iPath[128];
-    char oPath[128];
+    char iPath[256];
+    char oPath[256];
     char igdName[64];
     strcpy(iPath, *i_path);
     strcpy(oPath, *o_path);

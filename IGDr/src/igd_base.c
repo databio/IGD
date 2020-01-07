@@ -136,14 +136,14 @@ info_t* get_fileinfo(char *ifName, int32_t *nFiles)
     }
     char buf[1024], *s0, *s1, *s2, *s3;
     int nfiles=0;
-    fgets(buf, 1024, fp);
+    char* rtn = fgets(buf, 1024, fp);
     while(fgets(buf, 1024, fp)!=NULL)
 		nfiles++;
 
     info_t *fi = (info_t*)malloc(nfiles*sizeof(info_t));
     fseek(fp, 0, SEEK_SET);
     int i=0;
-    fgets(buf, 1024, fp);   //header
+    rtn = fgets(buf, 1024, fp);   //header
     while(fgets(buf, 1024, fp)!=NULL){
         s0 = strtok(buf, "\t");
         s1 = strtok(NULL, "\t");
@@ -162,7 +162,7 @@ info_t* get_fileinfo(char *ifName, int32_t *nFiles)
 iGD_t* open_iGD(char *igdFile)
 {
 	iGD_t* iGD = iGD_init();
-    char tmp[128];
+    char tmp[256];
     strcpy(tmp, igdFile);
     tmp[strrchr(tmp, '.')-tmp] = '\0';
     strcpy(iGD->fname, tmp);
@@ -172,16 +172,16 @@ iGD_t* open_iGD(char *igdFile)
     FILE *fp = fopen(igdFile, "rb");
     if(fp == NULL)
         printf("Can't open file %s", igdFile);
-    fread(&iGD->nbp, sizeof(int32_t), 1, fp);
-    fread(&iGD->gType, sizeof(int32_t), 1, fp);
-    fread(&iGD->nCtg, sizeof(int32_t), 1, fp);
+    long rtn = fread(&iGD->nbp, sizeof(int32_t), 1, fp);
+    rtn = fread(&iGD->gType, sizeof(int32_t), 1, fp);
+    rtn = fread(&iGD->nCtg, sizeof(int32_t), 1, fp);
    	int i, k;
    	int32_t gdsize;
    	gdsize = sizeof(gdata_t);
     int32_t tileS, m = iGD->nCtg;		//the idx of a tile in the chrom
     //------------------------------------------
     iGD->nTile = malloc(m*sizeof(int32_t));
-    fread(iGD->nTile, sizeof(int32_t)*m, 1, fp);
+    rtn = fread(iGD->nTile, sizeof(int32_t)*m, 1, fp);
     int64_t chr_loc = 12 + 44*m;		//header size in bytes
     for(i=0;i<m;i++) chr_loc += iGD->nTile[i]*4;
     //------------------------------------------
@@ -190,7 +190,7 @@ iGD_t* open_iGD(char *igdFile)
     for(i=0;i<m;i++){
     	k = iGD->nTile[i];
     	iGD->nCnt[i] = calloc(k, sizeof(int32_t));
-    	fread(iGD->nCnt[i], sizeof(int32_t)*k, 1, fp);
+    	rtn = fread(iGD->nCnt[i], sizeof(int32_t)*k, 1, fp);
     	//--------------------------------------
     	iGD->tIdx[i] = calloc(k, sizeof(int64_t));
     	iGD->tIdx[i][0] = chr_loc;
@@ -202,7 +202,7 @@ iGD_t* open_iGD(char *igdFile)
 	iGD->cName = malloc(m*sizeof(char*));
     for(i=0;i<m;i++){
 		iGD->cName[i] = malloc(40*sizeof(char));
-		fread(iGD->cName[i], 40, 1, fp);
+		  rtn = fread(iGD->cName[i], 40, 1, fp);
     }
     iGD->fP = fp;
 
@@ -237,7 +237,7 @@ int32_t get_nFiles(iGD_t *iGD)
 
 void igd_saveT(igd_t *igd, char *oPath)
 {	//Save/append tiles to disc, add cnts tp Cnts
-	char idFile[128];
+	char idFile[256];
 	for (int i = 0; i < igd->nctg; i++){
 		ctg_t *ctg = &igd->ctg[i];
 		for(int j=0; j< ctg->mTiles; j++){
@@ -264,7 +264,7 @@ void igd_saveT(igd_t *igd, char *oPath)
 
 void igd_save(igd_t *igd, char *oPath, char *igdName)
 {
-	char idFile[128], iname[128];
+	char idFile[256], iname[256];
 	//1. Save iGD data info: ctg string length 40
     int32_t i, j, n, m  = igd->nctg;
     sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");
@@ -301,7 +301,7 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 					printf("Can't open file %s", iname);
 	    		gdsize = nrec*sizeof(gdata_t);
 			    gdata_t *gdata = malloc(gdsize);
-			    fread(gdata, gdsize, 1, fp0);
+			    long rtn = fread(gdata, gdsize, 1, fp0);
 			    fclose(fp0);
 			    radix_sort_intv(gdata, gdata+nrec);
 			    fwrite(gdata, gdsize, 1, fp);

@@ -23,6 +23,3 @@ hits: number of intersections to each database source file
 \description{
 Function to search the igd database for multiple queries
 }
-\examples{
-hits <- search_nr(igdr, chrm, qs, qe)
-}
