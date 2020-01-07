@@ -12,7 +12,7 @@ setClass("IGDr",
 #' @export
 #' @examples
 #' \dontrun{library(IGDr)
-#' igd_file <- system.file("extdata", "rme3_igd/roadmap_b14.igd")
+#' igd_file <- "testigd/roadmap_b14.igd")
 #' igdr <- IGDr(igd_file)}
 IGDr <- function(igd_file)
 {

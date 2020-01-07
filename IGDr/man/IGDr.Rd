@@ -17,6 +17,6 @@ Function to open/load an igd database for search
 }
 \examples{
 \dontrun{library(IGDr)
-igd_file <- system.file("extdata", "rme3_igd/roadmap_b14.igd")
+igd_file <- "testigd/roadmap_b14.igd")
 igdr <- IGDr(igd_file)}
 }
