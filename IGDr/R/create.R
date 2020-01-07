@@ -26,10 +26,11 @@
 #' @return an igd database will be created in the specified folder
 #' @export
 #' @examples
-#' \dontrun{library("IGDr")
-#' iPath <- system.file("extdata", "rme3", "IGDr")
-#' oPath <- system.file("extdata", "rme3_igd", "IGDr")
-#' IGDr::createIGD(iPath, oPath, "roadmap_b14")}
+#' \dontrun{
+#' library("IGDr")
+#' iPath <- system.file("extdata", "rme3", package = "IGDr")
+#' IGDr::createIGD(iPath, "testigd", "roadmap_b14")
+#' }
 createIGD <- function(iPath, oPath, igdName, binsize=16384) {
     .C("create_iGD", as.character(iPath), as.character(oPath), as.character(igdName), as.integer(binsize), PACKAGE = "IGDr")
 }
