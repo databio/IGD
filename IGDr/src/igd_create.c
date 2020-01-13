@@ -100,14 +100,15 @@ void create_iGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
     printf("igd_create 1: %i\n", n_files);
 
     //2. Read files
-    int nCols=16;
+    int nCols=32;
     unsigned char buffer[256];
     int32_t i, j, k, ig, i0=0, i1=0, L0=0, L1=1, m, nL; //int64_t?
+    char **splits = malloc((nCols+1)*sizeof(char *));
     while(i0<n_files){
         //2.1 Start from (i0, L0): read till (i1, L1)
         ig = i0;
         m = 0;
-        char **splits = malloc((nCols+1)*sizeof(char *));
+
 		//2.2 Read ~4GB data from files
         while(m==0 && ig<n_files){   	//m>0 defines breaks when reading maxCount
 			//printf("%i, %i, %i, %s\n", i0, ig, nL, file_ids[ig]);
@@ -137,7 +138,7 @@ void create_iGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
 			if(m==0) ig++;
 		}
         //2.3 Save/append tiles to disc, add cnts tp Cnts
-		free(splits);
+
 		igd_saveT(igd, oPath);
         i0 = ig;
         L0 = L1;
@@ -164,13 +165,15 @@ void create_iGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
     }
     fclose(fpi);
     free(nr);
-    free(avg);
+    free(avg);		
+
     //printf("igd_create 3\n");
 
 	//4. Sort tile data and save into single files per ctg
 	igd_save(igd, oPath, igdName);
 	globfree(&gResult);
-	printf("igd_create done!\n");
+	printf("igd_create done!\n");    
+	free(splits);
 }
 
 
@@ -204,6 +207,7 @@ void create_iGD_f(char **i_path, char **o_path, char **igd_name, int *tile_size)
     fseek(fp, 0, SEEK_SET);
     int ix=0;
     while(fgets(buf, 1024, fp)!=NULL){
+ 		buf[strcspn(buf, "\n")] = 0;
         file_ids[ix] = strdup(buf);
         ix++;
     }
@@ -240,14 +244,15 @@ void create_iGD_f(char **i_path, char **o_path, char **igd_name, int *tile_size)
     double *avg = calloc(n_files, sizeof(double));
     //printf("igd_create 1: %i\n", n_files);
     //2. Read files
-    int nCols=16;
+    int nCols=32;
     unsigned char buffer[256];
     int32_t i, j, k, ig, i0=0, i1=0, L0=0, L1=1, m, nL; //int64_t?
+	char **splits = malloc((nCols+1)*sizeof(char *));    
     while(i0<n_files){
         //2.1 Start from (i0, L0): read till (i1, L1)
         ig = i0;
         m = 0;
-        char **splits = malloc((nCols+1)*sizeof(char *));
+
 		//2.2 Read ~4GB data from files
         while(m==0 && ig<n_files){   	//m>0 defines breaks when reading maxCount
 			//printf("%i, %i, %i, %s\n", i0, ig, nL, file_ids[ig]);
@@ -277,7 +282,7 @@ void create_iGD_f(char **i_path, char **o_path, char **igd_name, int *tile_size)
 			if(m==0) ig++;
 		}
         //2.3 Save/append tiles to disc, add cnts tp Cnts
-		free(splits);
+
 		igd_saveT(igd, oPath);
         i0 = ig;
         L0 = L1;
@@ -309,5 +314,6 @@ void create_iGD_f(char **i_path, char **o_path, char **igd_name, int *tile_size)
 
 	//4. Sort tile data and save into single files per ctg
 	igd_save(igd, oPath, igdName);
-	printf("igd_create done!\n");
+	printf("igd_create done!\n");		
+	free(splits);
 }
