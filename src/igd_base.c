@@ -306,7 +306,7 @@ int32_t get_id(const char *chrm)
 }
 
 void igd_saveT(igd_t *igd, char *oPath)
-{	//Save/append tiles to disc, add cnts tp Cnts 
+{	//Temporarily Save/append tiles to disc, add cnts tp Cnts; reset tile->gList 
 	char idFile[128];
 	for (int i = 0; i < igd->nctg; i++){
 		ctg_t *ctg = &igd->ctg[i];
@@ -320,15 +320,15 @@ void igd_saveT(igd_t *igd, char *oPath)
 		            printf("Can't open file %s", idFile);
 		        fwrite(tile->gList, sizeof(gdata_t), tile->ncnts, fp);
 		        fclose(fp); 
+		        free(tile->gList);
 		    }			
 		    tile->nCnts += tile->ncnts;
 			tile->ncnts = 0;
-			free(tile->gList);
-		    tile->mcnts = 16;//MAX(16, tile->mcnts/16);
+		    tile->mcnts = 16;//initialize: MAX(16, tile->mcnts/16);
 		    tile->gList = malloc(tile->mcnts*sizeof(gdata_t));
 		    //tile->gList = realloc(tile->gList, tile->mcnts*sizeof(gdata_t));?		    
 		}
-	}	
+	}
 	igd->total = 0;	//batch total
 }
 
@@ -346,11 +346,11 @@ void igd0_saveT(igd0_t *igd, char *oPath)
 		        if(fp==NULL)
 		            printf("Can't open file %s", idFile);
 		        fwrite(tile->gList, sizeof(gdata0_t), tile->ncnts, fp);
-		        fclose(fp); 
+		        fclose(fp); 			
+		        free(tile->gList);
 		    }			
 		    tile->nCnts += tile->ncnts;
 			tile->ncnts = 0;
-			free(tile->gList);
 		    tile->mcnts = 16;//MAX(16, tile->mcnts/16);
 		    tile->gList = malloc(tile->mcnts*sizeof(gdata0_t));
 		    //tile->gList = realloc(tile->gList, tile->mcnts*sizeof(gdata_t));?		    
