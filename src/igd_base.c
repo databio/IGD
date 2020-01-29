@@ -280,7 +280,7 @@ iGD_t *get_igdinfo(char *igdFile)
 	iGD->cName = malloc(m*sizeof(char*));     
     for(i=0;i<m;i++){
 		iGD->cName[i] = malloc(40*sizeof(char));   	
-		fread(iGD->cName[i], 40, 1, fp);     
+		fread(iGD->cName[i], 40, 1, fp);    
     }   
     fclose(fp);
    
