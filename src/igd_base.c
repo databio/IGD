@@ -408,21 +408,13 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 				if(fp0 == NULL)
 					printf("Can't open file %s", iname);
 	    		gdsize = nrec*sizeof(gdata_t);		
-	    		printf("1 %i\t %i\t %i\t %s\t", i, j, nrec, p->name);
-			    gdata_t *gdata = malloc(gdsize);
-	    		printf("2 \t");			    
+			    gdata_t *gdata = malloc(gdsize);			    
 			    fread(gdata, gdsize, 1, fp0);
 			    fclose(fp0);
-			    printf("3 \t");
-			    if(i==116 && j==0){
-			    	for(k=0;k<nrec;k++)
-			    		printf("%i\t %i\t %i\n", gdata[k].start, gdata[k].end, gdata[k].idx);	
-			    }
 			    radix_sort_intv(gdata, gdata+nrec); 
 			    fwrite(gdata, gdsize, 1, fp);
 			    free(gdata);
-		        remove(iname); 
-		        printf("4 \n");             
+		        remove(iname);             
 		    }
 		}
     }
