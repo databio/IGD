@@ -30,10 +30,10 @@ void str_splits( char* str, int *nmax, char **splits)
 char *parse_bed(char *s, int32_t *st_, int32_t *en_)
 {
 	char *p, *q, *ctg = 0;
-	int32_t i, st = -1, en = -1;
+	int32_t c, i, st = -1, en = -1;
 	for (i = 0, p = q = s;; ++q) {
 		if (*q == '\t' || *q == '\0') {
-			int c = *q;
+			c = *q;
 			*q = 0;
 			if (i == 0) ctg = p;
 			else if (i == 1) st = atol(p);
@@ -43,7 +43,9 @@ char *parse_bed(char *s, int32_t *st_, int32_t *en_)
 		}
 	}
 	*st_ = st, *en_ = en;
-	return i >= 3? ctg : 0;
+	if(i>=3 && ctg[0]=='c' && ctg[1]=='h' && ctg[2]=='r' && strlen(ctg)<40 && en>0)return ctg;
+	else return 0;
+	//return i >= 3? ctg : 0;
 }
 
 int32_t bSearch(gdata_t *gdata, int32_t t0, int32_t tc, int32_t qe)
@@ -93,7 +95,7 @@ int32_t bSearch0(gdata0_t *gdata, int32_t t0, int32_t tc, int32_t qe)
 void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t v, int32_t idx)
 {	//layers: igd->ctg->gTile->gdata(list)
 	if(s >= e)return;
-	int absent;
+	int absent, i;
 	khint_t k;
 	strhash_t *h = (strhash_t*)hc;
 	k = kh_put(str, h, chrm, &absent);
@@ -112,31 +114,31 @@ void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t v, int3
 		p->gTile = malloc(p->mTiles*sizeof(tile_t));		
 		kh_key(h, k) = p->name;
 		//tile: initialize
-		for(int i=0;i<p->mTiles;i++){
+		for(i=0;i<p->mTiles;i++){
 			tile_t *tile = &p->gTile[i];
 			tile->ncnts = 0;	//each batch 
 			tile->nCnts = 0;	//total
-			tile->mcnts = 4;	
+			tile->mcnts = 2;	
 			tile->gList = malloc(tile->mcnts*sizeof(gdata_t));
 		}	
 	}
-	int32_t kk = kh_val(h, k);
+	int32_t tt, kk = kh_val(h, k);
 	ctg_t *p = &igd->ctg[kk];
 	if (n2+1>=p->mTiles){
-		int32_t tt = p->mTiles;
+		tt = p->mTiles;
 		p->mTiles = n2+1;
 	    p->gTile = realloc(p->gTile, p->mTiles*sizeof(tile_t));
 	    //initialize new tiles
-		for(int i=tt;i<p->mTiles;i++){
+		for(i=tt;i<p->mTiles;i++){
 			tile_t *tile = &p->gTile[i];
 			tile->ncnts = 0;	//each batch 
 			tile->nCnts = 0;	//total
-			tile->mcnts = 16;	
+			tile->mcnts = 2;	
 			tile->gList = malloc(tile->mcnts*sizeof(gdata_t));
 		}
 	}
 	//add data elements
-	for(int i=n1;i<=n2;i++){
+	for(i=n1;i<=n2;i++){
 		tile_t *tile = &p->gTile[i];
 		if(tile->ncnts == tile->mcnts)
 			EXPAND(tile->gList, tile->mcnts);		
@@ -158,7 +160,7 @@ void igd0_add(igd0_t *igd, const char *chrm, int32_t s, int32_t e, int32_t idx)
 	strhash_t *h = (strhash_t*)hc;
 	k = kh_put(str, h, chrm, &absent);
 	int32_t n1 = s/igd->nbp;
-	int32_t n2 = (e-1)/igd->nbp;	
+	int32_t i, n2 = (e-1)/igd->nbp;	
 	if (absent) {
 		//printf("%s %i %i %i\n", chrm, n1, n2, k);
 		//igd
@@ -172,7 +174,7 @@ void igd0_add(igd0_t *igd, const char *chrm, int32_t s, int32_t e, int32_t idx)
 		p->gTile = malloc(p->mTiles*sizeof(tile_t));		
 		kh_key(h, k) = p->name;
 		//tile: initialize
-		for(int i=0;i<p->mTiles;i++){
+		for(i=0;i<p->mTiles;i++){
 			tile0_t *tile = &p->gTile[i];
 			tile->ncnts = 0;	//each batch 
 			tile->nCnts = 0;	//total
@@ -180,14 +182,14 @@ void igd0_add(igd0_t *igd, const char *chrm, int32_t s, int32_t e, int32_t idx)
 			tile->gList = malloc(tile->mcnts*sizeof(gdata0_t));
 		}	
 	}
-	int32_t kk = kh_val(h, k);
+	int32_t tt, kk = kh_val(h, k);
 	ctg0_t *p = &igd->ctg[kk];
 	if (n2+1>=p->mTiles){
-		int32_t tt = p->mTiles;
+		tt = p->mTiles;
 		p->mTiles = n2+1;
 	    p->gTile = realloc(p->gTile, p->mTiles*sizeof(tile0_t));
 	    //initialize new tiles
-		for(int i=tt;i<p->mTiles;i++){
+		for(i=tt;i<p->mTiles;i++){
 			tile0_t *tile = &p->gTile[i];
 			tile->ncnts = 0;	//each batch 
 			tile->nCnts = 0;	//total
@@ -196,7 +198,7 @@ void igd0_add(igd0_t *igd, const char *chrm, int32_t s, int32_t e, int32_t idx)
 		}
 	}
 	//add data elements
-	for(int i=n1;i<=n2;i++){
+	for(i=n1;i<=n2;i++){
 		tile0_t *tile = &p->gTile[i];
 		if(tile->ncnts == tile->mcnts)
 			EXPAND(tile->gList, tile->mcnts);		
@@ -250,7 +252,7 @@ iGD_t *get_igdinfo(char *igdFile)
     fread(&iGD->nbp, sizeof(int32_t), 1, fp);
     fread(&iGD->gType, sizeof(int32_t), 1, fp);  
     fread(&iGD->nCtg, sizeof(int32_t), 1, fp);    
-   	int i, k;
+   	int i, j, k;
    	int32_t gdsize;
    	if(iGD->gType==0)
    		gdsize = sizeof(gdata0_t);
@@ -272,7 +274,7 @@ iGD_t *get_igdinfo(char *igdFile)
     	//--------------------------------------     	
     	iGD->tIdx[i] = calloc(k, sizeof(int64_t)); 
     	iGD->tIdx[i][0] = chr_loc;
-    	for(int j=1; j<k; j++)
+    	for(j=1; j<k; j++)
     		iGD->tIdx[i][j] = iGD->tIdx[i][j-1]+iGD->nCnt[i][j-1]*gdsize;
     	chr_loc = iGD->tIdx[i][k-1]+iGD->nCnt[i][k-1]*gdsize;
     }
@@ -307,10 +309,13 @@ int32_t get_id(const char *chrm)
 
 void igd_saveT(igd_t *igd, char *oPath)
 {	//Temporarily Save/append tiles to disc, add cnts tp Cnts; reset tile->gList 
-	char idFile[128];
-	for (int i = 0; i < igd->nctg; i++){
+	char idFile[1024];
+	int64_t nt=0;
+	int i, j;
+	for (i = 0; i < igd->nctg; i++){
 		ctg_t *ctg = &igd->ctg[i];
-		for(int j=0; j< ctg->mTiles; j++){
+		nt += ctg->mTiles;
+		for(j=0; j< ctg->mTiles; j++){
 			tile_t *tile = &ctg->gTile[j];
 			//--------------------------------------- 
 			if(tile->ncnts>0){                    
@@ -318,26 +323,29 @@ void igd_saveT(igd_t *igd, char *oPath)
 		        FILE *fp = fopen(idFile, "ab");
 		        if(fp==NULL)
 		            printf("Can't open file %s", idFile);
-		        fwrite(tile->gList, sizeof(gdata_t), tile->ncnts, fp);
-		        fclose(fp); 
-		        free(tile->gList);
-		    }			
-		    tile->nCnts += tile->ncnts;
-			tile->ncnts = 0;
-		    tile->mcnts = 16;//initialize: MAX(16, tile->mcnts/16);
-		    tile->gList = malloc(tile->mcnts*sizeof(gdata_t));
-		    //tile->gList = realloc(tile->gList, tile->mcnts*sizeof(gdata_t));?		    
+		        fwrite(tile->gList, sizeof(gdata_t), tile->ncnts, fp);		    
+		        tile->nCnts += tile->ncnts;		  
+		        fclose(fp);
+				if(tile->ncnts>8)tile->mcnts=8;
+				else tile->mcnts = 2;			
+				free(tile->gList);
+		    	tile->gList = malloc(tile->mcnts*sizeof(gdata_t));
+		    	tile->ncnts = 0;		         
+		    }	
+			//remove tiles?
 		}
 	}
+	printf("Total tiles: %i\t %lld\t %lld\n", igd->nctg, (long long)igd->total, (long long)nt);
 	igd->total = 0;	//batch total
 }
 
 void igd0_saveT(igd0_t *igd, char *oPath)
 {	//Save/append tiles to disc, add cnts tp Cnts 
 	char idFile[128];
-	for (int i = 0; i < igd->nctg; i++){
+	int i, j;
+	for (i = 0; i < igd->nctg; i++){
 		ctg_t *ctg = &igd->ctg[i];
-		for(int j=0; j< ctg->mTiles; j++){
+		for(j=0; j< ctg->mTiles; j++){
 			tile_t *tile = &ctg->gTile[j];
 			//--------------------------------------- 
 			if(tile->ncnts>0){                    
@@ -350,8 +358,10 @@ void igd0_saveT(igd0_t *igd, char *oPath)
 		        free(tile->gList);
 		    }			
 		    tile->nCnts += tile->ncnts;
+		    if(tile->ncnts>2)
+		    	tile->mcnts=4;
+		    else tile->mcnts = 2;
 			tile->ncnts = 0;
-		    tile->mcnts = 16;//MAX(16, tile->mcnts/16);
 		    tile->gList = malloc(tile->mcnts*sizeof(gdata0_t));
 		    //tile->gList = realloc(tile->gList, tile->mcnts*sizeof(gdata_t));?		    
 		}
@@ -361,9 +371,9 @@ void igd0_saveT(igd0_t *igd, char *oPath)
 
 void igd_save(igd_t *igd, char *oPath, char *igdName)
 {
-	char idFile[128], iname[128];
+	char idFile[1024], iname[1024];
 	//1. Save iGD data info: ctg string length 40	
-    int32_t i, j, n, m  = igd->nctg;
+    int32_t i, j, n, nrec, gdsize, m  = igd->nctg;
     sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");	
     FILE *fp = fopen(idFile, "wb"); 
     if(fp==NULL)
@@ -385,25 +395,34 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 		fwrite(igd->ctg[i].name, 40, 1, fp);		         
 	
 	//2. Sort and save tiles data
+	int k;
 	for(i=0;i<m;i++){
 		ctg_t *p = &igd->ctg[i];    
-		n = p->mTiles;         
+		n = p->mTiles;
 		for(j=0;j<n;j++){
 			tile_t *q = &p->gTile[j];	
-			int32_t nrec = q->nCnts, gdsize;		
+			nrec = q->nCnts;		
 		    if(nrec>0){				    
 		    	sprintf(iname, "%s%s%s_%i", oPath, "data0/", p->name, j);
 				FILE *fp0 = fopen(iname, "rb");
 				if(fp0 == NULL)
 					printf("Can't open file %s", iname);
-	    		gdsize = nrec*sizeof(gdata_t);
+	    		gdsize = nrec*sizeof(gdata_t);		
+	    		printf("1 %i\t %i\t %i\t %s\t", i, j, nrec, p->name);
 			    gdata_t *gdata = malloc(gdsize);
+	    		printf("2 \t");			    
 			    fread(gdata, gdsize, 1, fp0);
 			    fclose(fp0);
+			    printf("3 \t");
+			    if(i==116 && j==0){
+			    	for(k=0;k<nrec;k++)
+			    		printf("%i\t %i\t %i\n", gdata[k].start, gdata[k].end, gdata[k].idx);	
+			    }
 			    radix_sort_intv(gdata, gdata+nrec); 
 			    fwrite(gdata, gdsize, 1, fp);
 			    free(gdata);
-		        remove(iname);              
+		        remove(iname); 
+		        printf("4 \n");             
 		    }
 		}
     }
@@ -412,9 +431,9 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 
 void igd0_save(igd0_t *igd, char *oPath, char *igdName)
 {
-	char idFile[128], iname[128];
+	char idFile[1024], iname[1024];
 	//1. Save iGD data info: ctg string length 40	
-    int32_t i, j, n, m  = igd->nctg;
+    int32_t i, j, n, nrec, gdsize, m  = igd->nctg;
     sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");	
     FILE *fp = fopen(idFile, "wb"); 
     if(fp==NULL)
@@ -441,7 +460,7 @@ void igd0_save(igd0_t *igd, char *oPath, char *igdName)
 		n = p->mTiles;         
 		for(j=0;j<n;j++){
 			tile0_t *q = &p->gTile[j];	
-			int32_t nrec = q->nCnts, gdsize;		
+			nrec = q->nCnts;		
 		    if(nrec>0){				    
 		    	sprintf(iname, "%s%s%s_%i", oPath, "data0/", p->name, j);
 				FILE *fp0 = fopen(iname, "rb");
@@ -489,10 +508,11 @@ igd0_t *igd0_init(void)
 
 void igd_destroy(igd_t *igd)
 {
+	int i, j;
 	if (igd == 0) return;
-	for (int i = 0; i < igd->nctg; ++i){
+	for (i = 0; i < igd->nctg; ++i){
 		free(igd->ctg[i].name);
-		for(int j=0; j< igd->ctg[i].mTiles; j++)
+		for(j=0; j< igd->ctg[i].mTiles; j++)
 			free(igd->ctg[i].gTile[j].gList);			
 	}	
 	free(igd->ctg);
@@ -502,10 +522,11 @@ void igd_destroy(igd_t *igd)
 
 void igd0_destroy(igd0_t *igd)
 {
+	int i, j;
 	if (igd == 0) return;
-	for (int i = 0; i < igd->nctg; ++i){
+	for (i = 0; i < igd->nctg; ++i){
 		free(igd->ctg[i].name);
-		for(int j=0; j< igd->ctg[i].mTiles; j++)
+		for(j=0; j< igd->ctg[i].mTiles; j++)
 			free(igd->ctg[i].gTile[j].gList);			
 	}	
 	free(igd->ctg);

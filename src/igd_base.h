@@ -219,7 +219,7 @@ KSTREAM_INIT(gzFile, gzread, 0x10000)
 #define REALLOC(ptr, len) ((ptr) = (__typeof__(ptr))realloc((ptr), (len) * sizeof(*(ptr))))
 
 #define EXPAND(a, m) do { \
-		(m) = (m)? (m) + ((m)>>1) : 16; \
+		(m) = (m)? (m) + (2+(m)/8) : 16; \
 		REALLOC((a), (m)); \
 	}while (0) 
 
