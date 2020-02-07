@@ -136,7 +136,7 @@ int64_t getOverlaps0(char *qFile, int64_t *hits)
 
 int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 {   
-	int ichr = get_id(chrm);
+	int ichr = get_id(chrm);	
 	if(ichr<0)
 		return 0;
 	int i, j, n1 = qs/IGD->nbp, n2 = (qe-1)/IGD->nbp;	//define boundary!
@@ -144,7 +144,8 @@ int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 	int32_t nols = 0;
 	if(n1>mTile) 
 		return 0;
-	n2 = MIN(n2, mTile);	
+	n2 = MIN(n2, mTile);
+
 	tmpi = IGD->nCnt[ichr][n1];
 	tmpi1 = tmpi-1;
 	if(tmpi>0){
