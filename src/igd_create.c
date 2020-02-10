@@ -176,7 +176,7 @@ void create_igd_f(char *iPath, char *oPath, char *igdName)
 		//2.2 Read ~4GB data from files
         while(m==0 && ig<n_files){   	//m>0 defines breaks when reading maxCount       
 			printf("%i, %i, %i, %s\n", i0, ig, nL, file_ids[ig]);
-			fp = gzopen(file_ids[ig], "r");                           
+			printfp = gzopen(file_ids[ig], "r");                           
 		    nL = 0; 
 		    if(ig==i0 && L0>0){  		 //pass L0 lines of a big file
 		        while(nL<L0 && gzgets(fp, buffer, 1024)!=NULL)
@@ -184,7 +184,7 @@ void create_igd_f(char *iPath, char *oPath, char *igdName)
 		    }      			
 			while (m==0 && gzgets(fp, buffer, 1024)!=NULL) {
 				ctg = parse_bed(buffer, &st, &en);				
-				if(ctg && en<321000000){				
+				if(ctg && st>=0 && en<321000000){				
 					igd_add(igd, ctg, st, en, va, ig);				
 					nr[ig]++;
 					avg[ig]+=en-st;
