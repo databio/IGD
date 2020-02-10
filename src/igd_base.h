@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <err.h>
+#include <errno.h>
 #include <time.h>
 #include <math.h>
 #include <float.h>

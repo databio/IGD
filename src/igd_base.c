@@ -11,6 +11,13 @@ KRADIX_SORT_INIT(intv0, gdata0_t, gdata0_t_key, 4)
 KHASH_MAP_INIT_STR(str, int32_t)
 typedef khash_t(str) strhash_t;
 
+int compare_rstart(const void *a, const void *b)
+{
+    gdata_t *pa = (gdata_t *) a;
+    gdata_t *pb = (gdata_t *) b;
+    return pa->start - pb->start;
+}
+
 void str_splits( char* str, int *nmax, char **splits)
 {   //tsv 
     splits[*nmax] = NULL;
@@ -102,8 +109,6 @@ void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t v, int3
 	int32_t n1 = s/igd->nbp;
 	int32_t n2 = (e-1)/igd->nbp;	
 	if (absent) {
-		//printf("%s %i %i %i\n", chrm, n1, n2, k);
-		//igd
 		if (igd->nctg == igd->mctg)
 			EXPAND(igd->ctg, igd->mctg);							
 		kh_val(h, k) = igd->nctg;
@@ -312,6 +317,8 @@ void igd_saveT(igd_t *igd, char *oPath)
 	char idFile[1024];
 	int64_t nt=0;
 	int i, j;
+	FILE *fp;
+	errno = 0;
 	for (i = 0; i < igd->nctg; i++){
 		ctg_t *ctg = &igd->ctg[i];
 		nt += ctg->mTiles;
@@ -320,17 +327,16 @@ void igd_saveT(igd_t *igd, char *oPath)
 			//--------------------------------------- 
 			if(tile->ncnts>0){                    
 		        sprintf(idFile, "%s%s%s_%i", oPath, "data0/", ctg->name, j);
-		        FILE *fp = fopen(idFile, "ab");
-		        if(fp==NULL)
-		            printf("Can't open file %s", idFile);
-		        fwrite(tile->gList, sizeof(gdata_t), tile->ncnts, fp);		    
-		        tile->nCnts += tile->ncnts;		  
-		        fclose(fp);
+		        while(!(fp=fopen(idFile, "ab")))
+		            printf("Can't open file %s, %s\n", idFile, strerror(errno));
+			    fwrite(tile->gList, sizeof(gdata_t), tile->ncnts, fp);		    
+			    tile->nCnts += tile->ncnts;		  
+			    fclose(fp);
 				if(tile->ncnts>8)tile->mcnts=8;
 				else tile->mcnts = 2;			
 				free(tile->gList);
-		    	tile->gList = malloc(tile->mcnts*sizeof(gdata_t));
-		    	tile->ncnts = 0;		         
+				tile->gList = malloc(tile->mcnts*sizeof(gdata_t));
+				tile->ncnts = 0;		         
 		    }	
 			//remove tiles?
 		}
@@ -373,11 +379,14 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 {
 	char idFile[1024], iname[1024];
 	//1. Save iGD data info: ctg string length 40	
-    int32_t i, j, n, nrec, gdsize, m  = igd->nctg;
+    int32_t i, j, n, nrec, m = igd->nctg;
+    int64_t gdsize;
     sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");	
     FILE *fp = fopen(idFile, "wb"); 
-    if(fp==NULL)
+    if(fp==NULL){
         printf("Can't open file %s", idFile); 
+        return;
+    }
 	fwrite(&igd->nbp, sizeof(int32_t), 1, fp); 		//4 bytes
 	fwrite(&igd->gType, sizeof(int32_t), 1, fp); 	//4
 	fwrite(&m, sizeof(int32_t), 1, fp); 			//4	
@@ -398,24 +407,36 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 	int k;
 	for(i=0;i<m;i++){
 		ctg_t *p = &igd->ctg[i];    
-		n = p->mTiles;
+		n = p->mTiles;		    	
+		//printf("--%i\t%i\t %s\t", i, n, p->name);	
 		for(j=0;j<n;j++){
 			tile_t *q = &p->gTile[j];	
 			nrec = q->nCnts;		
-		    if(nrec>0){				    
+		    if(nrec>0){		
 		    	sprintf(iname, "%s%s%s_%i", oPath, "data0/", p->name, j);
 				FILE *fp0 = fopen(iname, "rb");
-				if(fp0 == NULL)
+				if(fp0 == NULL){
 					printf("Can't open file %s", iname);
-	    		gdsize = nrec*sizeof(gdata_t);		
-			    gdata_t *gdata = malloc(gdsize);			    
-			    fread(gdata, gdsize, 1, fp0);
-			    fclose(fp0);
-			    radix_sort_intv(gdata, gdata+nrec); 
-			    fwrite(gdata, gdsize, 1, fp);
-			    free(gdata);
-		        remove(iname);             
+					return;
+				}
+				else{
+					gdsize = nrec*sizeof(gdata_t);	
+					gdata_t *gdata = malloc(gdsize);	
+					if(gdata==NULL){
+						printf("Can't alloc mem %lld\n", gdsize);
+						return;
+					}		    
+					fread(gdata, gdsize, 1, fp0);
+					fclose(fp0);
+					qsort(gdata, nrec, sizeof(gdata_t), compare_rstart);		    
+					//radix_sort_intv(gdata, gdata+nrec); 
+					fwrite(gdata, gdsize, 1, fp);		    
+					free(gdata);
+					remove(iname); 
+			    }       
 		    }
+			free(q->gList);
+			q->nCnts = 0;		    
 		}
     }
     fclose(fp); 	
@@ -425,7 +446,8 @@ void igd0_save(igd0_t *igd, char *oPath, char *igdName)
 {
 	char idFile[1024], iname[1024];
 	//1. Save iGD data info: ctg string length 40	
-    int32_t i, j, n, nrec, gdsize, m  = igd->nctg;
+    int32_t i, j, n, nrec,  m  = igd->nctg;
+    int64_t gdsize;
     sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");	
     FILE *fp = fopen(idFile, "wb"); 
     if(fp==NULL)
@@ -456,16 +478,19 @@ void igd0_save(igd0_t *igd, char *oPath, char *igdName)
 		    if(nrec>0){				    
 		    	sprintf(iname, "%s%s%s_%i", oPath, "data0/", p->name, j);
 				FILE *fp0 = fopen(iname, "rb");
-				if(fp0 == NULL)
-					printf("Can't open file %s", iname);
-	    		gdsize = nrec*sizeof(gdata0_t);
-			    gdata0_t *gdata = malloc(gdsize);
-			    fread(gdata, gdsize, 1, fp0);
-			    fclose(fp0);
-			    radix_sort_intv0(gdata, gdata+nrec); 
-			    fwrite(gdata, gdsize, 1, fp);
-			    free(gdata);
-		        remove(iname);              
+				if(fp0 == NULL){				
+					printf("Can't open file %s", iname);	
+				}
+				else{
+					gdsize = nrec*sizeof(gdata0_t);
+					gdata0_t *gdata = malloc(gdsize);
+					fread(gdata, gdsize, 1, fp0);
+					fclose(fp0);
+					radix_sort_intv0(gdata, gdata+nrec); 
+					fwrite(gdata, gdsize, 1, fp);
+					free(gdata);
+				    remove(iname); 
+		        }             
 		    }
 		}
     }
@@ -504,8 +529,10 @@ void igd_destroy(igd_t *igd)
 	if (igd == 0) return;
 	for (i = 0; i < igd->nctg; ++i){
 		free(igd->ctg[i].name);
-		for(j=0; j< igd->ctg[i].mTiles; j++)
-			free(igd->ctg[i].gTile[j].gList);			
+		for(j=0; j< igd->ctg[i].mTiles; j++){
+			if(igd->ctg[i].gTile[j].nCnts>0)
+				free(igd->ctg[i].gTile[j].gList);
+		}			
 	}	
 	free(igd->ctg);
 	kh_destroy(str, (strhash_t*)hc);
@@ -518,8 +545,10 @@ void igd0_destroy(igd0_t *igd)
 	if (igd == 0) return;
 	for (i = 0; i < igd->nctg; ++i){
 		free(igd->ctg[i].name);
-		for(j=0; j< igd->ctg[i].mTiles; j++)
-			free(igd->ctg[i].gTile[j].gList);			
+		for(j=0; j< igd->ctg[i].mTiles; j++){
+			if(igd->ctg[i].gTile[j].nCnts>0)
+				free(igd->ctg[i].gTile[j].gList);	
+		}			
 	}	
 	free(igd->ctg);
 	kh_destroy(str, (strhash_t*)hc);
