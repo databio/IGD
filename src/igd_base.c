@@ -350,7 +350,7 @@ void igd0_saveT(igd0_t *igd, char *oPath)
 	char idFile[128];
 	int i, j;
 	for (i = 0; i < igd->nctg; i++){
-		ctg_t *ctg = &igd->ctg[i];
+		ctg_t *ctg = (ctg_t*)&igd->ctg[i];
 		for(j=0; j< ctg->mTiles; j++){
 			tile_t *tile = &ctg->gTile[j];
 			//--------------------------------------- 
@@ -423,7 +423,7 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 					gdsize = nrec*sizeof(gdata_t);	
 					gdata_t *gdata = malloc(gdsize);	
 					if(gdata==NULL){
-						printf("Can't alloc mem %lld\n", gdsize);
+						printf("Can't alloc mem %lld\n", (long long)gdsize);
 						return;
 					}		    
 					fread(gdata, gdsize, 1, fp0);
@@ -459,7 +459,7 @@ void igd0_save(igd0_t *igd, char *oPath, char *igdName)
 	for(i=0;i<m;i++)								//m*4
 		fwrite(&igd->ctg[i].mTiles, sizeof(int32_t), 1, fp);
 	for(i=0;i<m;i++){								//sum(mTiles)
-		ctg_t *p = &igd->ctg[i];
+		ctg_t *p = (ctg_t*)&igd->ctg[i];
 		n = p->mTiles;
 		for(j=0;j<n;j++)
 			fwrite(&p->gTile[j].nCnts, sizeof(int32_t), 1, fp);
