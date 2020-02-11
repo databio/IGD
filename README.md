@@ -27,8 +27,9 @@ the executable `igd` is in the subfolder `bin`. And then copy it to /usr/local/b
 
 ## How to run iGD
 
-### 1. Create iGD database from a genome data source
+### 1. Create iGD database
  
+#### 1.1 Create iGD database from a genome data source folder
 ```
 igd create "/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName" [option]
 
@@ -44,6 +45,24 @@ option:
 
 -b: bin-size (power of 2; default 14, which is 16384 bp)
 ```
+#### 1.2 Create iGD database from a list of source files
+ 
+```
+igd create "/path/to/source-list file" "/path/to/igd_folder/" "databaseName" -f [option]
+
+where:
+
+- "/path/to/source-list file" is the path to the file that lists the source files
+
+- "path/to/igd_folder/" is the path to the output igd folder;
+
+- "databaseName" is the name you give to the database, for eaxmple, "roadmap"
+
+option:
+
+-b: bin-size (power of 2; default 14, which is 16384 bp)
+```
+
 
 ### 2. Search iGD for overlaps
 ```
@@ -90,7 +109,7 @@ options:
 #### 1.2  from a file that contains the list of genome data source files 
 ```
 > library(IGDr)
-> createIGD("/path/to/data_source_folder/*" "/path/to/igd_folder/" "databaseName" [option]
+> createIGD_f("/path/to/source-list file" "/path/to/igd_folder/" "databaseName" [option]
 
 where:
 
