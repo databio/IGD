@@ -4,6 +4,8 @@
 //database intervals sorted by _start: 8/12/2019
 //-----------------------------------------------------------------------------------
 #include "igd_create.h"
+KHASH_MAP_INIT_STR(str, int32_t)
+typedef khash_t(str) strhash_t;
 
 int create_help(int exit_code)
 {
@@ -233,122 +235,10 @@ void create_igd_f(char *iPath, char *oPath, char *igdName)
     
 	//4. Sort tile data and save into single files per ctg
 	igd_save(igd, oPath, igdName);	
-	printf("igd_create 4\n");	
+	printf("igd_create 4\n");
+	free(file_ids);	
 	//free(splits); 
 }
-/*
-//create igd from a file list
-void create_igd_f(char *iPath, char *oPath, char *igdName)
-{  	
-	//0. Initialize igd
-	igd_t *igd = igd_init();
-	printf("igd_create 0\n");
-	
-    //1. Get the files  
-    FILE *fp = fopen(iPath, "r");
-    if(fp==NULL)
-        printf("Can't open file %s", iPath);
-        
-	char buf[1024];
-    int n_files=0;  
-    while(fgets(buf, 1024, fp)!=NULL)
-		n_files++;    
-    
-    char** file_ids = malloc(n_files*sizeof(char *));
-    fseek(fp, 0, SEEK_SET);
-    int ix=0;    
-    while(fgets(buf, 1024, fp)!=NULL){	
-    	buf[strcspn(buf, "\n")] = 0;      
-        file_ids[ix] = strdup(buf); 
-        //printf("%i\t%s\n", ix, file_ids[ix]);
-        ix++;
-    }        
-    fclose(fp);
-    
-    if(n_files<1){   
-        printf("Too few files (add to path /*): %i\n", n_files);  
-        return;
-	}  
-    int32_t *nr = calloc(n_files, sizeof(int32_t));
-    double *avg = calloc(n_files, sizeof(double));
-    printf("igd_create 1: %i\n", n_files); 
-           
-    //2. Read files
-    int nCols=32;
-    unsigned char buffer[256];     
-    int32_t i, j, k, ig, i0=0, i1=0, L0=0, L1=1, m, nL; //int64_t?        		
-    char **splits = malloc((nCols+1)*sizeof(char *)); 
-    while(i0<n_files){
-        //2.1 Start from (i0, L0): read till (i1, L1)
-        ig = i0; 
-        m = 0;    
-		//2.2 Read ~4GB data from files
-        while(m==0 && ig<n_files){   	//m>0 defines breaks when reading maxCount      
-			printf("%i, %i, %i, %s\n", i0, ig, nL, file_ids[ig]);
-			gzFile fp;
-			if ((fp = gzopen(file_ids[ig], "r")) == 0){
-				printf("Can't open %i\t %s\n", ig, file_ids[ig]);
-				return; 
-			}                            
-		    nL = 0; 
-		    if(ig==i0 && L0>0){  		 //pass L0 lines of a big file
-		        while(nL<L0 && gzgets(fp, buffer, 256)!=NULL)
-		            nL++;              
-		    }      			
-			while (m==0 && gzgets(fp, buffer, 256)!=NULL) {
-				str_splits(buffer, &nCols, splits); 
-				int32_t  st = atol(splits[1]), en = atol(splits[2]), va = 0;
-				if(nCols>4) va = atol(splits[4]);
-				igd_add(igd, splits[0], st, en, va, ig);				
-				nr[ig]++;
-				avg[ig]+=en-st;
-				nL++;
-                if(igd->total>maxCount){
-                    m = 1;
-                    i1 = ig;
-                    L1 = nL;    		//number of total lines or next line
-                }
-			}
-			gzclose(fp);
-			if(m==0) ig++;
-		}
-        //2.3 Save/append tiles to disc, add cnts tp Cnts 
-		//printf("---------------%i\t %i\n", i0, ig);        				         
-		igd_saveT(igd, oPath);
-        i0 = ig; 
-        L0 = L1;
-        L1 = 0;        
-	} 
-   
-	printf("igd_create 2\n");
-	
-	//3. save _index.tsv: 4 columns--index, filename, nr, avg
-    //Also has a header line: 
-    char idFile[128];
-    char *tchr;   
-    sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
-    FILE *fpi = fopen(idFile, "w");
-    if(fpi==NULL)
-        printf("Can't open file %s", idFile);     
-    fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
-    for(i=0; i<n_files; i++){
-        tchr = strrchr(file_ids[i], '/');
-        if(tchr!=NULL)
-            tchr += 1;
-        else
-            tchr = file_ids[i];
-        fprintf(fpi, "%i\t%s\t%i\t%f\n", i, tchr, nr[i], avg[i]/nr[i]);     
-    }
-    fclose(fpi);   
-    free(nr);
-    free(avg);    
-    printf("igd_create 3\n");
-    
-	//4. Sort tile data and save into single files per ctg
-	igd_save(igd, oPath, igdName);	
-	printf("igd_create 4\n");	
-	free(splits); 
-}*/
 
 //create ucsc igd from gz
 void create_igd0(char *iPath, char *oPath, char *igdName)
@@ -447,79 +337,46 @@ void create_igd0(char *iPath, char *oPath, char *igdName)
 }
 
 //create igd from a single .bed.gz Jaspar file with dataset index at 4th column
-void create_igd_Jaspar(char *iPath, char *oPath, char *igdName)
+void create_igd_bed4(char *iPath, char *oPath, char *igdName)
 {   //Process line by line: ipath is the file name
     //1. Get file_ids, n_files  
-    char** file_ids;
-    uint32_t n_files; 
     int nCols=32;
-    unsigned char buffer[1024]; 
-    uint64_t nL;       
+    unsigned char buffer[1024];        
     char **splits = malloc((nCols+1)*sizeof(char *));     
     //-------------------------------------------------------------------------
-    printf("igd_create 1\n");
-    int i, maxF = 10000;
-    file_ids = malloc(maxF*sizeof(char *));
-    gzFile zfile;
-    zfile = gzopen (iPath, "r");    
-    if (!zfile) {
-        fprintf (stderr, "gzopen of '%s' failed: %s.\n", iPath,
-                 strerror (errno));
-        exit (EXIT_FAILURE);
-    } 
-    n_files = 0;
-    nL = 0;
-    while(nL<200000000 && gzgets(zfile, buffer, 256)!=NULL){                   
-        str_splits(buffer, &nCols, splits);      
-        i=0;
-        while(i<n_files && strcmp(splits[3], file_ids[i])!=0)
-            i++;
-        if(i==n_files){
-            file_ids[i] = malloc(strlen(splits[3])+1);
-            strcpy(file_ids[i], splits[3]);//splits tmp pointers  
-            printf("%s %u %lld\n", file_ids[i], n_files, (long long)nL);
-            n_files++;            
-        }       
-        nL++;
-        if(nL%10000000==0)
-            printf("\t%u %lld\n", n_files, (long long)nL);                
-    }
-    gzclose(zfile);    
-    printf("%u %lld\n", n_files, (long long)nL);        
-    
-    //-----convert tf name to idx
-	//void *hf = kh_init(str); 
-	//int absent;
-	//for(i=0;i<n_files;i++){ 
-	//	khint_t k;
-	//	strhash_t *h = (strhash_t*)hf;
-	//	k = kh_put(str, h, file_ids[i], &absent);							
-	//	kh_val(h, k) = i;			
-	//	kh_key(h, k) = files_ids[i];
-	//}     
-    	
-	//------------------------------------------------------------------------		
+    printf("igd_create 1\n");    
     igd_t *igd = igd_init(); 
-    igd->gType = 1;  
-    int32_t *nr = calloc(n_files, sizeof(int32_t));
-    double *avg = calloc(n_files, sizeof(double));
-         
+    igd->gType = 1;
+    int maxF = 360000;
+    int32_t *nr = calloc(maxF, sizeof(int32_t));
+    double *avg = calloc(maxF, sizeof(double));
+    char** file_ids = malloc(maxF*sizeof(char *));
+    //--------------------------------------------
+    void *fHash = kh_init(str);
+    khint_t k;
+    //--------------------------------------------         
     //2. Read file  
-    nL = 0;
-    int j=0;                          
-    zfile = gzopen(iPath, "r");              
-    while(gzgets(zfile, buffer, 256)!=NULL){ 
+    int64_t nL = 0;
+    int32_t st, en, n_files = 0; 
+    int i, j=0, idx, absent;                          
+    gzFile zfile = gzopen(iPath, "r");              
+    while(gzgets(zfile, buffer, 1024)!=NULL){ 
         str_splits(buffer, &nCols, splits);	      
-		//strhash_t *h = (strhash_t*)hf;
-		//khint_t k = kh_get(str, h, splits[3]);
-		//k = kh_val(h, k);        
-        i=0;
-        while(i<n_files && strcmp(splits[3], file_ids[i])!=0)
-            i++;   
-        int32_t st = atol(splits[1]), en = atol(splits[2]); 	
-		igd_add(igd, splits[0], st, en, atol(splits[4]), i);			
-		nr[i]++;
-		avg[i]+=en-st;
+        //Set up hash table/find file id ---------
+        strhash_t *fH = (strhash_t*)fHash;
+        k = kh_put(str, fH, splits[3], &absent);
+        if(absent){
+        	kh_key(fH, k) = strdup(splits[3]);
+        	kh_val(fH, k) = n_files;
+        	file_ids[n_files] = strdup(splits[3]);
+        	n_files++;
+        }
+        idx = kh_val(fH, k);
+        //----------------------------------------
+        st = atol(splits[1]), en = atol(splits[2]); 	
+		igd_add(igd, splits[0], st, en, atol(splits[4]), idx);			
+		nr[idx]++;
+		avg[idx]+=en-st;
 		nL++;	
         //Save/append tiles to disc, add cnts tp Cnts 
         if(igd->total>=maxCount){ 
@@ -529,7 +386,8 @@ void create_igd_Jaspar(char *iPath, char *oPath, char *igdName)
 		    nL = 0;        
         }
 	}	
-	gzclose(zfile); 
+	gzclose(zfile);     
+	kh_destroy(str, fHash);
 	if(nL>0)
 		igd_saveT(igd, oPath);  
 	printf("igd_create 2\n");
@@ -543,7 +401,7 @@ void create_igd_Jaspar(char *iPath, char *oPath, char *igdName)
     if(fpi==NULL)
         printf("Can't open file %s", idFile);     
     fprintf(fpi, "Index\tFile\tNumber of regions\tAvg size\n");    
-    for(i=0; i<n_files; i++){
+    for(i=0; i<n_files; i++){  	
         tchr = strrchr(file_ids[i], '/');
         if(tchr!=NULL)
             tchr += 1;
@@ -551,15 +409,16 @@ void create_igd_Jaspar(char *iPath, char *oPath, char *igdName)
             tchr = file_ids[i];
         fprintf(fpi, "%i\t%s\t%i\t%f\n", i, tchr, nr[i], avg[i]/nr[i]);     
     }
+
     fclose(fpi);   
     free(nr);
     free(avg); 
-    free(splits);     
-    //kh_destroy(str, (strhash_t*)hf);  
     printf("igd_create 3\n");
 	//4. Sort tile data and save into a single file
 	igd_save(igd, oPath, igdName);	
-	printf("igd_create 4\n");     
+	printf("igd_create 4\n");   
+	free(file_ids); 
+	free(splits);       
 }
 
 //-------------------------------------------------------------------------------------
@@ -620,7 +479,7 @@ int igd_create(int argc, char **argv)
         if(dtype==0)
         	create_igd0(ipath, opath, dbname);
         else if(dtype==2)
-         	create_igd_Jaspar(ipath, opath, dbname);
+         	create_igd_bed4(ipath, opath, dbname);
         else if(ftype==1)
         	create_igd_f(ipath, opath, dbname);
         else //default

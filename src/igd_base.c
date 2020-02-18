@@ -341,7 +341,7 @@ void igd_saveT(igd_t *igd, char *oPath)
 			//remove tiles?
 		}
 	}
-	printf("Total tiles: %i\t %lld\t %lld\n", igd->nctg, (long long)igd->total, (long long)nt);
+	printf("....nCtgs, nRegions, nTiles %i\t %lld\t %lld\n", igd->nctg, (long long)igd->total, (long long)nt);
 	igd->total = 0;	//batch total
 }
 
