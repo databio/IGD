@@ -20,6 +20,7 @@ int search_help(int exit_code)
 "             -r <a region: chrN start end>\n"
 "             -v <signal value 0-1000>\n"
 "             -o <output file Name>\n"
+"             -m heatmap of igd self\n"
 "             -c display all intersects\n",
             PROGRAM_NAME, VERSION, PROGRAM_NAME);
     return exit_code;
@@ -341,6 +342,123 @@ int64_t getOverlaps_v(char *qFile, int64_t *hits, int32_t v)
 	return ols;
 }
 
+//using AIList: no decomp
+int64_t getMap(uint32_t **hitmap)
+{	//load igd tile one by one
+	int i, j, jj, ichr, n1, m=0;	
+	int32_t tE, tS, tmpi, bd, qe, qs, tmax;
+	int64_t nols = 0;
+	int32_t *maxE;	
+	for(ichr=0; ichr<IGD->nCtg; ichr++){	
+		for(n1=0; n1<IGD->nTile[ichr]; n1++){
+			bd = IGD->nbp*n1;		
+			tmpi = IGD->nCnt[ichr][n1];
+			m++;
+			if(m%1000==0)
+				printf("%i\n", m);			
+			if(tmpi>0){								
+				fseek(fP, IGD->tIdx[ichr][n1], SEEK_SET);			
+				free(gData);					
+				gData = malloc(tmpi*sizeof(gdata_t));
+				fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
+				//construct ailist--------------------------------
+				maxE = malloc(tmpi*sizeof(int32_t));
+				tmax = gData[0].end;
+				for(i=0;i<tmpi;i++){
+					if(gData[i].end>tmax)tmax = gData[i].end;
+					maxE[i]=tmax;
+				}
+				for(j=0;j<tmpi;j++){
+					qe = gData[j].end;
+					qs = gData[j].start;
+					if(qe>gData[0].start){					
+						jj = gData[j].idx;						
+						tS = 0;
+						if(qs<bd)
+							while(tS<tmpi && gData[tS].start<bd)tS++;		//exclude 
+						//---------------------------------------------------
+						if(tmpi<16){
+							i = tmpi-1;
+							while(gData[i].start>=qe)i--;
+						}
+						else
+							i = bSearch(gData, tS, tmpi-1, qe);	//idx
+						while(i>=tS && maxE[i]>qs){
+							if(gData[i].end>qs){
+								nols++;
+								hitmap[jj][gData[i].idx]++;
+							}
+							i--;
+						} 
+					}
+				}
+				free(maxE);	
+			}
+		}
+	}
+    return nols;
+}
+
+//using AIList: no decomp
+int64_t getMap_v(uint32_t **hitmap, int32_t v)
+{	//load igd tile one by one
+	int i, j, jj, ichr, n1, m=0;	
+	int32_t tE, tS, tmpi, bd, qe, qs, tmax;
+	int64_t nols = 0;
+	int32_t *maxE;
+	for(ichr=0; ichr<IGD->nCtg; ichr++){	
+		for(n1=0; n1<IGD->nTile[ichr]; n1++){
+			bd = IGD->nbp*n1;		
+			tmpi = IGD->nCnt[ichr][n1];
+			m++;
+			if(m%1000==0)
+				printf("%i\n", m);			
+			if(tmpi>0){								
+				fseek(fP, IGD->tIdx[ichr][n1], SEEK_SET);			
+				free(gData);					
+				gData = malloc(tmpi*sizeof(gdata_t));
+				fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
+				//construct ailist---------------------------
+				maxE = malloc(tmpi*sizeof(int32_t));
+				tmax = gData[0].end;
+				for(i=0;i<tmpi;i++){
+					if(gData[i].end>tmax)tmax = gData[i].end;
+					maxE[i]=tmax;
+				}
+				//-------------------------------------------
+				for(j=0;j<tmpi;j++){
+					if(gData[j].value>v){
+						qe = gData[j].end;
+						qs = gData[j].start;
+						if(qe>gData[0].start){					
+							jj = gData[j].idx;						
+							tS = 0;
+							if(qs<bd)
+								while(tS<tmpi && gData[tS].start<bd)tS++;		//exclude 
+							//---------------------------------------------------
+							if(tmpi<16){
+								i = tmpi-1;
+								while(gData[i].start>=qe)i--;
+							}
+							else
+								i = bSearch(gData, tS, tmpi-1, qe);	//idx
+							while(i>=tS && maxE[i]>qs){
+								if(gData[i].end>qs && gData[i].value>v){
+									nols++;
+									hitmap[jj][gData[i].idx]++;
+								}
+								i--;
+							} 
+						}
+					}
+				}
+				free(maxE);	
+			}
+		}
+	}
+    return nols;
+}
+
 //-------------------------------------------------------------------------------------
 int igd_search(int argc, char **argv)
 {   //igd[0] search[1] home/john/iGD/rme_igd/roadmap.igd[2] -q[3] query100.bed[4]
@@ -406,6 +524,9 @@ int igd_search(int argc, char **argv)
             if(i+1<argc)
                 v = atoi(argv[i+1]);
         }
+        else if(strcmp(argv[i], "-m")==0){
+            mode = 0;
+        }         
         else if(strcmp(argv[i], "-o")==0){
             if(i+1<argc)
                 strcpy(out, argv[i+1]);
@@ -417,7 +538,34 @@ int igd_search(int argc, char **argv)
      
     //----------------------------------------------------------
 	fP = fopen(igdName, "rb");				//share
-	if(mode==1){//for a query dataset (file)  
+	if(mode==0){
+    	uint32_t **hitmap = malloc(nfiles*sizeof(uint32_t*));
+    	for(i=0;i<nfiles;i++)
+    		hitmap[i] = calloc(nfiles, sizeof(uint32_t));
+    	if(v>0)
+			getMap_v(hitmap, v);
+		else
+			getMap(hitmap);    		   		
+    	FILE *fp;
+		if(strlen(out)<2)strcpy(out,"Hitmap");
+		fp = fopen(out, "w");
+	    if(fp==NULL)
+	        printf("Can't open file %s\n", out);
+	    else{
+	        fprintf(fp, "%u\t%u\t%u\n", nfiles, nfiles, v);
+	        for(i=0;i<nfiles;i++){
+	            for(j=0;j<nfiles;j++)
+	                fprintf(fp, "%u\t", hitmap[i][j]); 
+	            fprintf(fp, "\n");
+	        } 
+	        fclose(fp);
+	    }     
+	
+    	for(i=0;i<nfiles;i++)
+    		free(hitmap[i]);
+    	free(hitmap);  	
+	}
+	else if(mode==1){//for a query dataset (file)  
 		if(IGD->gType==0)
 			getOverlaps0(qfName, hits);
 		else{
