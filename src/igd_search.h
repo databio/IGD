@@ -23,6 +23,10 @@ int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int64_t *h
 int64_t getOverlaps(char *qFile, int64_t *hits);
 int64_t getOverlaps_v(char *qFile, int64_t *hits, int32_t v);	
 
+//mapping
+int64_t getMap(uint32_t **hitmap);
+int64_t getMap_v(uint32_t **hitmap, int32_t v);
+
 //search main
 int igd_search(int argc, char **argv);
 
