@@ -34,35 +34,42 @@
 #define VERSION MAJOR_VERSION "." MINOR_VERSION "." REVISION_VERSION
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
-#define maxCount 268435456	//16* = 4GB memory
-#define MAXC 10							//max number of components
+#define maxCount 268435456		//16* = 4GB memory
+#define MAXC 10					//max number of components
 //---------------------------------------------------------------------------------
-typedef struct{							//default 
-    int32_t idx;        				//genomic object--data set index
-    int32_t start;      				//region start
-    int32_t end;        				//region end
+typedef struct{					//for each query: query set search
+	int32_t idx_t;				//tile index
+	int32_t idx_g;				//gdata index: 64bit?
+	int32_t idx_f; 				//from gdata
+	float sm;					//similarity 
+} overlap_t;
+
+typedef struct{					//default 
+    int32_t idx;        		//genomic object--data set index
+    int32_t start;      		//region start
+    int32_t end;    			//region end
     int32_t value;
 } gdata_t;
 
-typedef struct{							//default 
-    int32_t idx;        				//genomic object--data set index
-    int32_t start;      				//region start
-    int32_t end;        				//region end
+typedef struct{					//default 
+    int32_t idx;        		//genomic object--data set index
+    int32_t start;      		//region start
+    int32_t end;        		//region end
 } gdata0_t;
 
 typedef struct{
-    char* fileName;						//dataset file
-    int32_t nr;							//number regions/dataset
-    double md;    						//average width of the regions
+    char* fileName;				//dataset file
+    int32_t nr;					//number regions/dataset
+    double md;    				//average width of the regions
 } info_t;
 
 typedef struct{
-	int32_t ncnts, nCnts, mcnts;		//batch counts, total, max
+	int32_t ncnts, nCnts, mcnts;//batch counts, total, max
 	gdata_t *gList;
 } tile_t;
 
 typedef struct{
-	int32_t ncnts, nCnts, mcnts;		//batch counts, total, max
+	int32_t ncnts, nCnts, mcnts;//batch counts, total, max
 	gdata0_t *gList;
 } tile0_t;
 
