@@ -1,9 +1,9 @@
-//=================================================================================
+//===================================================================================
 //Common structs, parameters, functions
 //by Jianglin Feng  05/12/2018
 //re-designed 7/1/2019
 //database intervals sorted by _start: 8/12/2019
-//---------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
 #ifndef __IGD_BASE_H__
 #define __IGD_BASE_H__
 
@@ -36,14 +36,8 @@
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define maxCount 268435456		//16* = 4GB memory
 #define MAXC 10					//max number of components
-//---------------------------------------------------------------------------------
-typedef struct{					//for each query: query set search
-	int32_t idx_t;				//tile index
-	int32_t idx_g;				//gdata index: 64bit?
-	int32_t idx_f; 				//from gdata
-	float sm;					//similarity 
-} overlap_t;
 
+//-----------------------------------------------------------------------------------
 typedef struct{					//default 
     int32_t idx;        		//genomic object--data set index
     int32_t start;      		//region start
@@ -108,6 +102,28 @@ typedef struct{							//for retrieving from disk file
 	int64_t **tIdx;  					//tile index *sizeof -> location in .igd file
 } iGD_t;
 
+//---------------------------------------------------------------------------------
+//for seqpare index
+typedef struct{					//for each query: query set search
+	int32_t idx_t;				//tile index
+	int32_t idx_g;				//gdata index: 64bit?
+	int32_t idx_f; 				//from gdata
+	float sm;					//similarity 
+} overlap_t;
+
+typedef struct{
+	char *name;    				//name of the contig
+	int64_t nr, mr;				//number of regions
+	gdata_t *glist;				//regions data	
+} chrom_t;
+
+typedef struct {	
+	chrom_t *ctg;        		// list of contigs (of size _n_ctg_)
+	int32_t nctg, mctg; 		// number and max number of contigs
+	void *hc;             		// dict for converting contig names to int    
+} ailist_t;
+
+//---------------------------------------------------------------------------------
 //---------Globals-----------------------------------------------------------------
 extern void *hc;						//dict for converting contig names to int
 extern iGD_t *IGD;
@@ -152,6 +168,12 @@ void igd0_save(igd0_t *igd, char *oPath, char *igdName);
 //Free ailist data
 void igd_destroy(igd_t *igd);
 void igd0_destroy(igd0_t *igd);
+
+//From AIList:
+ailist_t *ailist_init(void);
+void ailist_destroy(ailist_t *ail);
+void ailist_add(ailist_t *ail, const char *chr, uint32_t s, uint32_t e, int32_t v);
+ailist_t* readBED(const char* fn);
 //---------------------------------------------------------------------------------
 //The following section taken from Dr Heng Li's cgranges
 // (https://github.com/lh3/cgranges)
