@@ -245,20 +245,19 @@ void seqOverlaps(char *qFile, double *sm)
 	ailist_t *ail = readBed(qFile);
 	//-----------------------------------------------------
 	//calculate overlap for each chromosome 
-	int i, j, k, nj, idx, nr, nn=0, mm=1000000;
-	float tf, maxf;
+	int i, j, k, m, nj, nk, ig, it, idx, maxk, maxj, nq, nn=0, mm=1000000;
+	float maxf;
 	int nfiles = IGD->nFiles;
-	for(i=0;i<nfiles;i++)
-		sm[i] = 0.0;
+	
 	for(i=0; i<ail->nctg; i++){
 		chrom_t *p  = &ail->ctg[i];
 		gdata_t *L1 = p->glist;						
-		nr 			= p->nr;
-		radix_sort_intv(L1, L1+nr);
+		nq 			= p->nr;
+		radix_sort_intv(L1, L1+nq);
 		overlap_t **hits = malloc(nr*sizeof(overlap_t*));
 		overlap_t *tmp = malloc(mm*sizeof(overlap_t));
-		int *nh = malloc(nr*sizeof(int)); 
-		for(j=0; j<nr; j++){
+		int *nh = malloc(nq*sizeof(int)); 
+		for(j=0; j<nq; j++){
 			nn = 0;
 			seq_overlaps(p->name, L1[j].start, L1[j].end, tmp, &nn, &mm);
 			hits[j] = malloc(nn*sizeof(overlap_t));
@@ -267,34 +266,58 @@ void seqOverlaps(char *qFile, double *sm)
 			nh[j]=nn;
 		}		
 		free(tmp);	
-		//---mutual best match from hits
-		for(j=0;i<nr;j++){
-			idx=-1;
-			k=0;
-			while(k<nh[j]){
-				if(hits[j][k].idx_f!=idx){
-					//end the last group
-					if(idx!=-1){	//record and mark it
-						sm[idx] += maxf;	
-					}
-					//start the new group
-					idx = hits[j][k].idx_f;
-					maxf = hits[j][k].sm;
-				}
-				else{
-					if(hits[j][k].sm>maxf)
+		//---deal with one dataset a time
+		int *kst0 = calloc(nq, sizeof(int));	//k-start for current idx_f
+		int *kst = calloc(nq, sizeof(int));		//k-start for next idx_f
+		int *nst0 = calloc(nq, sizeof(int));	//length				
+		for(m=0;m<nfiles;m++){
+			//1. Find the max
+			maxf = 0.0;
+			for(j=0;j<nq;j++){
+				k=kst[j];
+				while(k<nh[j] && hits[j][k].idx_f!=m)k++;
+				kst0[j] = k;//start of the current m: for section 2
+				while(k<nh[j] && hits[j][k].idx_f==m){
+					if(hits[j][k].sm>maxf){
 						maxf = hits[j][k];
+						maxk = k;
+						maxj = j;
+					}
+					k++;	
 				}
-				k++;
+				kst[j]=k;	//start of the next idx_f
+				nst0[j] = k-kst0[j];
+			}
+			//2. Record and Remove the j-th row (set nst0=0) and column(set sm=0.0)
+			sm[m] = 0.0;
+			while(maxf>0.0){
+				sm[m] += maxf;
+				nst0[maxj] = 0;
+				it = hits[maxj][maxk].idx_t;
+				ig = hits[maxj][maxk].idx_g;
+				maxf = 0.0;
+				for(j=0;j<nq;j++){
+					if(nst0[j]>0){
+						for(k=kst0[j]; k<kst0[j]+nst0[j]; k++){
+							if(hits[j][k].idx_g==ig && hits[j][k].idx_t==it)
+								hits[j][k].sm = 0.0;
+							else if(hits[j][k].sm>maxf){
+								maxf = hits[j][k].sm;
+								maxk = k;
+								maxj = j;
+							}
+						}
+					}
+				}			
 			}
 		}
+		free(nst0);
+		free(kst);
+		free(kst0);
 		free(nh);
 		free(hits);
 	}
-	//-----------------------------------------------------
-	//calculate final sm for each dataset
-	
-
+	ailist_destroy(ail);
 	return;
 }
 
