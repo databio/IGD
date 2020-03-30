@@ -17,7 +17,7 @@ int64_t getOverlaps0(char *qFile, int64_t *hits);
 
 //for seqpare
 void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *hits, uint32_t *n, uint32_t *m);
-void seqOverlaps(char *qFile, overlap_t *hits);
+void seqOverlaps(char *qFile, double *sm);
 
 //Single query
 int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int64_t *hits);
