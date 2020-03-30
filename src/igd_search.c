@@ -141,11 +141,11 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *hits, uint32_t 
 	float qlen=qe-qs, st, rlen;
 	int ichr = get_id(chrm);
 	if(ichr<0)
-		return 0;
+		return;
 	int i, j, n1 = qs/IGD->nbp, n2 = (qe-1)/IGD->nbp;	//define boundary!
 	int32_t re, rs, tE, tS, tL, tR, tM, tmpi, tmpi1, mlen, mTile = IGD->nTile[ichr]-1;
 	if(n1>mTile) 
-		return 0;
+		return;
 	n2 = MIN(n2, mTile);	
 	tmpi = IGD->nCnt[ichr][n1];
 	tmpi1 = tmpi-1;
@@ -242,7 +242,7 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *hits, uint32_t 
 void seqOverlaps(char *qFile, double *sm)
 {	//calculate similarities
 	//-----------------------------------------------------
-	ailist_t *ail = readBed(qFile);
+	ailist_t *ail = readBED(qFile);
 	//-----------------------------------------------------
 	//calculate overlap for each chromosome 
 	int i, j, k, m, nj, nk, ig, it, idx, maxk, maxj, nq, nn=0, mm=1000000;
@@ -254,7 +254,7 @@ void seqOverlaps(char *qFile, double *sm)
 		gdata_t *L1 = p->glist;						
 		nq 			= p->nr;
 		radix_sort_intv(L1, L1+nq);
-		overlap_t **hits = malloc(nr*sizeof(overlap_t*));
+		overlap_t **hits = malloc(nq*sizeof(overlap_t*));
 		overlap_t *tmp = malloc(mm*sizeof(overlap_t));
 		int *nh = malloc(nq*sizeof(int)); 
 		for(j=0; j<nq; j++){
@@ -279,7 +279,7 @@ void seqOverlaps(char *qFile, double *sm)
 				kst0[j] = k;//start of the current m: for section 2
 				while(k<nh[j] && hits[j][k].idx_f==m){
 					if(hits[j][k].sm>maxf){
-						maxf = hits[j][k];
+						maxf = hits[j][k].sm;
 						maxk = k;
 						maxj = j;
 					}

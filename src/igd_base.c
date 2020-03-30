@@ -577,7 +577,6 @@ void ailist_destroy(ailist_t *ail)
 	for (i = 0; i < ail->nctg; ++i){
 		free(ail->ctg[i].name);
 		free(ail->ctg[i].glist);
-		free(ail->ctg[i].maxE);
 	}
 	free(ail->ctg);
 	kh_destroy(str, (strhash_t*)ail->hc);
