@@ -5,12 +5,11 @@
 //-----------------------------------------------------------------------------------
 #include "igd_base.h"
 #define gdata_t_key(r) ((r).start)
-#define gdata_t_keyi(r) ((r).idx)
 #define gdata0_t_key(r) ((r).start)
 
 KRADIX_SORT_INIT(intv, gdata_t, gdata_t_key, 4)
-KRADIX_SORT_INIT(intvi, gdata_t, gdata_t_keyi, 4)
 KRADIX_SORT_INIT(intv0, gdata0_t, gdata0_t_key, 4)
+
 KHASH_MAP_INIT_STR(str, int32_t)
 typedef khash_t(str) strhash_t;
 
@@ -19,6 +18,13 @@ int compare_rstart(const void *a, const void *b)
     gdata_t *pa = (gdata_t *) a;
     gdata_t *pb = (gdata_t *) b;
     return pa->start - pb->start;
+}
+
+int compare_fidx(const void *a, const void *b)
+{
+    overlap_t *pa = (overlap_t *) a;
+    overlap_t *pb = (overlap_t *) b;
+    return pa->idx_f - pb->idx_f;
 }
 
 void str_splits( char* str, int *nmax, char **splits)
@@ -431,8 +437,8 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 					}		    
 					fread(gdata, gdsize, 1, fp0);
 					fclose(fp0);
-					qsort(gdata, nrec, sizeof(gdata_t), compare_rstart);		    
-					//radix_sort_intv(gdata, gdata+nrec); 
+					//qsort(gdata, nrec, sizeof(gdata_t), compare_rstart);		    
+					radix_sort_intv(gdata, gdata+nrec); 
 					fwrite(gdata, gdsize, 1, fp);		    
 					free(gdata);
 					remove(iname); 
@@ -565,7 +571,7 @@ ailist_t *ailist_init(void)
 	ailist_t *ail = malloc(1*sizeof(ailist_t));
 	ail->hc = kh_init(str);
 	ail->nctg = 0;
-	ail->mctg = 32;
+	ail->mctg = 100;
 	ail->ctg = malloc(ail->mctg*sizeof(ctg_t));
 	return ail;
 }

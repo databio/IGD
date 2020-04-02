@@ -136,6 +136,9 @@ extern FILE *fP;
 void str_splits( char* str, int *nmax, char **splits);
 char *parse_bed(char *s, int32_t *st_, int32_t *en_);
 
+int compare_rstart(const void *a, const void *b);
+int compare_fidx(const void *a, const void *b);
+
 //Binary search
 int32_t bSearch(gdata_t *gdata, int32_t t0, int32_t tc, int32_t qe);
 int32_t bSearch0(gdata0_t *gdata, int32_t t0, int32_t tc, int32_t qe);
