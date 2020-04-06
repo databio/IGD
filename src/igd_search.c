@@ -646,7 +646,11 @@ int64_t getMap_v(uint32_t **hitmap, int32_t v)
     return nols;
 }
 
+
 //-------------------------------------------------------------------------------------
+
+// NS: 2nd element of argv is an igd database (file?)
+
 int igd_search(int argc, char **argv)
 {   //igd[0] search[1] home/john/iGD/rme_igd/roadmap.igd[2] -q[3] query100.bed[4]
     if(argc<4)
@@ -687,6 +691,8 @@ int igd_search(int argc, char **argv)
     //for(i=0;i<nfiles;i++){
     //	printf("%i\t%i\t%i\n", i, IGD->finfo[i].nr, IGD->finfo[i].md);
     //}
+
+    // NS: CLI argument parsing:
     for(i=3; i<argc; i++){
         if(strcmp(argv[i], "-q")==0){
             if(i+1<argc){

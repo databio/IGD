@@ -79,11 +79,22 @@ typedef struct{
 	tile0_t *gTile;                  	//tile data
 } ctg0_t;
 
+
+/**
+ * @brief A container to hold... something?
+ *
+ * Detailed explanation.
+ */
 typedef struct{		
-	int32_t nbp, gType, nctg, mctg;		// number of base pairs, data type: 0, 1, 2 etc; size differs	
-	int64_t total;						//total region in each ctg
-	ctg_t *ctg;        					//list of contigs (of size _n_ctg_) 
+	int32_t nbp;		/** Number of base pairs */
+	int32_t gType;		/** Data type (0,1,2, etc) */
+	int32_t nctg;		/** size differs */
+	int32_t mctg;		/** ???  */
+	int64_t total;		/** total region in each ctg */
+	ctg_t *ctg;			/** list of contigs (of size _n_ctg_)  */
 } igd_t;
+
+
 
 typedef struct{		
 	int32_t nbp, gType, nctg, mctg;		// number of base pairs, data type: 0, 1, 2 etc; size differs	
