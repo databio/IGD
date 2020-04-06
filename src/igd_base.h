@@ -114,8 +114,13 @@ typedef struct{					//for each query: query set search
 typedef struct{
 	char *name;    				//name of the contig
 	int64_t nr, mr;				//number of regions
-	gdata_t *glist;				//regions data	
+	gdata0_t *glist;				//regions data	
 } chrom_t;
+
+typedef struct{
+	int32_t nn, mm;				//number of regions
+	overlap_t *olist;			//regions data	
+} olp_t;
 
 typedef struct {	
 	chrom_t *ctg;        		// list of contigs (of size _n_ctg_)
@@ -137,6 +142,7 @@ void str_splits( char* str, int *nmax, char **splits);
 char *parse_bed(char *s, int32_t *st_, int32_t *en_);
 
 int compare_rstart(const void *a, const void *b);
+int compare_qstart(const void *a, const void *b);//gdata0
 int compare_fidx(const void *a, const void *b);
 
 //Binary search
@@ -257,4 +263,3 @@ KSTREAM_INIT(gzFile, gzread, 0x10000)
 	}while (0) 
 
 #endif
-
