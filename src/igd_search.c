@@ -135,7 +135,7 @@ int64_t getOverlaps0(char *qFile, int64_t *hits)
 }
 
 //--------------------------------------------------------------------------------------
-void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *hits, uint32_t *n, uint32_t *m)
+/*void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *olp, uint32_t *n, uint32_t *m)
 {   
 	uint32_t nt=0, mt=*m;
 	float qlen=qe-qs, st, rlen;
@@ -149,12 +149,22 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *hits, uint32_t 
 	n2 = MIN(n2, mTile);	
 	tmpi = IGD->nCnt[ichr][n1];
 	tmpi1 = tmpi-1;
+	if(qs==42907176 && qe==42916364)
+		printf("0: %i\n", tmpi);
 	if(tmpi>0){
 		if(n1!=preIdx || ichr!=preChr){
 			fseek(fP, IGD->tIdx[ichr][n1], SEEK_SET);			
-			free(gData);					
+			free(gData);
+			//gData = NULL;	
+			if(qs==42907176 && qe==42916364)
+				printf("1: %i\n", n1);
+			//gData = (gdata_t *)realloc(gData, tmpi*sizeof(gdata_t));				
 			gData = malloc(tmpi*sizeof(gdata_t));
+			if(qs==42907176 && qe==42916364)
+				printf("2: %i\n", n2);			
 			fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
+			if(qs==42907176 && qe==42916364)
+				printf("3: %i\n", ichr);			
 			preIdx = n1;
 			preChr = ichr;
 		}		
@@ -172,18 +182,23 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *hits, uint32_t 
 			//-----------------------------------------
 			for(i=tL; i>=0; i--){			
 				if(gData[i].end>qs){
-					if(nt==mt)EXPAND(hits, mt);
+					//if(qs==42907176 && qe==42916364)
+					//	printf("4: %i\n", nt);
+					if(nt==mt)
+						EXPAND(olp, mt);											
 					re = gData[i].end;
 					rs = gData[i].start;					
 					st = MIN(qe, re)-MAX(qs, rs);
-					rlen = re-rs;//this is necessary: float range small		
-					hits[nt].idx_t = n1;
-					hits[nt].idx_g = i;
-					hits[nt].idx_f = gData[i].idx;
-					hits[nt].sm = st/(qlen+rlen-st);
+					rlen = re-rs;			//this is necessary: float range						
+					olp[nt].idx_t = n1;
+					olp[nt].idx_g = i;
+					olp[nt].idx_f = gData[i].idx;
+					olp[nt].sm = st/(qlen+rlen-st);
 					nt++;
 				} 
-			}			
+			}					
+			if(qs==42907176 && qe==42916364)
+				printf("4: %i\n", nt);		
 		}
 		if(n2>n1){									//n2>n1
 			int32_t bd = IGD->nbp*(n1+1);			//only keep the first		
@@ -193,13 +208,14 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *hits, uint32_t 
 				if(tmpi>0){
 					if(j!=preIdx || ichr!=preChr){
 						fseek(fP, IGD->tIdx[ichr][j], SEEK_SET);			
-						free(gData);					
-						gData = malloc(tmpi*sizeof(gdata_t));
+						//free(gData);					
+						//gData = malloc(tmpi*sizeof(gdata_t));
+						gData = (gdata_t*)realloc(gData, tmpi*sizeof(gdata_t));
 						fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
 						preIdx = j;
 						preChr = ichr;
 					}	
-					if(qe>gData0[0].start){	
+					if(qe>gData[0].start){	
 						//find the 1st rs < qe						
 						tS = 0;
 						while(tS<tmpi && gData[tS].start<bd)tS++;	//qs<bd	
@@ -215,15 +231,16 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *hits, uint32_t 
 						//-----------------------------------------
 						for(i=tL; i>=tS; i--){ 		
 							if(gData[i].end>qs){
-								if(nt==mt)EXPAND(hits, mt);
+								if(nt==mt)	
+									EXPAND(olp, mt);
 								re = gData[i].end;
 								rs = gData[i].start;					
 								st = MIN(qe, re)-MAX(qs, rs);
 								rlen = re-rs;//this is necessary: float range small		
-								hits[nt].idx_t = j;
-								hits[nt].idx_g = i;
-								hits[nt].idx_f = gData[i].idx;
-								hits[nt].sm = st/(qlen+rlen-st);
+								olp[nt].idx_t = j;
+								olp[nt].idx_g = i;
+								olp[nt].idx_f = gData[i].idx;
+								olp[nt].sm = st/(qlen+rlen-st);
 								nt++;				
 							} 
 						}
@@ -236,6 +253,7 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *hits, uint32_t 
 	//-----------------------------------------------------	
 	*n = nt;
 	*m = mt;
+	//printf("nt, mt: %i\t %i\n", nt, mt);	
     return;
 }
 
@@ -245,64 +263,79 @@ void seqOverlaps(char *qFile, double *sm)
 	ailist_t *ail = readBED(qFile);
 	//-----------------------------------------------------
 	//calculate overlap for each chromosome 
-	int i, j, k, m, nj, nk, ig, it, idx, maxk, maxj, nq, nn=0, mm=1000000;
+	int i, j, k, m, nj, nk, ig, it, idx, maxk, maxj, nq, Nq=0, nn=0, mm=20000000;
 	float maxf;
 	int nfiles = IGD->nFiles;
-	
+	preChr = -6, preIdx=-8;  
+	for(m=0;m<nfiles;m++)
+		sm[m] = 0.0;		
+	//int *nols = calloc(nfiles, sizeof(int));
+	//int *nols0 = calloc(nfiles, sizeof(int));	
 	for(i=0; i<ail->nctg; i++){
 		chrom_t *p  = &ail->ctg[i];
 		gdata_t *L1 = p->glist;						
 		nq 			= p->nr;
-		radix_sort_intv(L1, L1+nq);
-		overlap_t **hits = malloc(nq*sizeof(overlap_t*));
-		overlap_t *tmp = malloc(mm*sizeof(overlap_t));
+		Nq += nq;		
+		//radix_sort_intv(L1, L1+nq);
+		qsort(L1, nq, sizeof(gdata_t), compare_rstart);
+		overlap_t **olps = malloc(nq*sizeof(overlap_t*));
 		int *nh = malloc(nq*sizeof(int)); 
+		overlap_t *tmp = malloc(mm*sizeof(overlap_t));
 		for(j=0; j<nq; j++){
-			nn = 0;
+			nn = 0;	
 			seq_overlaps(p->name, L1[j].start, L1[j].end, tmp, &nn, &mm);
-			hits[j] = malloc(nn*sizeof(overlap_t));
-			radix_sort_intvi(tmp, tmp+nn);
-			memcpy(hits[j], tmp, nn);
-			nh[j]=nn;
-		}		
-		free(tmp);	
+			if(nn>0){
+				olps[j] = malloc(nn*sizeof(overlap_t));
+				qsort(tmp, nn, sizeof(overlap_t), compare_fidx);
+				memcpy(olps[j], tmp, nn*sizeof(overlap_t));
+			}
+			nh[j]=nn;	
+		}	
+		free(tmp);
+		//for(j=0;j<nq;j++){
+		//	for(k=0;k<nh[j];k++){
+		//		nols0[olps[j][k].idx_f]++;	
+		//	}	
+		//}
+	
 		//---deal with one dataset a time
 		int *kst0 = calloc(nq, sizeof(int));	//k-start for current idx_f
 		int *kst = calloc(nq, sizeof(int));		//k-start for next idx_f
-		int *nst0 = calloc(nq, sizeof(int));	//length				
-		for(m=0;m<nfiles;m++){
+		int *nst0 = calloc(nq, sizeof(int));	//length
+		for(m=0; m<nfiles;  m++){
 			//1. Find the max
 			maxf = 0.0;
 			for(j=0;j<nq;j++){
 				k=kst[j];
-				while(k<nh[j] && hits[j][k].idx_f!=m)k++;
+				while(k<nh[j] && olps[j][k].idx_f<m)k++;
 				kst0[j] = k;//start of the current m: for section 2
-				while(k<nh[j] && hits[j][k].idx_f==m){
-					if(hits[j][k].sm>maxf){
-						maxf = hits[j][k].sm;
+				while(k<nh[j] && olps[j][k].idx_f==m){
+					if(olps[j][k].sm>maxf){
+						maxf = olps[j][k].sm;
 						maxk = k;
 						maxj = j;
 					}
 					k++;	
 				}
-				kst[j]=k;	//start of the next idx_f
+				kst[j]=k;	//start of the next m
 				nst0[j] = k-kst0[j];
+				//nols[m] += nst0[j];
 			}
+		
 			//2. Record and Remove the j-th row (set nst0=0) and column(set sm=0.0)
-			sm[m] = 0.0;
 			while(maxf>0.0){
 				sm[m] += maxf;
 				nst0[maxj] = 0;
-				it = hits[maxj][maxk].idx_t;
-				ig = hits[maxj][maxk].idx_g;
+				it = olps[maxj][maxk].idx_t;
+				ig = olps[maxj][maxk].idx_g;
 				maxf = 0.0;
 				for(j=0;j<nq;j++){
 					if(nst0[j]>0){
 						for(k=kst0[j]; k<kst0[j]+nst0[j]; k++){
-							if(hits[j][k].idx_g==ig && hits[j][k].idx_t==it)
-								hits[j][k].sm = 0.0;
-							else if(hits[j][k].sm>maxf){
-								maxf = hits[j][k].sm;
+							if(olps[j][k].idx_g==ig && olps[j][k].idx_t==it)
+								olps[j][k].sm = 0.0;
+							else if(olps[j][k].sm>maxf){
+								maxf = olps[j][k].sm;
 								maxk = k;
 								maxj = j;
 							}
@@ -313,13 +346,230 @@ void seqOverlaps(char *qFile, double *sm)
 		}
 		free(nst0);
 		free(kst);
-		free(kst0);
+		free(kst0);	
 		free(nh);
-		free(hits);
+		free(olps);
 	}
+	for(m=0;m<nfiles;m++){
+		//printf("%i\t %i\t %i\n", m, nols0[m], nols[m]);
+		sm[m] = sm[m]/(Nq+IGD->finfo[m].nr-sm[m]);
+	}	
+	//free(nols);
+	//free(nols0);
+	ailist_destroy(ail);
+	return;
+}*/
+
+//--------------------------------------------------------------------------------------
+void seq_overlaps(char *chrm, int32_t qs, int32_t qe, olp_t *olp)
+{   
+	float qlen=qe-qs, st, rlen;
+	int ichr = get_id(chrm);
+	if(ichr<0)
+		return;
+	int i, j, n1 = qs/IGD->nbp, n2 = (qe-1)/IGD->nbp;	//define boundary!
+	int32_t re, rs, tE, tS, tL, tR, tM, tmpi, tmpi1, mlen, mTile = IGD->nTile[ichr]-1;
+	if(n1>mTile) 
+		return;
+	n2 = MIN(n2, mTile);	
+	tmpi = IGD->nCnt[ichr][n1];
+	tmpi1 = tmpi-1;
+	if(tmpi>0){
+		if(n1!=preIdx || ichr!=preChr){
+			fseek(fP, IGD->tIdx[ichr][n1], SEEK_SET);	
+			free(gData);								
+			gData = malloc(tmpi*sizeof(gdata_t));			
+			fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
+			preIdx = n1;
+			preChr = ichr;
+		}		
+		if(qe>gData[0].start){			//sorted by start
+			//find the 1st rs < qe from right
+			tL = 0, tR=tmpi1;
+			while(tL<tR-1){					//result: tR=tL+1, tL.s<qe
+				tM = (tL+tR)/2; 			//possible case: tmpi=2 or 1 or [tmpi1].s<qe
+				if(gData[tM].start < qe)	 
+				    tL = tM;
+				else
+				    tR = tM;				
+			}
+			if(gData[tR].start<qe)tL = tR;
+			//-----------------------------------------
+			for(i=tL; i>=0; i--){			
+				if(gData[i].end>qs){
+					if(olp->nn==olp->mm)
+						EXPAND(olp->olist, olp->mm);					
+					re = gData[i].end;
+					rs = gData[i].start;					
+					st = MIN(qe, re)-MAX(qs, rs);
+					rlen = re-rs;			//this is necessary	
+					overlap_t *p = &olp->olist[olp->nn++];						 
+					p->idx_g = i;
+					p->idx_f = gData[i].idx;				
+					p->idx_t = n1;						
+					p->sm = st/(qlen+rlen-st);
+				} 
+			}		
+		}
+		if(n2>n1){									//n2>n1
+			int32_t bd = IGD->nbp*(n1+1);			//only keep the first		
+			for(j=n1+1; j<=n2; j++){				//n2 inclusive!!!
+				tmpi = IGD->nCnt[ichr][j];
+				tmpi1 = tmpi-1;
+				if(tmpi>0){
+					if(j!=preIdx || ichr!=preChr){
+						fseek(fP, IGD->tIdx[ichr][j], SEEK_SET);			
+						free(gData);					
+						gData = malloc(tmpi*sizeof(gdata_t));
+						fread(gData, sizeof(gdata_t)*tmpi, 1, fP);
+						preIdx = j;
+						preChr = ichr;
+					}	
+					if(qe>gData[0].start){	
+						//find the 1st rs < qe						
+						tS = 0;
+						while(tS<tmpi && gData[tS].start<bd)tS++;	//qs<bd	
+						tL = 0, tR=tmpi1;
+						while(tL<tR-1){					//result: tR=tL+1, tL.s<qe
+							tM = (tL+tR)/2; 
+							if(gData[tM].start < qe)	 
+								tL = tM;
+							else
+								tR = tM;				
+						}
+						if(gData[tR].start<qe)tL = tR;
+						//-----------------------------------------
+						for(i=tL; i>=tS; i--){ 		
+							if(gData[i].end>qs){							
+								if(olp->nn==olp->mm)
+									EXPAND(olp->olist, olp->mm);					
+								re = gData[i].end;
+								rs = gData[i].start;					
+								st = MIN(qe, re)-MAX(qs, rs);
+								rlen = re-rs;			//this is necessary	
+								overlap_t *p = &olp->olist[olp->nn++];						 
+								p->idx_g = i;
+								p->idx_f = gData[i].idx;				
+								p->idx_t = n1;						
+								p->sm = st/(qlen+rlen-st);				
+							} 
+						}
+					}
+				}
+				bd+=IGD->nbp;		
+			}	
+		}
+	}
+    return;
+}
+
+void seqOverlaps(char *qFile, double *sm)
+{	//calculate similarities
+	//-----------------------------------------------------
+	ailist_t *ail = readBED(qFile);
+	//-----------------------------------------------------
+	//calculate overlap for each chromosome 
+	int i, j, k, m, nj, nk, ig, it, idx, maxk, maxj, nq, Nq=0;
+	float maxf;
+	int nfiles = IGD->nFiles;
+	preChr = -6, preIdx=-8;  
+	for(m=0;m<nfiles;m++)
+		sm[m] = 0.0;		
+	//int *nols = calloc(nfiles, sizeof(int));
+	//int *nols0 = calloc(nfiles, sizeof(int));		
+	for(i=0; i<ail->nctg; i++){
+		chrom_t *p  = &ail->ctg[i];
+		gdata0_t *L1 = p->glist;						
+		nq 			= p->nr;
+		Nq += nq;		
+		//radix_sort_intv(L1, L1+nq);
+		qsort(L1, nq, sizeof(gdata0_t), compare_qstart);
+		overlap_t **olps = malloc(nq*sizeof(overlap_t*));
+		int *nh = malloc(nq*sizeof(int)); 
+		printf("%i\t %i\t %s\n",i, nq, p->name);			
+		olp_t *olp = (olp_t *)malloc(1*sizeof(olp_t));
+		olp->mm = 1000000;
+		olp->olist = malloc(olp->mm*sizeof(overlap_t));		
+		for(j=0; j<nq; j++){	
+			olp->nn = 0;
+			seq_overlaps(p->name, L1[j].start, L1[j].end, olp);
+			if(olp->nn > 0){
+				olps[j] = (overlap_t *)malloc(olp->nn*sizeof(overlap_t));				
+				qsort(olp->olist, olp->nn, sizeof(overlap_t), compare_fidx);				
+				memcpy(olps[j], olp->olist, olp->nn*sizeof(overlap_t));
+			}
+			nh[j]=olp->nn;
+		}	
+		free(olp->olist);
+		free(olp);
+		//for(j=0;j<nq;j++){
+		//	for(k=0;k<nh[j];k++){
+		//		nols0[olps[j][k].idx_f]++;	
+		//	}	
+		//}
+	
+		//---deal with one dataset a time
+		int *kst0 = calloc(nq, sizeof(int));	//k-start for current idx_f
+		int *kst = calloc(nq, sizeof(int));		//k-start for next idx_f
+		int *nst0 = calloc(nq, sizeof(int));	//length
+		for(m=0; m<nfiles;  m++){
+			//1. Find the max
+			maxf = 0.0;
+			for(j=0;j<nq;j++){
+				k=kst[j];
+				while(k<nh[j] && olps[j][k].idx_f<m)k++;
+				kst0[j] = k;//start of the current m: for section 2
+				while(k<nh[j] && olps[j][k].idx_f==m){
+					if(olps[j][k].sm>maxf){
+						maxf = olps[j][k].sm;
+						maxk = k;
+						maxj = j;
+					}
+					k++;	
+				}
+				kst[j]=k;	//start of the next m
+				nst0[j] = k-kst0[j];
+				//nols[m] += nst0[j];
+			}
+		
+			//2. Record and Remove the j-th row (set nst0=0) and column(set sm=0.0)
+			while(maxf>0.0){
+				sm[m] += maxf;
+				nst0[maxj] = 0;
+				it = olps[maxj][maxk].idx_t;
+				ig = olps[maxj][maxk].idx_g;
+				maxf = 0.0;
+				for(j=0;j<nq;j++){
+					if(nst0[j]>0){
+						for(k=kst0[j]; k<kst0[j]+nst0[j]; k++){
+							if(olps[j][k].idx_g==ig && olps[j][k].idx_t==it)
+								olps[j][k].sm = 0.0;
+							else if(olps[j][k].sm>maxf){
+								maxf = olps[j][k].sm;
+								maxk = k;
+								maxj = j;
+							}
+						}
+					}
+				}			
+			}
+		}
+		free(nst0);
+		free(kst);
+		free(kst0);	
+		free(nh);
+		free(olps);
+	}
+	for(m=0;m<nfiles;m++){
+		//printf("%i\t %i\t %i\n", m, nols0[m], nols[m]);
+		sm[m] = sm[m]/(Nq+IGD->finfo[m].nr-sm[m]);
+	}	
+	//free(nols);
+	//free(nols0);
 	ailist_destroy(ail);
 	return;
 }
+
 
 //--------------------------------------------------------------------------------
 int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
@@ -427,13 +677,13 @@ int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int64_t *h
 			preIdx = n1;
 			preChr = ichr;
 		}
-		if(qe>gData[0].start){					//sorted by start
+		if(qe>gData[0].start){							//sorted by start
 			if(tmpi<16){
 				tE = tmpi-1;
 				while(gData[tE].start>=qe)tE--;
 			}
 			else
-				tE = bSearch(gData, 0, tmpi-1, qe);	//idx
+				tE = bSearch(gData, 0, tmpi-1, qe);		//idx
 			for(i=tE; i>=0; i--){
 				if(gData[i].end>qs && gData[i].value>=v){
 					nols++;
@@ -442,8 +692,8 @@ int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int64_t *h
 			}
 		}
 	}
-	if(n2>n1){									//n2>n1
-		int32_t bd = IGD->nbp*(n1+1);				//only keep the first
+	if(n2>n1){											//n2>n1
+		int32_t bd = IGD->nbp*(n1+1);					//only keep the first
 		for(j=n1+1; j<=n2; j++){
 			tmpi = IGD->nCnt[ichr][j];
 			if(tmpi>0){
@@ -719,7 +969,10 @@ int igd_search(int argc, char **argv)
         }
         else if(strcmp(argv[i], "-m")==0){
             mode = 0;
-        }         
+        } 
+        else if(strcmp(argv[i], "-s")==0){
+            mode = 3;	//seqpare
+        }                  
         else if(strcmp(argv[i], "-o")==0){
             if(i+1<argc)
                 strcpy(out, argv[i+1]);
@@ -792,12 +1045,9 @@ int igd_search(int argc, char **argv)
     else if(mode==3){//output seqpare index
     	double *sm = malloc(nfiles*sizeof(double));
 		seqOverlaps(qfName, sm);
-		printf("index\t File_name\t number of regions\t similarity\t dataset name\n"); 
-		int64_t total = 0;       
+		printf("index\t File_name\t number of regions\t similarity\t dataset name\n");       
 	    for(i=0;i<nfiles;i++){
-	    	if(hits[i]>0)
-	        	printf("%i\t%i\t%lld\t%s\n", i, IGD->finfo[i].nr, sm[i], IGD->finfo[i].fileName); 
-	    	total += hits[i];
+	        printf("%i\t%i\t%10.6f\t%s\n", i, IGD->finfo[i].nr, sm[i], IGD->finfo[i].fileName); 
 	    }  
 	    free(sm);
     }

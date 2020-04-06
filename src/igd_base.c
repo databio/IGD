@@ -5,12 +5,11 @@
 //-----------------------------------------------------------------------------------
 #include "igd_base.h"
 #define gdata_t_key(r) ((r).start)
-#define gdata_t_keyi(r) ((r).idx)
 #define gdata0_t_key(r) ((r).start)
 
 KRADIX_SORT_INIT(intv, gdata_t, gdata_t_key, 4)
-KRADIX_SORT_INIT(intvi, gdata_t, gdata_t_keyi, 4)
 KRADIX_SORT_INIT(intv0, gdata0_t, gdata0_t_key, 4)
+
 KHASH_MAP_INIT_STR(str, int32_t)
 typedef khash_t(str) strhash_t;
 
@@ -18,6 +17,20 @@ int compare_rstart(const void *a, const void *b)
 {
     gdata_t *pa = (gdata_t *) a;
     gdata_t *pb = (gdata_t *) b;
+    return pa->start - pb->start;
+}
+
+int compare_fidx(const void *a, const void *b)
+{
+    overlap_t *pa = (overlap_t *) a;
+    overlap_t *pb = (overlap_t *) b;
+    return pa->idx_f - pb->idx_f;
+}
+
+int compare_qstart(const void *a, const void *b)
+{
+    gdata0_t *pa = (gdata0_t *) a;
+    gdata0_t *pb = (gdata0_t *) b;
     return pa->start - pb->start;
 }
 
@@ -431,8 +444,8 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 					}		    
 					fread(gdata, gdsize, 1, fp0);
 					fclose(fp0);
-					qsort(gdata, nrec, sizeof(gdata_t), compare_rstart);		    
-					//radix_sort_intv(gdata, gdata+nrec); 
+					//qsort(gdata, nrec, sizeof(gdata_t), compare_rstart);		    
+					radix_sort_intv(gdata, gdata+nrec); 
 					fwrite(gdata, gdsize, 1, fp);		    
 					free(gdata);
 					remove(iname); 
@@ -565,8 +578,8 @@ ailist_t *ailist_init(void)
 	ailist_t *ail = malloc(1*sizeof(ailist_t));
 	ail->hc = kh_init(str);
 	ail->nctg = 0;
-	ail->mctg = 32;
-	ail->ctg = malloc(ail->mctg*sizeof(ctg_t));
+	ail->mctg = 48;
+	ail->ctg = (chrom_t *)malloc(ail->mctg*sizeof(chrom_t));
 	return ail;
 }
 
@@ -586,25 +599,25 @@ void ailist_destroy(ailist_t *ail)
 void ailist_add(ailist_t *ail, const char *chr, uint32_t s, uint32_t e, int32_t v)
 {
 	if(s > e)return;
-	int absent;
+	int absent, i;
 	khint_t k;
 	strhash_t *h = (strhash_t*)ail->hc;
 	k = kh_put(str, h, chr, &absent);
 	if (absent) {
 		if (ail->nctg == ail->mctg)
-			EXPAND(ail->ctg, ail->mctg);							
+			EXPAND(ail->ctg, ail->mctg);						
 		kh_val(h, k) = ail->nctg;		
 		chrom_t *p = &ail->ctg[ail->nctg++];
 		p->name = strdup(chr);
 		p->nr=0;	p->mr=64;
-		p->glist = malloc(p->mr*sizeof(gdata_t));
+		p->glist = (gdata0_t *)malloc(p->mr*sizeof(gdata0_t));
 		kh_key(h, k) = p->name;
 	}
 	int32_t kk = kh_val(h, k);
 	chrom_t *q = &ail->ctg[kk];
 	if (q->nr == q->mr)
 		EXPAND(q->glist, q->mr);	
-	gdata_t *p = &q->glist[q->nr++];
+	gdata0_t *p = &q->glist[q->nr++];
 	p->start = s;
 	p->end   = e;
 	return;
