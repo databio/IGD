@@ -1,4 +1,0 @@
-exportPattern("^[[:alpha:]]+")
-useDynLib(IGDr)
-exportClasses(IGDr)
-export(IGDr)
