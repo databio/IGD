@@ -26,6 +26,10 @@ int search_help(int exit_code)
     return exit_code;
 }
 
+//Get the overlaps for a query interval
+//Input: chromosome name chrm, start, end
+//Output number of overlaps for each dataset in the database
+//For data mode gdata0_t
 int32_t get_overlaps0(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 {   
 	int ichr = get_id(chrm);
@@ -109,6 +113,10 @@ int32_t get_overlaps0(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
     return nols;
 }
 
+//Get the overlaps for a query dataset from a query file(.bed)
+//Input: chromosome name chrm, start, end
+//Output number of overlaps for each dataset in the database
+//For data mode gdata0_t
 int64_t getOverlaps0(char *qFile, int64_t *hits)
 {	//for gdata0_t
 	gzFile fp;
@@ -135,6 +143,7 @@ int64_t getOverlaps0(char *qFile, int64_t *hits)
 }
 
 //--------------------------------------------------------------------------------------
+//Follow the definition of Selena and John https://github.com/deepstanding/seqpare.git
 void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *olp, uint32_t *n, uint32_t *m)
 {   
 	uint32_t nt=0, mt=*m;
@@ -227,10 +236,10 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *olp, uint32_t *
 						for(i=tL; i>=tS; i--){ 		
 							if(gData[i].end>qs){
 								if(nt==mt){
-									mt += 1000;	
+									mt += 10000;	
 									overlap_t *tmp = (overlap_t*)malloc(mt*sizeof(overlap_t));
 									memcpy(tmp, olp, nt*sizeof(overlap_t));
-									printf("--%i\t %i\t %i\n", nt, mt, tmpi);
+									//printf("--%i\t %i\t %i\n", nt, mt, tmpi);
 									free(olp);
 									olp = tmp;		
 									//EXPAND(olp, mt);
@@ -259,13 +268,17 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *olp, uint32_t *
     return;
 }
 
+
+//--------------------------------------------------------------------------------------
+//Follow the definition of Selena https://github.com/deepstanding/seqpare.git
+//Fast but not very general
 void seqOverlaps(char *qFile, double *sm)
 {	//calculate similarities
 	//-----------------------------------------------------
 	ailist_t *ail = readBED(qFile);
 	//-----------------------------------------------------
 	//calculate overlap for each chromosome 
-	int i, j, k, m, nj, nk, ig, it, idx, maxk, maxj, nq, Nq=0, nn=0, mm=20000000;
+	int i, j, k, m, nj, nk, ig, it, idx, maxk, maxj, nq, Nq=0, nn=0, mm=12800000;
 	float maxf;
 	int nfiles = IGD->nFiles;
 	preChr = -6, preIdx=-8;  
@@ -363,6 +376,10 @@ void seqOverlaps(char *qFile, double *sm)
 }
 
 //--------------------------------------------------------------------------------
+//Get the overlaps for a given interval
+//Input: chromosome name chrm, start, end
+//Output number of overlaps for each dataset in the database
+//For data mode gdata_t
 int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 {   
 	int ichr = get_id(chrm);	
@@ -446,7 +463,11 @@ int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
     return nols;
 }
 
-//for gData with v
+//--------------------------------------------------------------------------------------
+//Get the overlaps for a query dataset from a query file(.bed) at a given signal value
+//Input: chromosome name chrm, start, end, signal value
+//Output number of overlaps for each dataset in the database
+//For data mode gdata_t
 int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int64_t *hits)
 {   //no need to store every overlaps, only get the number of hits
 	int ichr = get_id(chrm);
@@ -520,6 +541,7 @@ int32_t get_overlaps_v(char *chrm, int32_t qs, int32_t qe, int32_t v, int64_t *h
     return nols;
 }
 
+
 int64_t getOverlaps(char *qFile, int64_t *hits)
 {	
 	gzFile fp;
@@ -544,6 +566,7 @@ int64_t getOverlaps(char *qFile, int64_t *hits)
 	gzclose(fp);	
 	return ols;
 }
+
 
 int64_t getOverlaps_v(char *qFile, int64_t *hits, int32_t v)
 {	//for gadta1_t
