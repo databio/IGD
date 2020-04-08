@@ -9,19 +9,21 @@ int create_IGD_from_params(CreateParams_t* cParams) {
     printf("Called create...");
     CreateParams_show(cParams); 
     //check if the subfolders exist:    
-    // char ftmp[1024];
-    // struct stat st = {0};  
+    char ftmp[1024];
+    struct stat st = {0};  
     
-    // sprintf(ftmp, "%s%s%s", cParams->outputPath, cParams->igdName, ".igd");
-    // if(stat(ftmp, &st) == 0)
-    //     printf("The igd database file %s exists!\n", ftmp);  
-    // else{
-    //     if (stat(cParams->outputPath, &st) == -1){
-    //         mkdir(cParams->outputPath, 0777);    
-    //     }
-    //     sprintf(ftmp, "%s%s", cParams->outputPath, "data0");
-    //     if (stat(ftmp, &st) == -1)
-    //         mkdir(ftmp, 0777);
+    sprintf(ftmp, "%s%s%s", cParams->outputPath, cParams->igdName, ".igd");
+    if(stat(ftmp, &st) == 0)
+        printf("The target igd database file %s exists!\n", ftmp);  
+    else {
+        if (stat(cParams->outputPath, &st) == -1){
+            mkdir(cParams->outputPath, 0777);    
+        }
+        // Build a temporary data folder
+        sprintf(ftmp, "%s%s", cParams->outputPath, "data0");
+        if (stat(ftmp, &st) == -1)
+            mkdir(ftmp, 0777);
+        
     //     if(cParams->dataMode==0)
     //         create_igd0(cParams->inputPath, cParams->outputPath, cParams->igdName);
     //     else if(cParams->dataMode==2)
@@ -30,7 +32,12 @@ int create_IGD_from_params(CreateParams_t* cParams) {
     //         create_igd_f(cParams->inputPath, cParams->outputPath, cParams->igdName);
     //     else //default
     //         create_igd(cParams->inputPath, cParams->outputPath, cParams->igdName);
-    // }
+
+        // Remove the temp folder
+        if (stat(ftmp, &st) == 0)
+            rmdir(ftmp);
+
+    }
     return EX_OK;
 }
 
