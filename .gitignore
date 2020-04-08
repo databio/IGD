@@ -2,3 +2,7 @@
 bin
 obj
 core
+*.o
+*.so
+IGDr/src/*.o
+IGDr/src/*.so
