@@ -10,6 +10,55 @@ KRADIX_SORT_INIT(intv, gdata_t, gdata_t_key, 4)
 KHASH_MAP_INIT_STR(str, int32_t)
 typedef khash_t(str) strhash_t;
 
+// Initializers
+
+SearchParams_t *SearchParams_init()
+{
+    SearchParams_t *sTask = malloc(sizeof(SearchParams_t));
+    sTask->datamode = 0;
+    sTask->checking = 0;
+    sTask->stat2 = 1;
+    sTask->status = INIT;
+    // printf("Initialized SearchParams\n");
+    return sTask;
+}
+
+CreateParams_t *CreateParams_init()
+{
+    CreateParams_t *cTask = malloc(sizeof(CreateParams_t));
+    cTask->status = INIT;
+    return cTask;
+}
+
+IGD_t *IGD_init()
+{
+    IGD_t *IGD = (IGD_t *) malloc(1*sizeof(IGD_t));
+    IGD->nbp = 16384;
+    IGD->gType = 1;
+    IGD->nCtg = 24;
+    return IGD;
+}
+
+void close_IGD(IGD_t *IGD)
+{
+	if(IGD==0) return;
+	fclose(IGD->fP);
+	free(IGD->gData);
+    free(IGD->nTile);
+    kh_destroy(str, (strhash_t*)IGD->hc);
+    for(int i=0;i<IGD->nCtg;i++){
+     	free(IGD->nCnt[i]);
+     	free(IGD->tIdx[i]);
+    }
+    free(IGD->nCnt);
+    free(IGD->tIdx);
+    free(IGD->cName);
+    free(IGD->finfo);
+    free(IGD);
+}
+
+
+
 void str_splits( char* str, int *nmax, char **splits)
 {   //tsv
     splits[*nmax] = NULL;
@@ -350,75 +399,4 @@ void igd_destroy(igd_t *igd)
 	free(igd->ctg);
 	kh_destroy(str, (strhash_t*)igd->hc);
 	free(igd);
-}
-
-SearchParams_t *SearchParams_init()
-{
-    printf("Creating SearchParams\n"); 
-    SearchParams_t *sTask = malloc(sizeof(SearchParams_t));
-    sTask->datamode = 0;
-    sTask->checking = 0;
-    sTask->stat2 = 1;
-    sTask->status = INIT;
-    printf("Finished initializing SearchParams\n"); 
-    return sTask;
-}
-
-SearchParams_t SearchParams_init2()
-{
-    printf("Creating SearchParams\n"); 
-    SearchParams_t sTask;// = (SearchParams_t *) malloc(1*sizeof(SearchParams_t));
-    sTask.datamode = 0;
-    sTask.checking = 0;
-    sTask.status = FAILED;
-    sTask.stat2 = 0;
-    printf("Creating SearchParams\n"); 
-    return sTask;
-}
-
-SearchParams_t *SearchParams_init_old()
-{
-    printf("Creating SearchParams\n"); 
-    SearchParams_t *sTask = (SearchParams_t *) malloc(1*sizeof(SearchParams_t));
-    sTask->datamode = 0;
-    sTask->checking = 0;
-    sTask->status = FAILED;
-    sTask->stat2 = 0;
-    printf("Creating SearchParams\n"); 
-    return sTask;
-}
-
-
-CreateParams_t *CreateParams_init()
-{
-    CreateParams_t *cTask = (CreateParams_t *) malloc(1*sizeof(CreateParams_t));
-    return cTask;
-}
-
-
-IGD_t *IGD_init()
-{
-    IGD_t *IGD = (IGD_t *) malloc(1*sizeof(IGD_t));
-    IGD->nbp = 16384;
-    IGD->gType = 1;
-    IGD->nCtg = 24;
-    return IGD;
-}
-
-void close_IGD(IGD_t *IGD)
-{
-	if(IGD==0) return;
-	fclose(IGD->fP);
-	free(IGD->gData);
-    free(IGD->nTile);
-    kh_destroy(str, (strhash_t*)IGD->hc);
-    for(int i=0;i<IGD->nCtg;i++){
-     	free(IGD->nCnt[i]);
-     	free(IGD->tIdx[i]);
-    }
-    free(IGD->nCnt);
-    free(IGD->tIdx);
-    free(IGD->cName);
-    free(IGD->finfo);
-    free(IGD);
 }

@@ -50,13 +50,18 @@ int main(int argc, char **argv)
 
     if (strcmp(cmd, "create") == 0) {
         CreateParams_t* cParams = parse_create_args(argc, argv);
+        if (cParams->status == FAILED) {
+            // printf("Status: {%d}\n", cParams->status); 
+            free(cParams);
+            return EX_OK;
+        }
         result = create_IGD_from_params(cParams);
         free(cParams);
     } else if (strcmp(cmd, "search") == 0) {
         SearchParams_t* sParams = parse_search_args(argc, argv);
         if (sParams->status == FAILED) {
-            printf("Status: {%d}\n", sParams->status); 
-            // free(sParams);
+            // printf("Status: {%d}\n", sParams->status); 
+            free(sParams);
             return EX_OK;
         }
         // create IGD_t object
@@ -122,10 +127,10 @@ int search_help(int exit_code)
 }
 
 SearchParams_t *parse_search_args(int argc, char **argv) {
-    SearchParams_t *sParams = SearchParams_init();  // Allocate memory for search settings struct
+    SearchParams_t *sParams = SearchParams_init();  // Allocate memory for search parameter struct
     sParams->status = FAILED;  // pre-initialize to FAILED
 
-    if(argc<4) {
+    if (argc<4) {
         search_help(EX_OK);
         return sParams;
     }
@@ -156,7 +161,7 @@ SearchParams_t *parse_search_args(int argc, char **argv) {
                 qfName = argv[i+1];
                 mode = 1;
             }
-            else{
+            else {
                 printf("No query file.\n");
                 return sParams;
             }   
@@ -198,10 +203,13 @@ SearchParams_t *parse_search_args(int argc, char **argv) {
 }  
 
 CreateParams_t * parse_create_args(int argc, char **argv) {
-    if (argc < 5) 
-        return create_help(EX_OK);       
-
     CreateParams_t *cParams = CreateParams_init();
+    cParams->status = FAILED;  // pre-initialize to FAILED
+
+    if (argc < 5) {
+        create_help(EX_OK);
+        return cParams;
+    }
 
     int32_t i, j, n;
     // char ipath[1024];

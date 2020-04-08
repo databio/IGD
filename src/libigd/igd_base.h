@@ -43,7 +43,7 @@ extern "C"{
 
 enum IGD_TASKTYPE{CREATE, SEARCH};
 enum IGD_DATAMODE{NOVALUE, MODE1, MODE2, SEQPARE};
-enum IGD_INPUT_FILETYPE{FOLDER, LIST_OF_BED};
+enum INPUT_FILETYPE{FOLDER, LIST_OF_BED};
 enum STATUS{FAILED, INIT, SUCCESS};
 
 //---------------------------------------------------------------------------------
@@ -102,33 +102,44 @@ typedef struct{                         //For search: external...
 /**
  * @brief Parameter struct for a CREATE task
  *
- * Detailed explanation.
+ * This is a simple struct that holds any user-provided parameters used to
+ * execute an IGD create task. Gathering these parameters into a struct makes
+ * it more easy to use the C code as a library, because we can write functions
+ * that use these struct objects as inputs, then provide many different ways
+ * to create the struct objects.
  */
 typedef struct {
-    char igdName[128];
-    enum IGD_DATAMODE datamode;
-    enum IGD_INPUT_FILETYPE filetype;
-    char inputPath[2048];
-    char outputPath[2048];
+    char igdName[128];                  // Database name (sans .igd extension)
+    char inputPath[2048];               
+    char outputPath[2048];              // Output folder where database will be saved
+    enum IGD_DATAMODE datamode;         // What type of database is it?
+    enum INPUT_FILETYPE filetype;
+    enum STATUS status;
     int32_t tile_size;
 } CreateParams_t;
 
 /**
  * @brief Parameter struct for a SEARCH task
  *
- * Detailed explanation.
+ * This struct holds any user-defined parameters for an IGD search task.
  */
 typedef struct {
     char igdFileName[128];
     char queryFileName[128];
     enum IGD_DATAMODE datamode;
-    int32_t checking;
     enum STATUS status;
+    int32_t checking;
     int32_t stat2;
 } SearchParams_t;
 
 
 //---------------------------------------------------------------------------------
+
+//Initializers for IGD and Params structs
+IGD_t *IGD_init();
+SearchParams_t *SearchParams_init();
+CreateParams_t *CreateParams_init();
+
 //Parse a line of BED file
 void str_splits(char *str, int *nmax, char **splits);
 char *parse_bed(char *s, int32_t *st_, int32_t *en_);
@@ -153,13 +164,6 @@ IGD_t *open_IGD(char *igdFile);
 
 //Initialize igd_t
 igd_t *igd_init(int tile_size);
-
-//Initialize IGD_t
-IGD_t *IGD_init();
-
-SearchParams_t *SearchParams_init();
-
-// SearchParams_t SearchParams_init2();
 
 //Save tile data
 void igd_saveT(igd_t *igd, char *oPath);
