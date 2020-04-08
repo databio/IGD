@@ -143,7 +143,9 @@ int64_t getOverlaps0(char *qFile, int64_t *hits)
 }
 
 //--------------------------------------------------------------------------------------
-//Follow the definition of Selena and John https://github.com/deepstanding/seqpare.git
+//Follow the definition of Seqpare: Selena https://github.com/deepstanding/seqpare.git
+//Fast but not very general
+//--------------------------------------------------------------------------------------
 void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *olp, uint32_t *n, uint32_t *m)
 {   
 	uint32_t nt=0, mt=*m;
@@ -181,18 +183,8 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *olp, uint32_t *
 			//-----------------------------------------
 			for(i=tL; i>=0; i--){			
 				if(gData[i].end>qs){
-					if(nt==mt){
-						mt += 10000;
-						printf("1....%i\t %i\t %i\n", nt, mt, tmpi);	
-						overlap_t *tmp = malloc(mt*sizeof(overlap_t));
-						memcpy(tmp, olp, nt*sizeof(overlap_t));
-						printf("2....%i\t %i\t %i\n", nt, mt, tmpi);
-						free(olp);
-						olp = tmp;
-						printf("3....%i\t %i\t %i\n", nt, mt, tmpi);					
-						//olp = (overlap_t *)realloc(olp, mt*sizeof(overlap_t));	
-						//EXPAND(olp, mt);
-					}						
+					if(nt==mt)	
+						EXPAND(olp, mt);						
 					re = gData[i].end;
 					rs = gData[i].start;					
 					st = MIN(qe, re)-MAX(qs, rs);
@@ -235,15 +227,8 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *olp, uint32_t *
 						//-----------------------------------------
 						for(i=tL; i>=tS; i--){ 		
 							if(gData[i].end>qs){
-								if(nt==mt){
-									mt += 10000;	
-									overlap_t *tmp = (overlap_t*)malloc(mt*sizeof(overlap_t));
-									memcpy(tmp, olp, nt*sizeof(overlap_t));
-									//printf("--%i\t %i\t %i\n", nt, mt, tmpi);
-									free(olp);
-									olp = tmp;		
-									//EXPAND(olp, mt);
-								}
+								if(nt==mt)	
+									EXPAND(olp, mt);
 								re = gData[i].end;
 								rs = gData[i].start;					
 								st = MIN(qe, re)-MAX(qs, rs);
@@ -261,24 +246,19 @@ void seq_overlaps(char *chrm, int32_t qs, int32_t qe, overlap_t *olp, uint32_t *
 			}	
 		}
 	}
-	//-----------------------------------------------------	
 	*n = nt;
 	*m = mt;
-	//printf("nt, mt: %i\t %i\n", nt, mt);	
     return;
 }
 
-
-//--------------------------------------------------------------------------------------
-//Follow the definition of Selena https://github.com/deepstanding/seqpare.git
-//Fast but not very general
+//Follow the definition of Selena and John https://github.com/deepstanding/seqpare.git
 void seqOverlaps(char *qFile, double *sm)
 {	//calculate similarities
 	//-----------------------------------------------------
 	ailist_t *ail = readBED(qFile);
 	//-----------------------------------------------------
 	//calculate overlap for each chromosome 
-	int i, j, k, m, nj, nk, ig, it, idx, maxk, maxj, nq, Nq=0, nn=0, mm=12800000;
+	int i, j, k, m, nj, nk, ig, it, idx, maxk, maxj, nq, Nq=0, nn=0, mm=20000000;
 	float maxf;
 	int nfiles = IGD->nFiles;
 	preChr = -6, preIdx=-8;  
@@ -375,11 +355,8 @@ void seqOverlaps(char *qFile, double *sm)
 	return;
 }
 
+
 //--------------------------------------------------------------------------------
-//Get the overlaps for a given interval
-//Input: chromosome name chrm, start, end
-//Output number of overlaps for each dataset in the database
-//For data mode gdata_t
 int32_t get_overlaps(char *chrm, int32_t qs, int32_t qe, int64_t *hits)
 {   
 	int ichr = get_id(chrm);	
@@ -711,6 +688,9 @@ int64_t getMap_v(uint32_t **hitmap, int32_t v)
 }
 
 //-------------------------------------------------------------------------------------
+
+// NS: 2nd element of argv is an igd database (file?)
+
 int igd_search(int argc, char **argv)
 {   //igd[0] search[1] home/john/iGD/rme_igd/roadmap.igd[2] -q[3] query100.bed[4]
     if(argc<4)
@@ -751,6 +731,8 @@ int igd_search(int argc, char **argv)
     //for(i=0;i<nfiles;i++){
     //	printf("%i\t%i\t%i\n", i, IGD->finfo[i].nr, IGD->finfo[i].md);
     //}
+
+    // NS: CLI argument parsing:
     for(i=3; i<argc; i++){
         if(strcmp(argv[i], "-q")==0){
             if(i+1<argc){

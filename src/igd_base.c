@@ -571,7 +571,7 @@ ailist_t *ailist_init(void)
 	ailist_t *ail = malloc(1*sizeof(ailist_t));
 	ail->hc = kh_init(str);
 	ail->nctg = 0;
-	ail->mctg = 100;
+	ail->mctg = 256;
 	ail->ctg = malloc(ail->mctg*sizeof(ctg_t));
 	return ail;
 }
