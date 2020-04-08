@@ -5,18 +5,35 @@
 //-----------------------------------------------------------------------------------
 #include "igd_create.h"
 
-int create_help(int exit_code)
-{
-    printf(
-"%s, v%s\n"
-"usage:   %s create <input dir> <output dir> <output igd name> [options] \n"
-"             -b  <Tile size in power of 2 (default 14)> \n"
-"             -c  < .BED column as value >=4 (default 4) \n",
-            PROGRAM_NAME, VERSION, PROGRAM_NAME);
-    return exit_code;
+int create_IGD_from_task(CreateTask_t* cTask) {
+    //check if the subfolders exist:    
+    // char ftmp[1024];
+    // struct stat st = {0};  
+    
+    // sprintf(ftmp, "%s%s%s", cTask->outputPath, cTask->igdName, ".igd");
+    // if(stat(ftmp, &st) == 0)
+    //     printf("The igd database file %s exists!\n", ftmp);  
+    // else{
+    //     if (stat(cTask->outputPath, &st) == -1){
+    //         mkdir(cTask->outputPath, 0777);    
+    //     }
+    //     sprintf(ftmp, "%s%s", cTask->outputPath, "data0");
+    //     if (stat(ftmp, &st) == -1)
+    //         mkdir(ftmp, 0777);
+    //     if(cTask->datamode==0)
+    //         create_igd0(cTask->inputPath, cTask->outputPath, cTask->igdName);
+    //     else if(cTask->datamode==2)
+    //         create_igd_bed4(cTask->inputPath, cTask->outputPath, cTask->igdName);
+    //     else if(cTask->filetype==1)
+    //         create_igd_f(cTask->inputPath, cTask->outputPath, cTask->igdName);
+    //     else //default
+    //         create_igd(cTask->inputPath, cTask->outputPath, cTask->igdName);
+    // }
+    return EX_OK;
 }
 
-void create_iGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
+
+void create_IGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
 {   //.C call using pointers to pass arguments!!!
     char iPath[256];
     char oPath[256];
@@ -137,7 +154,7 @@ void create_iGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
 			gzclose(fp);
 			if(m==0) ig++;
 		}
-        //2.3 Save/append tiles to disc, add cnts tp Cnts
+        //2.3 Save/append tiles to disk, add cnts tp Cnts
 
 		igd_saveT(igd, oPath);
         i0 = ig;
@@ -177,7 +194,7 @@ void create_iGD(char **i_path, char **o_path, char **igd_name, int *tile_size)
 }
 
 
-void create_iGD_f(char **i_path, char **o_path, char **igd_name, int *tile_size)
+void create_IGD_f(char **i_path, char **o_path, char **igd_name, int *tile_size)
 {   //.C call using pointers to pass arguments!!!
     char iPath[256];
     char oPath[256];

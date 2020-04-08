@@ -1,7 +1,7 @@
 CFLAGS = -g -lz -lm -O2
 BIN = bin
 OBJ = obj
-VPATH = src
+VPATH = src src/libigd
 LIB = igd_base.o igd_create.o igd_search.o igd.o 
 OBJS = $(addprefix $(OBJ)/, $(LIB))
 
@@ -24,3 +24,4 @@ $(BIN):
 clean:
 	rm -rf $(BIN)/*
 	rm -rf $(OBJ)/*
+	rm -rf src/libigd/*.o

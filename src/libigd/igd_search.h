@@ -49,37 +49,36 @@ int32_t ht_get(hTable *ht, const char *key);
 void ht_free(hTable* ht);
 
 //Single query
-void get_overlaps(iGD_t *iGD, char *chrm, int32_t qs, int32_t qe, int64_t *hits);
+void get_overlaps(IGD_t *IGD, char *chrm, int32_t qs, int32_t qe, int64_t *hits);
 
 //32bit
-void get_overlaps32(iGD_t *iGD, char *chrm, int32_t qs, int32_t qe, int32_t *hits);
+void get_overlaps32(IGD_t *IGD, char *chrm, int32_t qs, int32_t qe, int32_t *hits);
 
 void search_1(char **igdFile, char **qchr, int32_t *qs, int32_t *qe, int64_t *hits);
 
 
 /**
- * @brief Compute overlaps between a query file and IGD * database
+ * @brief Compute overlaps between a query file and IGD database
  *
- * @param iGD The database object
+ * @param IGD The database object
  * @param qFile Path to query bed file
- * @param hits Pre-allocated vector of length iGD->nFiles, where results will
- *      be returned.
+ * @param hits Pre-allocated vector of length IGD->nFiles, for returned results
  * @return A vector of overlap counts for each database file.
  */
-int32_t* getOverlapsFile(iGD_t* iGD, char *qFile, int32_t *hits);
+int32_t* getOverlapsFile(IGD_t* IGD, char *qFile, int32_t *hits);
 
 /**
- * @brief Compute overlaps between a query file and IGD * database
+ * @brief Compute overlaps between a query Vector and IGD database
  *
- * @param iGD The database object
+ * @param IGD The database object
  * @param qLength Number of elements in the query vectors (which should be the same)
  * @param qChrs Vector of chromosome identifiers 
  * @param qStarts Vector of start coordinates
  * @param qEnds Vector of end coordinates 
- * @param hits Pre-allocated vector of length iGD->nFiles, for returned results
+ * @param hits Pre-allocated vector of length IGD->nFiles, for returned results
  * @return A vector of overlap counts for each database file.
  */
-int32_t* getOverlapsVectors(iGD_t* iGD, int qLength, char **qChrs, 
+int32_t* getOverlapsVectors(IGD_t* IGD, int qLength, char **qChrs, 
     int32_t *qStarts, int32_t *qEnds, int32_t *hits);
 
 

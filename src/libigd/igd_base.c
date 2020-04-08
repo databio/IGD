@@ -172,80 +172,80 @@ info_t* get_fileinfo(char *ifName, int32_t *nFiles)
     return fi;
 }
 
-iGD_t* open_iGD(char *igdFile)
+IGD_t* open_IGD(char *igdFile)
 {
-	iGD_t* iGD = iGD_init();
+	IGD_t* IGD = IGD_init();
     char tmp[256];
     strcpy(tmp, igdFile);
     tmp[strrchr(tmp, '.')-tmp] = '\0';
-    strcpy(iGD->fname, tmp);
+    strcpy(IGD->fname, tmp);
     char *idFile = tmp;					//str_split(tmp, '.', &nCols)[0];
     strcat(idFile, "_index.tsv");
-    iGD->finfo = get_fileinfo(idFile, &iGD->nFiles);
+    IGD->finfo = get_fileinfo(idFile, &IGD->nFiles);
     FILE *fp = fopen(igdFile, "rb");
     if(fp == NULL)
         printf("Can't open file %s", igdFile);
-    long rtn = fread(&iGD->nbp, sizeof(int32_t), 1, fp);
-    rtn = fread(&iGD->gType, sizeof(int32_t), 1, fp);
-    rtn = fread(&iGD->nCtg, sizeof(int32_t), 1, fp);
+    long rtn = fread(&IGD->nbp, sizeof(int32_t), 1, fp);
+    rtn = fread(&IGD->gType, sizeof(int32_t), 1, fp);
+    rtn = fread(&IGD->nCtg, sizeof(int32_t), 1, fp);
    	int i, k;
    	int32_t gdsize;
    	gdsize = sizeof(gdata_t);
-    int32_t tileS, m = iGD->nCtg;		//the idx of a tile in the chrom
+    int32_t tileS, m = IGD->nCtg;		//the idx of a tile in the chrom
     //------------------------------------------
-    iGD->nTile = malloc(m*sizeof(int32_t));
-    rtn = fread(iGD->nTile, sizeof(int32_t)*m, 1, fp);
+    IGD->nTile = malloc(m*sizeof(int32_t));
+    rtn = fread(IGD->nTile, sizeof(int32_t)*m, 1, fp);
     int64_t chr_loc = 12 + 44*m;		//header size in bytes
-    for(i=0;i<m;i++) chr_loc += iGD->nTile[i]*4;
+    for(i=0;i<m;i++) chr_loc += IGD->nTile[i]*4;
     //------------------------------------------
-    iGD->nCnt = malloc(m*sizeof(int32_t*));
-    iGD->tIdx = malloc(m*sizeof(int64_t*));
+    IGD->nCnt = malloc(m*sizeof(int32_t*));
+    IGD->tIdx = malloc(m*sizeof(int64_t*));
     for(i=0;i<m;i++){
-    	k = iGD->nTile[i];
-    	iGD->nCnt[i] = calloc(k, sizeof(int32_t));
-    	rtn = fread(iGD->nCnt[i], sizeof(int32_t)*k, 1, fp);
+    	k = IGD->nTile[i];
+    	IGD->nCnt[i] = calloc(k, sizeof(int32_t));
+    	rtn = fread(IGD->nCnt[i], sizeof(int32_t)*k, 1, fp);
     	//--------------------------------------
-    	iGD->tIdx[i] = calloc(k, sizeof(int64_t));
-    	iGD->tIdx[i][0] = chr_loc;
+    	IGD->tIdx[i] = calloc(k, sizeof(int64_t));
+    	IGD->tIdx[i][0] = chr_loc;
     	for(int j=1; j<k; j++)
-    		iGD->tIdx[i][j] = iGD->tIdx[i][j-1]+iGD->nCnt[i][j-1]*gdsize;
-    	chr_loc = iGD->tIdx[i][k-1]+iGD->nCnt[i][k-1]*gdsize;
+    		IGD->tIdx[i][j] = IGD->tIdx[i][j-1]+IGD->nCnt[i][j-1]*gdsize;
+    	chr_loc = IGD->tIdx[i][k-1]+IGD->nCnt[i][k-1]*gdsize;
     }
 
-	iGD->cName = malloc(m*sizeof(char*));
+	IGD->cName = malloc(m*sizeof(char*));
     for(i=0;i<m;i++){
-		iGD->cName[i] = malloc(40*sizeof(char));
-		  rtn = fread(iGD->cName[i], 40, 1, fp);
+		IGD->cName[i] = malloc(40*sizeof(char));
+		  rtn = fread(IGD->cName[i], 40, 1, fp);
     }
-    iGD->fP = fp;
+    IGD->fP = fp;
 
     //setup hc
-	iGD->hc = kh_init(str);
+	IGD->hc = kh_init(str);
 	int absent;
-	for(i=0;i<iGD->nCtg;i++){
+	for(i=0;i<IGD->nCtg;i++){
 		khint_t k;
-		strhash_t *h = (strhash_t*)iGD->hc;
-		k = kh_put(str, h, iGD->cName[i], &absent);
+		strhash_t *h = (strhash_t*)IGD->hc;
+		k = kh_put(str, h, IGD->cName[i], &absent);
 		kh_val(h, k) = i;
-		kh_key(h, k) = iGD->cName[i];
+		kh_key(h, k) = IGD->cName[i];
 	}
-	iGD->gData = malloc(1*sizeof(gdata_t));
-	iGD->preIdx = -1;
-	iGD->preChr = -1;
-    return iGD;
+	IGD->gData = malloc(1*sizeof(gdata_t));
+	IGD->preIdx = -1;
+	IGD->preChr = -1;
+    return IGD;
 }
 
-int32_t get_id(iGD_t *iGD, const char *chrm)
+int32_t get_id(IGD_t *IGD, const char *chrm)
 {	//for search
 	khint_t k;
-	strhash_t *h = (strhash_t*)iGD->hc;
+	strhash_t *h = (strhash_t*)IGD->hc;
 	k = kh_get(str, h, chrm);
 	return k == kh_end(h)? -1 : kh_val(h, k);
 }
 
-int32_t get_nFiles(iGD_t *iGD)
+int32_t get_nFiles(IGD_t *IGD)
 {
-	return iGD->nFiles;
+	return IGD->nFiles;
 }
 
 void igd_saveT(igd_t *igd, char *oPath)
@@ -278,7 +278,7 @@ void igd_saveT(igd_t *igd, char *oPath)
 void igd_save(igd_t *igd, char *oPath, char *igdName)
 {
 	char idFile[256], iname[256];
-	//1. Save iGD data info: ctg string length 40
+	//1. Save IGD data info: ctg string length 40
     int32_t i, j, n, m  = igd->nctg;
     sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");
     FILE *fp = fopen(idFile, "wb");
@@ -352,29 +352,44 @@ void igd_destroy(igd_t *igd)
 	free(igd);
 }
 
-iGD_t *iGD_init()
+SearchTask_t *SearchTask_init()
 {
-    iGD_t *iGD = (iGD_t *) malloc(1*sizeof(iGD_t));
-    iGD->nbp = 16384;
-    iGD->gType = 1;
-    iGD->nCtg = 24;
-    return iGD;
+    SearchTask_t *sTask = (SearchTask_t *) malloc(1*sizeof(SearchTask_t));
+    sTask->datamode = 0;
+    sTask->checking = 0;
+    return sTask;
 }
 
-void close_iGD(iGD_t *iGD)
+CreateTask_t *CreateTask_init()
 {
-	if(iGD==0) return;
-	fclose(iGD->fP);
-	free(iGD->gData);
-    free(iGD->nTile);
-    kh_destroy(str, (strhash_t*)iGD->hc);
-    for(int i=0;i<iGD->nCtg;i++){
-     	free(iGD->nCnt[i]);
-     	free(iGD->tIdx[i]);
+    CreateTask_t *cTask = (CreateTask_t *) malloc(1*sizeof(CreateTask_t));
+    return cTask;
+}
+
+
+IGD_t *IGD_init()
+{
+    IGD_t *IGD = (IGD_t *) malloc(1*sizeof(IGD_t));
+    IGD->nbp = 16384;
+    IGD->gType = 1;
+    IGD->nCtg = 24;
+    return IGD;
+}
+
+void close_IGD(IGD_t *IGD)
+{
+	if(IGD==0) return;
+	fclose(IGD->fP);
+	free(IGD->gData);
+    free(IGD->nTile);
+    kh_destroy(str, (strhash_t*)IGD->hc);
+    for(int i=0;i<IGD->nCtg;i++){
+     	free(IGD->nCnt[i]);
+     	free(IGD->tIdx[i]);
     }
-    free(iGD->nCnt);
-    free(iGD->tIdx);
-    free(iGD->cName);
-    free(iGD->finfo);
-    free(iGD);
+    free(IGD->nCnt);
+    free(IGD->tIdx);
+    free(IGD->cName);
+    free(IGD->finfo);
+    free(IGD);
 }

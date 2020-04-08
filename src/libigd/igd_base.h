@@ -30,7 +30,7 @@
 #define PROGRAM_NAME  "igd"
 #define MAJOR_VERSION "0"
 #define MINOR_VERSION "1"
-#define REVISION_VERSION "1"
+#define REVISION_VERSION "2"
 #define BUILD_VERSION "0"
 #define VERSION MAJOR_VERSION "." MINOR_VERSION "." REVISION_VERSION
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
@@ -76,6 +76,10 @@ typedef struct{
 
                                    //For creation: internal...
 
+enum IGD_TASKTYPE{CREATE, SEARCH};
+enum IGD_DATAMODE{NOVALUE, MODE1, MODE2, SEQPARE};
+enum FILETYPE{UNKNOWN, LIST_OF_BED};
+
 /**
  * @brief Representation of IGD database objects
  *
@@ -93,11 +97,38 @@ typedef struct{                         //For search: external...
     info_t *finfo;
     FILE *fP;
     void *hc;
-} iGD_t;
+} IGD_t;
+
+/**
+ * @brief Parameter struct for a CREATE task
+ *
+ * Detailed explanation.
+ */
+typedef struct {
+    char igdName[128];
+    enum IGD_DATAMODE datamode;
+    enum FILETYPE filetype;
+    char inputPath[2048];
+    char outputPath[2048];
+    int32_t tile_size;
+} CreateTask_t;
+
+/**
+ * @brief Parameter struct for a SEARCH task
+ *
+ * Detailed explanation.
+ */
+typedef struct {
+    char igdFileName[128];
+    char queryFileName[128];
+    enum IGD_DATAMODE datamode;
+    int checking;
+} SearchTask_t;
+
 
 //---------------------------------------------------------------------------------
 //Parse a line of BED file
-void str_splits( char* str, int *nmax, char **splits);
+void str_splits(char *str, int *nmax, char **splits);
 char *parse_bed(char *s, int32_t *st_, int32_t *en_);
 
 //Binary search
@@ -107,22 +138,22 @@ int32_t bSearch(gdata_t *gdata, int32_t t0, int32_t tc, int32_t qe);
 void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t v, int32_t idx);
 
 //Get id from igd dict
-int32_t get_id(iGD_t *iGD, const char *chrm);
+int32_t get_id(IGD_t *IGD, const char *chrm);
 
-//Get nFiles from iGD
-int32_t get_nFiles(iGD_t *iGD);
+//Get nFiles from IGD
+int32_t get_nFiles(IGD_t *IGD);
 
 //Get file info from .tsv
 info_t *get_fileinfo(char *ifName, int32_t *nFiles);
 
 //Get igd info from .igd
-iGD_t *open_iGD(char *igdFile);
+IGD_t *open_IGD(char *igdFile);
 
 //Initialize igd_t
 igd_t *igd_init(int tile_size);
 
-//Initialize iGD_t
-iGD_t *iGD_init();
+//Initialize IGD_t
+IGD_t *IGD_init();
 
 //Save tile data
 void igd_saveT(igd_t *igd, char *oPath);
@@ -133,8 +164,8 @@ void igd_save(igd_t *igd, char *oPath, char *igdName);
 //Free igd data
 void igd_destroy(igd_t *igd);
 
-//Free iGD data
-void close_iGD(iGD_t *iGD);
+//Free IGD data
+void close_IGD(IGD_t *IGD);
 
 
 #ifdef __cplusplus
