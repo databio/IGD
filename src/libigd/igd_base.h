@@ -41,6 +41,10 @@
 extern "C"{
 #endif 
 
+enum IGD_TASKTYPE{CREATE, SEARCH};
+enum IGD_DATAMODE{NOVALUE, MODE1, MODE2, SEQPARE};
+enum IGD_INPUT_FILETYPE{FOLDER, LIST_OF_BED};
+enum STATUS{FAILED, INIT, SUCCESS};
 
 //---------------------------------------------------------------------------------
 typedef struct{                         //default
@@ -76,10 +80,6 @@ typedef struct{
 
                                    //For creation: internal...
 
-enum IGD_TASKTYPE{CREATE, SEARCH};
-enum IGD_DATAMODE{NOVALUE, MODE1, MODE2, SEQPARE};
-enum FILETYPE{UNKNOWN, LIST_OF_BED};
-
 /**
  * @brief Representation of IGD database objects
  *
@@ -107,7 +107,7 @@ typedef struct{                         //For search: external...
 typedef struct {
     char igdName[128];
     enum IGD_DATAMODE datamode;
-    enum FILETYPE filetype;
+    enum IGD_INPUT_FILETYPE filetype;
     char inputPath[2048];
     char outputPath[2048];
     int32_t tile_size;
@@ -122,7 +122,9 @@ typedef struct {
     char igdFileName[128];
     char queryFileName[128];
     enum IGD_DATAMODE datamode;
-    int checking;
+    int32_t checking;
+    enum STATUS status;
+    int32_t stat2;
 } SearchTask_t;
 
 
@@ -154,6 +156,10 @@ igd_t *igd_init(int tile_size);
 
 //Initialize IGD_t
 IGD_t *IGD_init();
+
+SearchTask_t *SearchTask_init();
+
+// SearchTask_t SearchTask_init2();
 
 //Save tile data
 void igd_saveT(igd_t *igd, char *oPath);

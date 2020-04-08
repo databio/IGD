@@ -15,10 +15,8 @@ int igd_help(int argc, char **argv, int exit_code);
 int create_help(int exit_code);
 int search_help(int exit_code);
 
-SearchTask_t * parse_search_args(int argc, char **argv);
-CreateTask_t * parse_create_args(int argc, char **argv);
-
-
+SearchTask_t *parse_search_args(int argc, char **argv);
+CreateTask_t *parse_create_args(int argc, char **argv);
 
 void *hc;				//extern from igd_base.h
 IGD_t *IGD;
@@ -39,6 +37,12 @@ int main(int argc, char **argv)
         free(cTask);
     } else if (strcmp(cmd, "search") == 0) {
         SearchTask_t* sTask = parse_search_args(argc, argv);
+        if (sTask->status == FAILED) {
+            printf("SearchTask status: {%d}\n", sTask->status); 
+            printf("Creating task failed.\n");
+            // free(sTask);
+            return EX_OK;
+        }
         // create IGD_t object
         IGD_t *IGD = open_IGD(sTask->igdFileName);
         // allocate response vector
@@ -48,7 +52,7 @@ int main(int argc, char **argv)
         // result = search_IGD(IGD, sTask);
 
          // write results to stdout
-        printf("index\t File_name\t number of regions\t number of hits\n");        
+        printf("index\ttotal_regions\toverlaps\tfile_name\n");        
         for(int i=0;i<IGD->nFiles;i++) {
             printf("%i\t%i\t%lld\t%s\n", i, IGD->finfo[i].nr, (long long)hits[i], IGD->finfo[i].fileName);
         }
@@ -100,11 +104,18 @@ int search_help(int exit_code)
     return exit_code;
 }
 
-SearchTask_t * parse_search_args(int argc, char **argv) {
-    if(argc<4)
-        return search_help(EX_OK); 
-
+SearchTask_t *parse_search_args(int argc, char **argv) {
     SearchTask_t *sTask = SearchTask_init();
+
+    printf("Set status 1\n"); 
+    sTask->status = FAILED;
+    printf("Set status 2\n");
+    if(argc<4) {
+        search_help(EX_OK);
+        return sTask;
+    }
+    // SearchTask_t sTask = *sTask;
+
     char* igdName = argv[2];
     int32_t v = 0, qs=1, qe=2;
     int i, i1, j, checking=0, mode=-1, mt=0, ext=0, xlen=0,  mv=0, mx=0, ichr, k;
@@ -116,12 +127,12 @@ SearchTask_t * parse_search_args(int argc, char **argv) {
     char *ftype = igdName + strlen(igdName) - 4;
     if(strcmp(".igd", ftype)!=0){
         printf("%s is not an igd database", igdName);
-        return EX_OK;
+        return sTask;
     }    
     FILE* fi = fopen(igdName, "rb");
     if(!fi){
         printf("%s does not exist", igdName);
-        return EX_OK;
+        return sTask;
     }
     fclose(fi);
 
@@ -133,7 +144,7 @@ SearchTask_t * parse_search_args(int argc, char **argv) {
             }
             else{
                 printf("No query file.\n");
-                return EX_OK;
+                return sTask;
             }   
         }
         else if(strcmp(argv[i], "-r")==0){
@@ -164,6 +175,7 @@ SearchTask_t * parse_search_args(int argc, char **argv) {
         }                              
     }
 
+    sTask->status = SUCCESS;
     strcpy(sTask->igdFileName, igdName);
     strcpy(sTask->queryFileName, qfName);
     sTask->checking = checking;

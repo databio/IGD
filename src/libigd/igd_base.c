@@ -354,11 +354,40 @@ void igd_destroy(igd_t *igd)
 
 SearchTask_t *SearchTask_init()
 {
+    printf("Creating SearchTask\n"); 
+    SearchTask_t *sTask = malloc(sizeof(SearchTask_t));
+    sTask->datamode = 0;
+    sTask->checking = 0;
+    sTask->stat2 = 1;
+    sTask->status = INIT;
+    printf("Finished initializing SearchTask\n"); 
+    return sTask;
+}
+
+SearchTask_t SearchTask_init2()
+{
+    printf("Creating SearchTask\n"); 
+    SearchTask_t sTask;// = (SearchTask_t *) malloc(1*sizeof(SearchTask_t));
+    sTask.datamode = 0;
+    sTask.checking = 0;
+    sTask.status = FAILED;
+    sTask.stat2 = 0;
+    printf("Creating SearchTask\n"); 
+    return sTask;
+}
+
+SearchTask_t *SearchTask_init_old()
+{
+    printf("Creating SearchTask\n"); 
     SearchTask_t *sTask = (SearchTask_t *) malloc(1*sizeof(SearchTask_t));
     sTask->datamode = 0;
     sTask->checking = 0;
+    sTask->status = FAILED;
+    sTask->stat2 = 0;
+    printf("Creating SearchTask\n"); 
     return sTask;
 }
+
 
 CreateTask_t *CreateTask_init()
 {
