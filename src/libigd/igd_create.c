@@ -6,28 +6,30 @@
 #include "igd_create.h"
 
 int create_IGD_from_params(CreateParams_t* cParams) {
+    printf("Called create...");
+    CreateParams_show(cParams); 
     //check if the subfolders exist:    
     // char ftmp[1024];
     // struct stat st = {0};  
     
-    // sprintf(ftmp, "%s%s%s", cTask->outputPath, cTask->igdName, ".igd");
+    // sprintf(ftmp, "%s%s%s", cParams->outputPath, cParams->igdName, ".igd");
     // if(stat(ftmp, &st) == 0)
     //     printf("The igd database file %s exists!\n", ftmp);  
     // else{
-    //     if (stat(cTask->outputPath, &st) == -1){
-    //         mkdir(cTask->outputPath, 0777);    
+    //     if (stat(cParams->outputPath, &st) == -1){
+    //         mkdir(cParams->outputPath, 0777);    
     //     }
-    //     sprintf(ftmp, "%s%s", cTask->outputPath, "data0");
+    //     sprintf(ftmp, "%s%s", cParams->outputPath, "data0");
     //     if (stat(ftmp, &st) == -1)
     //         mkdir(ftmp, 0777);
-    //     if(cTask->datamode==0)
-    //         create_igd0(cTask->inputPath, cTask->outputPath, cTask->igdName);
-    //     else if(cTask->datamode==2)
-    //         create_igd_bed4(cTask->inputPath, cTask->outputPath, cTask->igdName);
-    //     else if(cTask->filetype==1)
-    //         create_igd_f(cTask->inputPath, cTask->outputPath, cTask->igdName);
+    //     if(cParams->dataMode==0)
+    //         create_igd0(cParams->inputPath, cParams->outputPath, cParams->igdName);
+    //     else if(cParams->dataMode==2)
+    //         create_igd_bed4(cParams->inputPath, cParams->outputPath, cParams->igdName);
+    //     else if(cParams->fileType==1)
+    //         create_igd_f(cParams->inputPath, cParams->outputPath, cParams->igdName);
     //     else //default
-    //         create_igd(cTask->inputPath, cTask->outputPath, cTask->igdName);
+    //         create_igd(cParams->inputPath, cParams->outputPath, cParams->igdName);
     // }
     return EX_OK;
 }

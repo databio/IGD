@@ -15,7 +15,7 @@ typedef khash_t(str) strhash_t;
 SearchParams_t *SearchParams_init()
 {
     SearchParams_t *sTask = malloc(sizeof(SearchParams_t));
-    sTask->datamode = 0;
+    sTask->dataMode = 0;
     sTask->checking = 0;
     sTask->stat2 = 1;
     sTask->status = INIT;
@@ -25,9 +25,14 @@ SearchParams_t *SearchParams_init()
 
 CreateParams_t *CreateParams_init()
 {
-    CreateParams_t *cTask = malloc(sizeof(CreateParams_t));
-    cTask->status = INIT;
-    return cTask;
+    CreateParams_t *cParams = malloc(sizeof(CreateParams_t));
+	// cParams->igdName = "";
+	// cParams->inputPath = "";
+	// cParams->outputPath = "";
+	cParams->dataMode = NOVALUE;
+	cParams->fileType = FOLDER;
+    cParams->status = INIT;
+    return cParams;
 }
 
 IGD_t *IGD_init()
@@ -58,6 +63,26 @@ void close_IGD(IGD_t *IGD)
 }
 
 
+void SearchParams_show(SearchParams_t* sParams) 
+{
+	printf("SearchParams:\n  igdFileName: %s\n  queryFileName: %s\n  dataMode: %d\n  status: %d\n", 
+		sParams->igdFileName,
+		sParams->queryFileName,
+		sParams->dataMode,
+		sParams->status);
+}
+
+void CreateParams_show(CreateParams_t* cParams) 
+{
+	printf("CreateParams:\n  igdName: %s\n  inputPath: %s\n  outputPath: %s\n  dataMode: %d\n  fileType: %d\n  status: %d\n  tileSize: %d\n", 
+		cParams->igdName,
+		cParams->inputPath,
+		cParams->outputPath,
+		cParams->dataMode,
+		cParams->fileType,
+		cParams->status,
+		cParams->tileSize);
+}
 
 void str_splits( char* str, int *nmax, char **splits)
 {   //tsv

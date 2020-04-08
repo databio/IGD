@@ -21,6 +21,12 @@
  */
 void create_IGD(char **i_path, char **o_path, char **igd_name, int *tile_size);
 
+/**
+ * @brief Create an IGD database object (*.igd) from a Params object
+ *
+ * @param cParams A struct holding all parameters required
+ * @return exit code; 0=success, 1=failed
+ */
 int create_IGD_from_params(CreateParams_t* cParams);
 
 

@@ -112,10 +112,10 @@ typedef struct {
     char igdName[128];                  // Database name (sans .igd extension)
     char inputPath[2048];               
     char outputPath[2048];              // Output folder where database will be saved
-    enum IGD_DATAMODE datamode;         // What type of database is it?
-    enum INPUT_FILETYPE filetype;
+    enum IGD_DATAMODE dataMode;         // What type of database is it?
+    enum INPUT_FILETYPE fileType;
     enum STATUS status;
-    int32_t tile_size;
+    int32_t tileSize;
 } CreateParams_t;
 
 /**
@@ -126,7 +126,7 @@ typedef struct {
 typedef struct {
     char igdFileName[128];
     char queryFileName[128];
-    enum IGD_DATAMODE datamode;
+    enum IGD_DATAMODE dataMode;
     enum STATUS status;
     int32_t checking;
     int32_t stat2;
@@ -139,6 +139,16 @@ typedef struct {
 IGD_t *IGD_init();
 SearchParams_t *SearchParams_init();
 CreateParams_t *CreateParams_init();
+
+/**
+ * @brief Show functions for param objects
+ *
+ * These functions will just print all the parameters. Useful for debugging or
+ * displaying for the user how we parsed the input parameters.
+ * @param sParams Parameter object to display
+ */
+void SearchParams_show(SearchParams_t* sParams);
+void CreateParams_show(CreateParams_t* cParams);
 
 //Parse a line of BED file
 void str_splits(char *str, int *nmax, char **splits);

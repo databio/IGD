@@ -51,36 +51,39 @@ int main(int argc, char **argv)
     if (strcmp(cmd, "create") == 0) {
         CreateParams_t* cParams = parse_create_args(argc, argv);
         if (cParams->status == FAILED) {
-            // printf("Status: {%d}\n", cParams->status); 
+            CreateParams_show(cParams);  // Useful for debug
             free(cParams);
             return EX_OK;
+        } else if (cParams->status == SUCCESS) {
+            result = create_IGD_from_params(cParams);
+            free(cParams);
         }
-        result = create_IGD_from_params(cParams);
-        free(cParams);
     } else if (strcmp(cmd, "search") == 0) {
         SearchParams_t* sParams = parse_search_args(argc, argv);
         if (sParams->status == FAILED) {
             // printf("Status: {%d}\n", sParams->status); 
+            SearchParams_show(sParams);
             free(sParams);
             return EX_OK;
-        }
-        // create IGD_t object
-        IGD_t *IGD = open_IGD(sParams->igdFileName);
-        // allocate response vector
-        int32_t *hits = calloc(IGD->nFiles, sizeof(int32_t));
-        // perform search
-        result = getOverlapsFile(IGD, sParams->queryFileName, hits);
-        // result = search_IGD(IGD, sParams);
+        } else if (sParams->status == SUCCESS) {
+            // create IGD_t object
+            IGD_t *IGD = open_IGD(sParams->igdFileName);
+            // allocate response vector
+            int32_t *hits = calloc(IGD->nFiles, sizeof(int32_t));
+            // perform search
+            result = getOverlapsFile(IGD, sParams->queryFileName, hits);
+            // result = search_IGD(IGD, sParams);
 
-         // write results to stdout
-        printf("index\ttotal_regions\toverlaps\tfile_name\n");        
-        for(int i=0;i<IGD->nFiles;i++) {
-            printf("%i\t%i\t%lld\t%s\n", i, IGD->finfo[i].nr, (long long)hits[i], IGD->finfo[i].fileName);
+             // write results to stdout
+            printf("index\ttotal_regions\toverlaps\tfile_name\n");        
+            for(int i=0;i<IGD->nFiles;i++) {
+                printf("%i\t%i\t%lld\t%s\n", i, IGD->finfo[i].nr, (long long)hits[i], IGD->finfo[i].fileName);
+            }
+            //Destruct
+            free(hits);
+            free(sParams);
+            close_IGD(IGD);
         }
-        //Destruct
-        free(hits);
-        free(sParams);
-        close_IGD(IGD);
     } else {
         fprintf(stderr, "Unknown command\n");
         return igd_help(argc, argv, EX_USAGE);;
@@ -197,7 +200,7 @@ SearchParams_t *parse_search_args(int argc, char **argv) {
     strcpy(sParams->igdFileName, igdName);
     strcpy(sParams->queryFileName, qfName);
     sParams->checking = checking;
-    sParams->datamode = mode;
+    sParams->dataMode = mode;
     sParams->status = SUCCESS;
     return sParams;
 }  
@@ -219,29 +222,29 @@ CreateParams_t * parse_create_args(int argc, char **argv) {
     strcpy(cParams->inputPath, argv[2]);
     strcpy(cParams->outputPath, argv[3]);
     strcpy(cParams->igdName, argv[4]);
-    cParams->datamode = 1;
-    cParams->filetype = 0;
+    cParams->dataMode = 1;
+    cParams->fileType = 0;
     int dtype = 1, ftype = 0;   //file type 1: list of bed file
-    cParams->tile_size = 16384;                              //2^14 = 16384; arg -b 14 (default)
+    cParams->tileSize = 16384;                              //2^14 = 16384; arg -b 14 (default)
 
     // process command-line arguments
     for(i=5; i<argc; i++){
         if(strcmp(argv[i], "-s")==0 && i+1<argc)    //data structure type
-            cParams->datamode = atoi(argv[i+1]); 
+            cParams->dataMode = atoi(argv[i+1]); 
         if(strcmp(argv[i], "-b")==0 && i+1<argc){
             n = atoi(argv[i+1]);
             if(n>10 && n<20)
-                cParams->tile_size = pow(2, n);  
+                cParams->tileSize = pow(2, n);  
         } 
         if(strcmp(argv[i], "-f")==0) 
-            cParams->filetype = 1;                                
+            cParams->fileType = 1;                                
     }
     
     if(cParams->outputPath[strlen(cParams->outputPath)-1]!='/'){
         strcat(cParams->outputPath, "/");
     }          
           
-    if(cParams->filetype==0 && cParams->datamode!=2){                            
+    if(cParams->fileType==0 && cParams->dataMode!=2){                            
         if(cParams->inputPath[strlen(cParams->inputPath)-1]=='/'){
             strcat(cParams->inputPath, "*");
         }
@@ -249,6 +252,7 @@ CreateParams_t * parse_create_args(int argc, char **argv) {
             strcat(cParams->inputPath, "/*");
         }
     }  
+    cParams->status = SUCCESS;
     return cParams;
 }
 

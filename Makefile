@@ -1,4 +1,5 @@
-CFLAGS = -g -lz -lm -O2
+# CFLAGS = -g -lz -lm -O2  # for production/benchmarking
+CFLAGS = -g -lz -lm  # for debug
 BIN = bin
 OBJ = obj
 VPATH = src src/libigd
