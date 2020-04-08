@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------------------
 #include "igd_create.h"
 
-int create_IGD_from_task(CreateTask_t* cTask) {
+int create_IGD_from_params(CreateParams_t* cParams) {
     //check if the subfolders exist:    
     // char ftmp[1024];
     // struct stat st = {0};  

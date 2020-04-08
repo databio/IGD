@@ -21,7 +21,7 @@
  */
 void create_IGD(char **i_path, char **o_path, char **igd_name, int *tile_size);
 
-int create_IGD_from_task(CreateTask_t* cTask);
+int create_IGD_from_params(CreateParams_t* cParams);
 
 
 #endif

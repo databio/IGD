@@ -15,15 +15,32 @@ int igd_help(int argc, char **argv, int exit_code);
 int create_help(int exit_code);
 int search_help(int exit_code);
 
-SearchTask_t *parse_search_args(int argc, char **argv);
-CreateTask_t *parse_create_args(int argc, char **argv);
+/**
+ * @brief Parse the command-line args (argv) if given 'search' command
+ *
+ * @param argc Arg count directly from main()
+ * @param argv Arg vars directly from main()
+ * @return A SearchParams_t* with all parameters needed for requested task.
+ */
+SearchParams_t *parse_search_args(int argc, char **argv);
 
-void *hc;				//extern from igd_base.h
-IGD_t *IGD;
-gdata_t *gData = NULL;
+/**
+ * @brief Parse the command-line args (argv) if given 'create' command
+ *
+ * @param argc Arg count directly from main()
+ * @param argv Arg vars directly from main()
+ * @return A CreateParams_t* with all parameters needed for requested task.
+ */
+CreateParams_t *parse_create_args(int argc, char **argv);
+
+
+// Old globals should be removed now with the C library approach
+// void *hc;				//extern from igd_base.h
+// IGD_t *IGD;
+// gdata_t *gData = NULL;
 // gdata0_t *gData0 = NULL;
-int32_t preIdx, preChr, tile_size;
-FILE *fP;
+// int32_t preIdx, preChr, tile_size;
+// FILE *fP;
 
 int main(int argc, char **argv)
 {
@@ -32,24 +49,23 @@ int main(int argc, char **argv)
     int result;
 
     if (strcmp(cmd, "create") == 0) {
-        CreateTask_t* cTask = parse_create_args(argc, argv);
-        result = create_IGD_from_task(cTask);
-        free(cTask);
+        CreateParams_t* cParams = parse_create_args(argc, argv);
+        result = create_IGD_from_params(cParams);
+        free(cParams);
     } else if (strcmp(cmd, "search") == 0) {
-        SearchTask_t* sTask = parse_search_args(argc, argv);
-        if (sTask->status == FAILED) {
-            printf("SearchTask status: {%d}\n", sTask->status); 
-            printf("Creating task failed.\n");
-            // free(sTask);
+        SearchParams_t* sParams = parse_search_args(argc, argv);
+        if (sParams->status == FAILED) {
+            printf("Status: {%d}\n", sParams->status); 
+            // free(sParams);
             return EX_OK;
         }
         // create IGD_t object
-        IGD_t *IGD = open_IGD(sTask->igdFileName);
+        IGD_t *IGD = open_IGD(sParams->igdFileName);
         // allocate response vector
         int32_t *hits = calloc(IGD->nFiles, sizeof(int32_t));
         // perform search
-        result = getOverlapsFile(IGD, sTask->queryFileName, hits);
-        // result = search_IGD(IGD, sTask);
+        result = getOverlapsFile(IGD, sParams->queryFileName, hits);
+        // result = search_IGD(IGD, sParams);
 
          // write results to stdout
         printf("index\ttotal_regions\toverlaps\tfile_name\n");        
@@ -57,7 +73,8 @@ int main(int argc, char **argv)
             printf("%i\t%i\t%lld\t%s\n", i, IGD->finfo[i].nr, (long long)hits[i], IGD->finfo[i].fileName);
         }
         //Destruct
-        free(hits);   
+        free(hits);
+        free(sParams);
         close_IGD(IGD);
     } else {
         fprintf(stderr, "Unknown command\n");
@@ -104,17 +121,14 @@ int search_help(int exit_code)
     return exit_code;
 }
 
-SearchTask_t *parse_search_args(int argc, char **argv) {
-    SearchTask_t *sTask = SearchTask_init();
+SearchParams_t *parse_search_args(int argc, char **argv) {
+    SearchParams_t *sParams = SearchParams_init();  // Allocate memory for search settings struct
+    sParams->status = FAILED;  // pre-initialize to FAILED
 
-    printf("Set status 1\n"); 
-    sTask->status = FAILED;
-    printf("Set status 2\n");
     if(argc<4) {
         search_help(EX_OK);
-        return sTask;
+        return sParams;
     }
-    // SearchTask_t sTask = *sTask;
 
     char* igdName = argv[2];
     int32_t v = 0, qs=1, qe=2;
@@ -127,12 +141,12 @@ SearchTask_t *parse_search_args(int argc, char **argv) {
     char *ftype = igdName + strlen(igdName) - 4;
     if(strcmp(".igd", ftype)!=0){
         printf("%s is not an igd database", igdName);
-        return sTask;
+        return sParams;
     }    
     FILE* fi = fopen(igdName, "rb");
     if(!fi){
         printf("%s does not exist", igdName);
-        return sTask;
+        return sParams;
     }
     fclose(fi);
 
@@ -144,7 +158,7 @@ SearchTask_t *parse_search_args(int argc, char **argv) {
             }
             else{
                 printf("No query file.\n");
-                return sTask;
+                return sParams;
             }   
         }
         else if(strcmp(argv[i], "-r")==0){
@@ -175,58 +189,58 @@ SearchTask_t *parse_search_args(int argc, char **argv) {
         }                              
     }
 
-    sTask->status = SUCCESS;
-    strcpy(sTask->igdFileName, igdName);
-    strcpy(sTask->queryFileName, qfName);
-    sTask->checking = checking;
-    sTask->datamode = mode;
-    return sTask;
+    strcpy(sParams->igdFileName, igdName);
+    strcpy(sParams->queryFileName, qfName);
+    sParams->checking = checking;
+    sParams->datamode = mode;
+    sParams->status = SUCCESS;
+    return sParams;
 }  
 
-CreateTask_t * parse_create_args(int argc, char **argv) {
+CreateParams_t * parse_create_args(int argc, char **argv) {
     if (argc < 5) 
         return create_help(EX_OK);       
 
-    CreateTask_t *cTask = CreateTask_init();
+    CreateParams_t *cParams = CreateParams_init();
 
     int32_t i, j, n;
     // char ipath[1024];
     // char opath[1024];
     // char *dbname = argv[4]; 
     char *s1, *s2;
-    strcpy(cTask->inputPath, argv[2]);
-    strcpy(cTask->outputPath, argv[3]);
-    strcpy(cTask->igdName, argv[4]);
-    cTask->datamode = 1;
-    cTask->filetype = 0;
+    strcpy(cParams->inputPath, argv[2]);
+    strcpy(cParams->outputPath, argv[3]);
+    strcpy(cParams->igdName, argv[4]);
+    cParams->datamode = 1;
+    cParams->filetype = 0;
     int dtype = 1, ftype = 0;   //file type 1: list of bed file
-    cTask->tile_size = 16384;                              //2^14 = 16384; arg -b 14 (default)
+    cParams->tile_size = 16384;                              //2^14 = 16384; arg -b 14 (default)
 
     // process command-line arguments
     for(i=5; i<argc; i++){
         if(strcmp(argv[i], "-s")==0 && i+1<argc)    //data structure type
-            cTask->datamode = atoi(argv[i+1]); 
+            cParams->datamode = atoi(argv[i+1]); 
         if(strcmp(argv[i], "-b")==0 && i+1<argc){
             n = atoi(argv[i+1]);
             if(n>10 && n<20)
-                cTask->tile_size = pow(2, n);  
+                cParams->tile_size = pow(2, n);  
         } 
         if(strcmp(argv[i], "-f")==0) 
-            cTask->filetype = 1;                                
+            cParams->filetype = 1;                                
     }
     
-    if(cTask->outputPath[strlen(cTask->outputPath)-1]!='/'){
-        strcat(cTask->outputPath, "/");
+    if(cParams->outputPath[strlen(cParams->outputPath)-1]!='/'){
+        strcat(cParams->outputPath, "/");
     }          
           
-    if(cTask->filetype==0 && cTask->datamode!=2){                            
-        if(cTask->inputPath[strlen(cTask->inputPath)-1]=='/'){
-            strcat(cTask->inputPath, "*");
+    if(cParams->filetype==0 && cParams->datamode!=2){                            
+        if(cParams->inputPath[strlen(cParams->inputPath)-1]=='/'){
+            strcat(cParams->inputPath, "*");
         }
-        else if(cTask->inputPath[strlen(cTask->inputPath)-1]!='*'){
-            strcat(cTask->inputPath, "/*");
+        else if(cParams->inputPath[strlen(cParams->inputPath)-1]!='*'){
+            strcat(cParams->inputPath, "/*");
         }
     }  
-    return cTask;
+    return cParams;
 }
 

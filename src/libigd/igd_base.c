@@ -352,46 +352,46 @@ void igd_destroy(igd_t *igd)
 	free(igd);
 }
 
-SearchTask_t *SearchTask_init()
+SearchParams_t *SearchParams_init()
 {
-    printf("Creating SearchTask\n"); 
-    SearchTask_t *sTask = malloc(sizeof(SearchTask_t));
+    printf("Creating SearchParams\n"); 
+    SearchParams_t *sTask = malloc(sizeof(SearchParams_t));
     sTask->datamode = 0;
     sTask->checking = 0;
     sTask->stat2 = 1;
     sTask->status = INIT;
-    printf("Finished initializing SearchTask\n"); 
+    printf("Finished initializing SearchParams\n"); 
     return sTask;
 }
 
-SearchTask_t SearchTask_init2()
+SearchParams_t SearchParams_init2()
 {
-    printf("Creating SearchTask\n"); 
-    SearchTask_t sTask;// = (SearchTask_t *) malloc(1*sizeof(SearchTask_t));
+    printf("Creating SearchParams\n"); 
+    SearchParams_t sTask;// = (SearchParams_t *) malloc(1*sizeof(SearchParams_t));
     sTask.datamode = 0;
     sTask.checking = 0;
     sTask.status = FAILED;
     sTask.stat2 = 0;
-    printf("Creating SearchTask\n"); 
+    printf("Creating SearchParams\n"); 
     return sTask;
 }
 
-SearchTask_t *SearchTask_init_old()
+SearchParams_t *SearchParams_init_old()
 {
-    printf("Creating SearchTask\n"); 
-    SearchTask_t *sTask = (SearchTask_t *) malloc(1*sizeof(SearchTask_t));
+    printf("Creating SearchParams\n"); 
+    SearchParams_t *sTask = (SearchParams_t *) malloc(1*sizeof(SearchParams_t));
     sTask->datamode = 0;
     sTask->checking = 0;
     sTask->status = FAILED;
     sTask->stat2 = 0;
-    printf("Creating SearchTask\n"); 
+    printf("Creating SearchParams\n"); 
     return sTask;
 }
 
 
-CreateTask_t *CreateTask_init()
+CreateParams_t *CreateParams_init()
 {
-    CreateTask_t *cTask = (CreateTask_t *) malloc(1*sizeof(CreateTask_t));
+    CreateParams_t *cTask = (CreateParams_t *) malloc(1*sizeof(CreateParams_t));
     return cTask;
 }
 

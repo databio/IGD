@@ -111,7 +111,7 @@ typedef struct {
     char inputPath[2048];
     char outputPath[2048];
     int32_t tile_size;
-} CreateTask_t;
+} CreateParams_t;
 
 /**
  * @brief Parameter struct for a SEARCH task
@@ -125,7 +125,7 @@ typedef struct {
     int32_t checking;
     enum STATUS status;
     int32_t stat2;
-} SearchTask_t;
+} SearchParams_t;
 
 
 //---------------------------------------------------------------------------------
@@ -157,9 +157,9 @@ igd_t *igd_init(int tile_size);
 //Initialize IGD_t
 IGD_t *IGD_init();
 
-SearchTask_t *SearchTask_init();
+SearchParams_t *SearchParams_init();
 
-// SearchTask_t SearchTask_init2();
+// SearchParams_t SearchParams_init2();
 
 //Save tile data
 void igd_saveT(igd_t *igd, char *oPath);
