@@ -565,17 +565,18 @@ void igd0_destroy(igd0_t *igd)
 }
 
 //------------------------------------------------------------------
-//for seqpare
+//For seqpare: Using chrom_t not ctg_t
 ailist_t *ailist_init(void)
 {
 	ailist_t *ail = malloc(1*sizeof(ailist_t));
 	ail->hc = kh_init(str);
 	ail->nctg = 0;
 	ail->mctg = 256;
-	ail->ctg = malloc(ail->mctg*sizeof(ctg_t));
+	ail->ctg = malloc(ail->mctg*sizeof(chrom_t));
 	return ail;
 }
 
+//Release ailist
 void ailist_destroy(ailist_t *ail)
 {
 	int32_t i;
@@ -589,6 +590,7 @@ void ailist_destroy(ailist_t *ail)
 	free(ail);
 }
 
+//Add 
 void ailist_add(ailist_t *ail, const char *chr, uint32_t s, uint32_t e, int32_t v)
 {
 	if(s > e)return;
