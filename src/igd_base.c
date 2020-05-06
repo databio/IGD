@@ -20,6 +20,13 @@ int compare_rstart(const void *a, const void *b)
     return pa->start - pb->start;
 }
 
+int compare_qstart(const void *a, const void *b)
+{	//for seqpare
+    gdata0_t *pa = (gdata0_t *) a;
+    gdata0_t *pb = (gdata0_t *) b;
+    return pa->start - pb->start;
+}
+
 int compare_fidx(const void *a, const void *b)
 {
     overlap_t *pa = (overlap_t *) a;
@@ -565,18 +572,17 @@ void igd0_destroy(igd0_t *igd)
 }
 
 //------------------------------------------------------------------
-//For seqpare: Using chrom_t not ctg_t
+//for seqpare
 ailist_t *ailist_init(void)
 {
 	ailist_t *ail = malloc(1*sizeof(ailist_t));
 	ail->hc = kh_init(str);
 	ail->nctg = 0;
-	ail->mctg = 256;
-	ail->ctg = malloc(ail->mctg*sizeof(chrom_t));
+	ail->mctg = 48;
+	ail->ctg = (chrom_t *)malloc(ail->mctg*sizeof(chrom_t));
 	return ail;
 }
 
-//Release ailist
 void ailist_destroy(ailist_t *ail)
 {
 	int32_t i;
@@ -590,29 +596,28 @@ void ailist_destroy(ailist_t *ail)
 	free(ail);
 }
 
-//Add 
 void ailist_add(ailist_t *ail, const char *chr, uint32_t s, uint32_t e, int32_t v)
 {
 	if(s > e)return;
-	int absent;
+	int absent, i;
 	khint_t k;
 	strhash_t *h = (strhash_t*)ail->hc;
 	k = kh_put(str, h, chr, &absent);
 	if (absent) {
 		if (ail->nctg == ail->mctg)
-			EXPAND(ail->ctg, ail->mctg);							
+			EXPAND(ail->ctg, ail->mctg);						
 		kh_val(h, k) = ail->nctg;		
 		chrom_t *p = &ail->ctg[ail->nctg++];
 		p->name = strdup(chr);
 		p->nr=0;	p->mr=64;
-		p->glist = malloc(p->mr*sizeof(gdata_t));
+		p->glist = (gdata0_t *)malloc(p->mr*sizeof(gdata0_t));
 		kh_key(h, k) = p->name;
 	}
 	int32_t kk = kh_val(h, k);
 	chrom_t *q = &ail->ctg[kk];
 	if (q->nr == q->mr)
 		EXPAND(q->glist, q->mr);	
-	gdata_t *p = &q->glist[q->nr++];
+	gdata0_t *p = &q->glist[q->nr++];
 	p->start = s;
 	p->end   = e;
 	return;

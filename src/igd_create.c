@@ -436,9 +436,7 @@ int igd_create(int argc, char **argv)
     char *dbname = argv[4]; 
     int dtype = 1, ftype = 0;	//file type 1: list of bed file
     
-    tile_size = 16384;								//2^14 = 16384; arg -b 14 (default)
-
-    // process command-line arguments
+    tile_size = 16384;								//b14 default
     for(i=5; i<argc; i++){
         if(strcmp(argv[i], "-s")==0 && i+1<argc)	//data structure type
             dtype = atoi(argv[i+1]); 
