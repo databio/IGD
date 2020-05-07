@@ -67,30 +67,10 @@ int32_t bSearch(gdata_t *gdata, int32_t t0, int32_t tc, int32_t qe)
   	return tE;
 }
 
-<<<<<<< HEAD
 void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t v, int32_t idx)
 {	//layers: igd->ctg->gTile->gdata(list)
 	if(s >= e)return;
 	int absent;
-=======
-/**
- * @brief Primary function for adding regions to an IGD object
- *
- * Adds a region to an IGD database?
- *
- * @param *igd a pointer to the IGD object (of type igd_t)
- * @param *chrm Chromosome ???
- * @param s Start coordinate
- * @param e End coordinate
- * @param v Value ???
- * @param idx ???
- * @return Null
- */
-void igd_add(igd_t *igd, const char *chrm, int32_t s, int32_t e, int32_t v, int32_t idx)
-{	//layers: igd->ctg->gTile->gdata(list)
-	if(s >= e)return;
-	int absent;  //return value from kh_put function
->>>>>>> 42a3ce8e28829decf75d9ff19eef2dbf843ddee3
 	khint_t k;
 	strhash_t *h = (strhash_t*)igd->hc;
 	k = kh_put(str, h, chrm, &absent);
