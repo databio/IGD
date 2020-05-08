@@ -1013,7 +1013,7 @@ int igd_search(int argc, char **argv)
 			else
 				getOverlaps(qfName, hits);
 		}
-		printf("index\t File_name\t number of regions\t number of hits\n"); 
+		printf("index\t number of regions\t number of hits\t File_name\n"); 
 		int64_t total = 0;       
 	    for(i=0;i<nfiles;i++){
 	    	if(hits[i]>0)
