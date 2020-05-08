@@ -59,13 +59,13 @@ option:
 
 ### 2. Search iGD for overlaps
 ```
-igd search "path/to/query_file" "path/to/igd_data_file" [options]
+igd search "path/to/igd_data_file" -q "path/to/query_file" [option]
 
 where:
 
-- path/to/query_file is the path to the query file
+- path/to/igd_data_file is the path to the igd data
 
-- path/to/igd_data_file is the path to the igd data (mode 1)
+- path/to/query_file is the path to the query file (.bed or .bed.gz)
 
 options:
 
@@ -75,9 +75,6 @@ options:
 ```
 
 For a detailed example, please check out the `vignettes`.
-
-## iGD databases
-Downloads of some iGD databases (fully created and directly searchable by using iGD) are available at [big.databio.org/example_data/igd](http://big.databio.org/example_data/igd).
 
 ## R-wrapper of IGD
 

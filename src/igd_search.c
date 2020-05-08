@@ -20,8 +20,7 @@ int search_help(int exit_code)
 "             -r <a region: chrN start end>\n"
 "             -v <signal value 0-1000>\n"
 "             -o <output file Name>\n"
-"             -m heatmap of igd self\n"
-"             -c display all intersects\n",
+"             -m heatmap of igd self\n",
             PROGRAM_NAME, VERSION, PROGRAM_NAME);
     return exit_code;
 }
@@ -1032,7 +1031,7 @@ int igd_search(int argc, char **argv)
     		else
      			ols = get_overlaps(chrm, qs, qe, hits);    			
     	}
-    	printf("index\t File_name\t number of regions\t number of hits\n");        
+    	printf("index\t number of regions\t number of hits\t File_name\n");        
         for(i=0;i<nfiles;i++)
             printf("%i\t%i\t%lld\t%s\n", i, IGD->finfo[i].nr, (long long)hits[i], IGD->finfo[i].fileName);
     }

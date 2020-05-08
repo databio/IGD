@@ -15,10 +15,8 @@ int create_help(int exit_code)
 "             -s  <Type of data structure> \n"
 "                   0 for [index, start, end]\n"
 "                   1 for [index, start, end, value], default\n"
-"                   2 single combined BED file, datatype 1\n"
 "             -f  (iPath is a file that lists paths of data src files) \n"
-"             -b  <Tile size in power of 2 (default 14)> \n"
-"             -c  < .BED column as value >=4 (default 4) \n",
+"             -b  <Tile size in power of 2 (default 14)> \n",
             PROGRAM_NAME, VERSION, PROGRAM_NAME);
     return exit_code;
 }
