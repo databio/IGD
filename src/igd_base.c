@@ -241,22 +241,24 @@ info_t* get_fileinfo(char *ifName, int32_t *nFiles)
     }
     char buf[1024], *s0, *s1, *s2, *s3;
     int nfiles=0; 
-    fgets(buf, 1024, fp);//head line
+    if(fgets(buf, 1024, fp)==NULL)
+		return NULL;
     while(fgets(buf, 1024, fp)!=NULL)
 		nfiles++;
 
     info_t *fi = (info_t*)malloc(nfiles*sizeof(info_t));
     fseek(fp, 0, SEEK_SET);
     int i=0;    
-    fgets(buf, 1024, fp);   //header
+    if(fgets(buf, 1024, fp)==NULL)
+		return NULL;
     while(fgets(buf, 1024, fp)!=NULL){	 
         s0 = strtok(buf, "\t");
         s1 = strtok(NULL, "\t");       
         fi[i].fileName = strdup(s1); 
         s2 = strtok(NULL, "\t");
         fi[i].nr = atol(s2);
-        //s3 = strtok(NULL, "\t"); 
-        //fi[i].md = (double)atol(s3); 
+        s3 = strtok(NULL, "\t"); 
+        fi[i].md = (double)atol(s3); 
         i++;
     }        
     *nFiles = (int32_t)nfiles;
@@ -270,9 +272,9 @@ iGD_t *get_igdinfo(char *igdFile)
     if(fp == NULL)
         printf("Can't open file %s", igdFile);
     iGD_t *iGD = malloc(1*sizeof(iGD_t));
-    fread(&iGD->nbp, sizeof(int32_t), 1, fp);
-    fread(&iGD->gType, sizeof(int32_t), 1, fp);  
-    fread(&iGD->nCtg, sizeof(int32_t), 1, fp);    
+    int ni = fread(&iGD->nbp, sizeof(int32_t), 1, fp);
+    ni = fread(&iGD->gType, sizeof(int32_t), 1, fp);  
+    ni = fread(&iGD->nCtg, sizeof(int32_t), 1, fp);    
    	int i, j, k;
    	int32_t gdsize;
    	if(iGD->gType==0)
@@ -282,7 +284,7 @@ iGD_t *get_igdinfo(char *igdFile)
     int32_t tileS, m = iGD->nCtg;	//the idx of a tile in the chrom 
     //------------------------------------------
     iGD->nTile = malloc(m*sizeof(int32_t));        
-    fread(iGD->nTile, sizeof(int32_t)*m, 1, fp);    
+    ni = fread(iGD->nTile, sizeof(int32_t)*m, 1, fp);    
     int64_t chr_loc = 12 + 44*m;	//header size in bytes
     for(i=0;i<m;i++) chr_loc += iGD->nTile[i]*4;
     //------------------------------------------
@@ -291,7 +293,7 @@ iGD_t *get_igdinfo(char *igdFile)
     for(i=0;i<m;i++){
     	k = iGD->nTile[i];    	
     	iGD->nCnt[i] = calloc(k, sizeof(int32_t));
-    	fread(iGD->nCnt[i], sizeof(int32_t)*k, 1, fp);
+    	ni = fread(iGD->nCnt[i], sizeof(int32_t)*k, 1, fp);
     	//--------------------------------------     	
     	iGD->tIdx[i] = calloc(k, sizeof(int64_t)); 
     	iGD->tIdx[i][0] = chr_loc;
@@ -303,7 +305,7 @@ iGD_t *get_igdinfo(char *igdFile)
 	iGD->cName = malloc(m*sizeof(char*));     
     for(i=0;i<m;i++){
 		iGD->cName[i] = malloc(40*sizeof(char));   	
-		fread(iGD->cName[i], 40, 1, fp);    
+		ni = fread(iGD->cName[i], 40, 1, fp);    
     }   
     fclose(fp);
    
@@ -357,7 +359,7 @@ void igd_saveT(igd_t *igd, char *oPath)
 			//remove tiles?
 		}
 	}
-	printf("....nCtgs, nRegions, nTiles %i\t %lld\t %lld\n", igd->nctg, (long long)igd->total, (long long)nt);
+	printf("nCtgs, nRegions, nTiles: %i\t %lld\t %lld\n", igd->nctg, (long long)igd->total, (long long)nt);
 	igd->total = 0;	//batch total
 }
 
@@ -395,7 +397,7 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 {
 	char idFile[1024], iname[1024];
 	//1. Save iGD data info: ctg string length 40	
-    int32_t i, j, n, nrec, m = igd->nctg;
+    int32_t i, j, n, nrec, ni, m = igd->nctg;
     int64_t gdsize;
     sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");	
     FILE *fp = fopen(idFile, "wb"); 
@@ -442,7 +444,7 @@ void igd_save(igd_t *igd, char *oPath, char *igdName)
 						printf("Can't alloc mem %lld\n", (long long)gdsize);
 						return;
 					}		    
-					fread(gdata, gdsize, 1, fp0);
+					ni = fread(gdata, gdsize, 1, fp0);
 					fclose(fp0);
 					//qsort(gdata, nrec, sizeof(gdata_t), compare_rstart);		    
 					radix_sort_intv(gdata, gdata+nrec); 
@@ -462,7 +464,7 @@ void igd0_save(igd0_t *igd, char *oPath, char *igdName)
 {
 	char idFile[1024], iname[1024];
 	//1. Save iGD data info: ctg string length 40	
-    int32_t i, j, n, nrec,  m  = igd->nctg;
+    int32_t i, j, n, ni, nrec,  m  = igd->nctg;
     int64_t gdsize;
     sprintf(idFile, "%s%s%s", oPath, igdName, ".igd");	
     FILE *fp = fopen(idFile, "wb"); 
@@ -500,7 +502,7 @@ void igd0_save(igd0_t *igd, char *oPath, char *igdName)
 				else{
 					gdsize = nrec*sizeof(gdata0_t);
 					gdata0_t *gdata = malloc(gdsize);
-					fread(gdata, gdsize, 1, fp0);
+					ni = fread(gdata, gdsize, 1, fp0);
 					fclose(fp0);
 					radix_sort_intv0(gdata, gdata+nrec); 
 					fwrite(gdata, gdsize, 1, fp);
