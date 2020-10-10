@@ -91,6 +91,8 @@ void create_igd(char *iPath, char *oPath, char *igdName)
     //Also has a header line: 
     char idFile[128];
     char *tchr;   
+	double l_avg = 0.0;
+	int64_t nT = 0;
     sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
     FILE *fpi = fopen(idFile, "w");
     if(fpi==NULL)
@@ -102,6 +104,8 @@ void create_igd(char *iPath, char *oPath, char *igdName)
             tchr += 1;
         else
             tchr = file_ids[i];
+		nT += nr[i];
+		l_avg += avg[i];
         fprintf(fpi, "%i\t%s\t%i\t%f\n", i, tchr, nr[i], avg[i]/nr[i]);     
     }
     fclose(fpi);   
@@ -112,6 +116,7 @@ void create_igd(char *iPath, char *oPath, char *igdName)
 	igd_save(igd, oPath, igdName);	
 	globfree(&gResult); 
 	printf("Save igd database to %s%s.igd\n", oPath, igdName);
+	printf("Total intervals, l_avg:  %lld %12.3f\n", (long long)nT, l_avg/nT);
 	free(splits); 
 }
 
@@ -208,6 +213,8 @@ void create_igd_f(char *iPath, char *oPath, char *igdName)
     //Also has a header line: 
     char idFile[1024];
     char *tchr;   
+	double l_avg = 0.0;
+	int64_t nT = 0;
     sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
     FILE *fpi = fopen(idFile, "w");
     if(fpi==NULL)
@@ -219,6 +226,8 @@ void create_igd_f(char *iPath, char *oPath, char *igdName)
             tchr += 1;
         else
             tchr = file_ids[i];
+		nT += nr[i];
+		l_avg += avg[i];
         fprintf(fpi, "%i\t%s\t%i\t%f\n", i, tchr, nr[i], avg[i]/nr[i]);     
     }
     fclose(fpi);   
@@ -228,6 +237,7 @@ void create_igd_f(char *iPath, char *oPath, char *igdName)
 	//4. Sort tile data and save into single files per ctg
 	igd_save(igd, oPath, igdName);	
 	printf("Save igd database to %s%s.igd\n", oPath, igdName);
+	printf("Total intervals, l_avg:  %lld %12.3f\n", (long long)nT, l_avg/nT);
 	free(file_ids);	
 	//free(splits); 
 }
@@ -302,6 +312,8 @@ void create_igd0(char *iPath, char *oPath, char *igdName)
     //Also has a header line: 
     char idFile[1024];
     char *tchr;   
+	double l_avg = 0.0;
+	int64_t nT = 0;
     sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
     FILE *fpi = fopen(idFile, "w");
     if(fpi==NULL)
@@ -313,6 +325,8 @@ void create_igd0(char *iPath, char *oPath, char *igdName)
             tchr += 1;
         else
             tchr = file_ids[i];
+		nT += nr[i];
+		l_avg += avg[i];
         fprintf(fpi, "%i\t%s\t%i\t%f\n", i, tchr, nr[i], avg[i]/nr[i]);     
     }
     fclose(fpi);   
@@ -324,6 +338,7 @@ void create_igd0(char *iPath, char *oPath, char *igdName)
 	igd0_save(igd, oPath, igdName);	
 	globfree(&gResult); 
 	printf("igd_create 4\n");	
+	printf("Total intervals, l_avg:  %lld %12.3f\n", (long long)nT, l_avg/nT);
 	free(splits);  
 }
 
@@ -386,7 +401,9 @@ void create_igd_bed4(char *iPath, char *oPath, char *igdName)
 	//3. save _index.tsv: 4 columns--index, filename, nr, avg
     //Also has a header line: 
     char idFile[1024];
-    char *tchr;   
+    char *tchr; 
+	double l_avg = 0.0;
+	int64_t nT = 0;  
     sprintf(idFile, "%s%s%s", oPath, igdName, "_index.tsv");    
     FILE *fpi = fopen(idFile, "w");
     if(fpi==NULL)
@@ -398,6 +415,8 @@ void create_igd_bed4(char *iPath, char *oPath, char *igdName)
             tchr += 1;
         else
             tchr = file_ids[i];
+		nT += nr[i];
+		l_avg += avg[i];
         fprintf(fpi, "%i\t%s\t%i\t%f\n", i, tchr, nr[i], avg[i]/nr[i]);     
     }
 
@@ -409,6 +428,7 @@ void create_igd_bed4(char *iPath, char *oPath, char *igdName)
 	igd_save(igd, oPath, igdName);	
 	printf("igd_create 4\n");   
 	free(file_ids); 
+	printf("Total intervals, l_avg:  %lld %12.3f\n", (long long)nT, l_avg/nT);
 	free(splits);       
 }
 
