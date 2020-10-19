@@ -59,7 +59,7 @@ option:
 
 ### 2. Search iGD for overlaps
 ```
-igd search "path/to/igd_data_file" -q "path/to/query_file" [option]
+igd search "path/to/igd_data_file" -q "path/to/query_file"
 
 where:
 
@@ -67,11 +67,20 @@ where:
 
 - path/to/query_file is the path to the query file (.bed or .bed.gz)
 
-options:
+other options:
 
--v: dynamic search with threshold signal value (0-1000)
+-r <chrN start end> (a single query)
 
--o: output file-name
+-v <signal value 0-1000> (signal value > v)
+
+-o <output file Name>
+
+-s (output Seqpare similarity)
+
+-f (output full overlaps, for -q and -r only)
+
+-m (hitsmap of igd datasets)
+
 ```
 
 For a detailed example, please check out the `vignettes`.
