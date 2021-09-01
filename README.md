@@ -11,6 +11,8 @@ If you use IGD in your research, please cite:
 
 Jianglin Feng, Nathan C Sheffield. IGD: high-performance search for large-scale genomic interval datasets. *Bioinformatics*, Volume 37, Issue 1, 1 January 2021, Pages 118–120, https://doi.org/10.1093/bioinformatics/btaa1062
 
+Preprint: https://www.biorxiv.org/content/10.1101/2020.06.08.139758v1
+
 
 ## How to build iGD
 
