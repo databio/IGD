@@ -4,6 +4,14 @@
 
 Databases of large-scale genome projects now contain thousands of genomic interval datasets. These data are a critical resource for understanding the function of DNA. However, our ability to examine and integrate interval data of this scale is limited. Here, we introduce the integrated genome database (IGD), a method and tool for searching genome interval datasets more than three orders of magnitude faster than existing approaches, while using only one hundredth of the memory. IGD uses a novel linear binning method that allows us to scale analysis to billions of genomic regions. 
 
+## Citation
+
+If you use IGD in your research, please cite:
+
+
+Jianglin Feng, Nathan C Sheffield. IGD: high-performance search for large-scale genomic interval datasets. *Bioinformatics*, Volume 37, Issue 1, 1 January 2021, Pages 118–120, https://doi.org/10.1093/bioinformatics/btaa1062
+
+
 ## How to build iGD
 
 If zlib is not already installed, install it:
